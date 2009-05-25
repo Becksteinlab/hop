@@ -25,12 +25,16 @@ hops with rate constants and fluxes derived from the MD simulations.\
       license="GPL2+",
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop", # not set up yet
       keywords="science 'molecular dynamics' analysis hydration water",
-      packages=find_packages(exclude=['tests','examples','doc/developer']),
+      packages=find_packages(exclude=['tests','extras','doc/examples']),
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'networkx<0.99',       # **
                         'pygraphviz<0.99',     # **
+      #                  'MDAnalysis>0.5.1',
                         ],
+      #dependency_links = [
+      #    "http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz",
+      #    ],
       # also requires:  'MDAnalysis>0.5.1',
       # http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
       # but this does not work automagically yet. See INSTALL
