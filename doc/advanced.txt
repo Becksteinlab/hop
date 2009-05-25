@@ -1,0 +1,257 @@
+=================
+ Advanced usage
+=================
+
+:Note: These notes can be slightly out of date.
+
+
+
+Analysis of individual water trajectories
+=========================================
+
+One needs to figure out how to translate the 'iatom' number back to a psf index. (TODO: should keep a translation table when I make the selection.)
+
+As a quick fix use the hop.psf, which keeps the original numbers; then just count...::
+
+   awk 'BEGIN {iatom=0};
+	$5 == "OH2" {serial=$1; res=$2; resn=$3; segname=$4; type=$5; 
+		     printf "%6d %6d %3s %5d\n",iatom,serial,res,resn; iatom++}' hops_water.psf > iatom2serial.dat
+   awk -v iatom=2025 '$1 == iatom {serial=$2; printf "serials %d to %d\n",serial,serial+2;}' iatom2serial.dat
+
+
+Visualize the water in VMD
+--------------------------
+
+  water and serial 8189 to 8182
+
+Also
+
+  density.export_map(label=12)
+
+and load the site map density.
+
+
+Comparing water networks
+========================
+
+:: figure:: images/Network_1IFC_2IFB.jpg
+   Comparison of water densities in I-FABP in apo (blue mesh) and holo
+   (green mesh). The water network is shown as balls and sticks. Sites
+   that are identified as common to both apo and holo are coloured
+   red, others are blue. Created with the Water network analysis tools
+   and VMD, rendered in Raster3D.
+
+One question is if hydration sites change when a ligand binds or when
+a residue is mutated. In order to answer this question one needs to
+run MD simulations for the two states and calculate their density and
+site map (as explained above). Then one remaps the sites of one
+density on to the other. This allows one to use powerful numpy
+expressions to compare the density grids and ultimately find out which
+site label in simulation 1 corresponds to site label in 2.
+
+
+Comparing densities
+-------------------
+
+First we need to identify the sites common to simulation 1 and 2.
+
+The steps in the protocol:
+
+   1. load pickled density object for simulation 1, eg water_1.pickle
+   2. load pickled density object for simulation 2, eg water_2.pickle
+   3. remap 2 on 1
+   4. compare the site maps 
+
+The following used the remap_density() and the
+find_common_sites_with() methods; see the source to understand how
+they work --- it is surprsingly simple because numpy is so powerful.
+
+Assuming you have a reference density ref and the density you want to
+compare to comp then you can remap comp to comp_ref with::
+
+   from hop.sitemap import Density,remap_density
+   ref = Density(...)
+   comp = Density(...)
+   comp_ref = remap_density(comp,ref)
+   comp_ref.save('comp_remapped_to_ref')
+   comp_ref.find_common_sites_with(ref,fmt='r%d')
+   ref.save()
+   comp_ref.save()
+
+This creates the new density which needs to be used for all
+comparisons. The find_common_sites_with() method annotates the
+site_properties attribute with all sites that are overlapping in the
+two densities. The label for 'common sites' is constructed from the
+integer label in the reference and the fmt string (by default, '%d',
+i.e. just the integer).
+
+Once this is done construct and visualize the CombinedGraph.
+
+
+One probably should re-create the hopping trajectory with the remapped
+density although in practice the differences have been small for the
+systems tested.
+
+
+
+Comparing Graphs
+----------------
+
+Once the common sites have been identified we can colour the graphs
+according to the 'conservation' of the site between different systems.
+
+
+Displaying separate graphs
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following assumes that a HopGraph was produced previously. We are
+now using the site_properties from the densities to add details to the
+graph::
+
+   import hop.sitemap, hop.graph
+   # densities (1OPA and 1OPB)
+   D = dict(apo=hop.sitemap.Density(...),holo=hop.sitemap.Density(...))
+
+   # hopping graphs
+   # add site_properties when loading the graph (bit of a hack)
+   H = dict(apo=hop.graph.HoppingGraph(filename='1OPA/analysis/hopgraph.pickle',
+				      site_properties=D['apo'].site_properties),
+	    holo=hop.graph.HoppingGraph(filename='1OPB/analysis/hopgraph.pickle',
+					site_properties=D['holo'].site_properties))
+   for x,h in H.items():
+      h.filter(exclude=dict(outliers=True,Nmin=5,unconnected=True))
+      h.save()
+      h.export(use_mapped_labels=True)  # .dot file for graphviz
+      h.export3D()                      # filename.psf and filename.pdb (display with protein)
+      print "Default file name: ", h.filename()
+
+
+The CombinedGraph
+~~~~~~~~~~~~~~~~~
+
+In order to layout the two graphs together one can construct the union
+of the two graphs, which we call the CombinedGraph. Constructing the
+CombinedGraph requires densities that have been remapped and which
+have their common sites identified::
+
+   from hop.graph import CombinedGraph
+   cg = CombinedGraph(g0=H['apo'],g1=H['holo'])
+
+Now one can display the apo (g0) or the holo (g1) graph with the other
+one only shown in the background::
+
+   cg.filter(exclude={'bulk':True, 'outliers':True})  # make filtered graph
+   cg.plot(0,filename='op0',max_node_size=900,linewidths=(0.1,))
+   cg.plot(1,filename='op1',max_node_size=900,linewidths=(0.1,))
+
+The colour of the nodes encodes the distance of the site centre from
+the centre of geometry of the protein. The node diameter is
+proportional to the occupancy. By default, only common sites are
+labelled by their 'common label'. Edges that are common to both graphs
+are shown in red.
+
+
+.. figure:: images/FABP_apo_network.png
+   water network: test case (I-FABP apo, 0.5 ns total)
+
+.. figure:: images/FABP_holo_network.png
+   water network: test case (I-FABP holo, 1.0 ns total)
+
+
+
+Crystal water density
+=====================
+
+It is easy to compare densities. In order to compare to the hydration
+sites seen in crystal structures it is convenient to build a density
+from the positions of the waters in the crystal structure. The
+crystallographic B-factor is converted into a root mean square
+fluctuation 
+
+  \sigma = \sqrt{3B/8\pi^2} 
+
+and the density approximated by a gaussian at the site of the oxygen
+x0, 
+
+   g(x,x_0) = \frac{1}{\sqrt{2\pi\sigma}^{3}} \exp\left(-\frac{(x-x_0)^2}{2\sigma^2}\right).
+
+
+
+Preparing a pdb
+---------------
+
+:Note: This section is incomplete and some of the scripts mentioned
+are not provided. Please contact the author if you are interested.
+
+Preparing a proper psf/pdb combo is actually more painful than it
+looks. You will have to keep the B-factors along, select a subsystem
+from the original pdb (one protein copy and waters), build missing
+hydrogens, and trying to cope with Charmm's idiosyncracies.
+
+1) download pdb file from PDB
+
+2) split copies of the protein in the asymmetric unit cell and the water (using the primitive oneChain.py script)::
+      #!/bin/bash
+
+      ONECHAIN=${HOME}/Biop/Library/struct_manip/oneChain.py
+
+      pdbid=1OPA
+      CHAINS="A B"
+
+      chain_d="./chains"
+      mkdir -p ${chain_d}
+
+      xwat_pdb="${chain_d}/${pdbid}_xwat.pdb"
+
+      # water
+      ${ONECHAIN}  -v -c ' ' -f ${pdbid}.pdb -o ${xwat_pdb}
+
+      # protein chains
+      for c in ${CHAINS}; do
+	  pdb=${pdbid}_$c.pdb
+	  wpdb="${chain_d}/${pdbid}_${c}W.pdb"
+	  ${ONECHAIN}  -v -c $c -i ${pdbid}
+	  cat $pdb ${xwat_pdb} > ${wpdb}
+	  mv ${pdb} ${chain_d}
+      done
+
+3) RMS-fit all chains+all water files in VMD.
+    * note the RMSD
+    * count waters within CUTOFF=4.0 A::
+         set w [atomselect <MOLID> 'water and name OH2']
+         $w len
+    * select one chain (typically, many waters and typical RMSD) 
+
+4) process selected chain (without water) and water with pdb2charmm::
+      from pdb2charmm import Structure
+      p = Structure('1OPA_A.pdb','1OPA')
+      p.fix(['ILE','cterm'])
+      p.write('1OPA_A_0.crd')
+      p.write('1OPA_A_0.pdb')
+
+      w = Structure('1OPA_xwat.pdb','XWAT')
+      w.fix('water')
+      w.write('1OPA_w_0.crd')
+      w.write('1OPA_w_0.pdb')
+
+5) build final psf/pdb/crd in Charmm::
+     charmm < 1opa_xtal.inp
+   produces 1opa_a_xtal.{psf,crd,pdb}
+
+The Charmm script only retains water within CUTOFF and builds all
+missing heavy atoms and hydrogens. The protein sequence and the number
+of crystal waters is coded in the script.
+
+Build the crystal water density
+-------------------------------
+
+   from hop.sitemap import density_from_pdb
+   d = density_from_pdb('1opa_a_xtal.psf','1opa_a_xtal.pdb')
+   d.convert_density('water')
+   d.map_sites(1.2)           # test...
+   d.save('xtal_water')
+   d.export()
+
+Bugs:
+ * original water resids are not kept
+ * complicated 

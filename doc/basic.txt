@@ -1,0 +1,170 @@
+================
+  Basic USAGE
+================
+
+A quick overview of how one can use the Hop module. 
+
+
+Input files
+===========
+
+For analysis, one needs
+
+* a psf of the system
+* a trajectory (dcd) that was RMS-fitted to a reference structure
+  (this is very important because the density is histogramed on a
+  fixed grid, i.e. in the laboratory frame; hence all overall
+  translations and rotations need to be removed so that water density
+  is not "washed out")
+
+Example SGE python scripts are in doc/examples.
+
+
+
+Example session
+===============
+
+The basic idea is to first map sites (find continuous regions of
+density above a threshold) and then analyze a trajectory in terms of
+transitions between those sites. 
+
+In the following a example python session is shown. Each step can be
+prototyped interactively in ``ipython``, using a short test
+trajectory (eg 1000 frames), and then later combined into a script
+(see the examples directory).
+
+In the following it is assumed that a number of hop sub modules have
+been loaded in the top level name space::
+
+   #------------------------
+   # beginning of example session
+   #------------------------
+   from hop.interactive import *
+
+(The ``interactive`` module contains some high-level functions that
+simplify certain tasks. See the source code for details; in
+``ipython`` this can be achieved with the "??" operator.)
+
+
+Defining hydration sites
+------------------------
+
+Sites are typical characterized by a density much higher than the bulk
+density (eg 2-5 times higher, or if you think in terms of chemical
+potentials then a change in density by a factor of 2.721 = e
+corresponds to a change in (local) chemical potential of 1 kT, and
+1.65 corresponds to 0.5 kT). However, this leaves out the bulk for
+analysis so we could not map transitions to and from the bulk. To make
+this kind of analysis useful one needs to add an additional site for
+bulk: This allows calculation of exchange with the bulk:
+
+   1. calculate a second density (density_bulk) for water which is at
+      a distance greater than 3.5 Å (or 4 Å). One can use MDAnalysis
+      as in the example below or VMD (with soluteselection='protein
+      and not name H*', cutoff=3.5, backend='VMD' (but only if the
+      trajectories are not big and fit into the computers main memory,
+      i.e. typically < 1G).
+   2. map the sites of this density at a low threshold (eg 0.6 of the
+      bulk density).
+   3. insert the largest site (number 1) into the list of high density sites
+   4. recompute the map
+
+The example session in ipython begins with the computation of the density::
+
+   # water density
+   density = make_density('./NPT/ifabp_water.psf','./NPT/ifabp_water_1_rmsfit.dcd',
+			  'water',delta=1.0,atomselection='name OH2',backend='MDAnalysis')
+   # bulk water density
+   density_bulk = make_density('./NPT/ifabp_water.psf','./NPT/ifabp_water_1_rmsfit.dcd',
+			       'bulk',delta=1.0,atomselection='name OH2',
+			       soluteselection='protein and not name H*',
+			       cutoff=3.5,backend='MDAnalysis')
+
+   # threshold
+   density.map_sites(1.65)
+   density_bulk.map_sites(0.6)
+
+   # add the biggest bulk site at position 1
+   density.site_insert_bulk(density_bulk)   # hack!
+   density.save()
+   del density_bulk
+ 
+In principle one is not restricted to defining sites via the density:
+one could define regions in space from e.g. a Voronoi tesselation or
+split space in a *binding site* and in an *unbound region*. None of
+this is directly supported at the moment; however, all that needs to
+be done is to provide a 3D array with grid cells numbered according
+to the regions (see code in ``hop.sitemap``).
+
+.. figure:: images/FABP_bulkwater.jpg
+   Water sites in I-FABP with palmitate. The bulk site is everything
+   outside the enveloping surface near the protein.
+
+One can visualize the density by exporting it as a dx file and viewing
+it in e.g. VMD::
+
+   density.export_map(labels='sites',combined=True)  # combines all sites into a single file
+   density.export_map(combined=False)                # writes each site separately to ./site_maps/
+
+(labels='sites' excludes the bulk site from being included; see docs
+for hop.sitemap.Density.site_labels for details.)
+
+Sites can also written as pseudo atoms (pdb+psf combo)
+
+   density.export3D('hydrationsites')
+
+Once the sites are defined, the *hopping trajectory* is compiled from
+the original one.
+
+
+
+Hopping trajectory
+------------------
+
+The 3D movement of each water molecule (or typically, each water
+oxygen) is translated into a 1D sequence of hops between sites::
+
+   hops = make_hoppingtraj(density,'hop_water+bulk')
+
+This can take a while so the result is stored as a new trajectory in
+dcd format, with an accompanying pseudo psf file.
+
+A hopping trajectory object can be recreated from the dcd and psf file
+with ``hops = hop.trajectory.HoppingTrajectory(filename='hop_water+bulk')``.
+
+
+
+Hopping graph
+=============
+
+The hopping trajectory is used together with the density (in the
+``hops`` object) to build a transport graph object ``tgraph``; the
+transport graph object itself is  not really important but its
+``hopgraph`` attribute is the final desired *hopping graph*::
+
+   tgraph = build_hoppinggraph(hops)  # this can take a while (hours) for big systems... 
+   h = tgraph.hopgraph       # main result is the 'hopgraph'
+   h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
+   h.tabulate_k()            # show all calculated rate constants (filtered graph)
+   h.plot_fits()             # plot rate constant fits
+   h.export('water')         # write XGMML to visualize (filtered) graph 
+   h.save()                  # save hopgraph for further analysis
+
+   #------------------------
+   # end of example session
+   #------------------------
+
+``hopgraph.export(file)`` writes a XGMML file that can be viewed in
+CytoScape; alternatively if the ``format='dot'`` keyword is supplied,
+a dot file is written that can be rendered with, for instance,
+GraphViz (Mac OS X). Alternatively, supply a format such as
+format='png' to export() to let pygraphviz do the rendering.
+
+One can re-analyze the hop graph later by loading the saved file::
+
+   import hop.graph
+   h = hop.graph.HoppingGraph(filename='hopgraph.pickle')
+   h.filter(exclude={'outliers':True, 'Nmin':5, 'unconnected':True})
+   h.plot_fits(directory='survival_times/nmin5',dt=5)
+
+

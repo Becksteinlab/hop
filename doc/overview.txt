@@ -1,5 +1,3 @@
-$Id$
-
 =======================
  Documentation for Hop
 =======================
@@ -8,6 +6,27 @@ Most of the documentation exists in the python doc strings. Use the
 python ``help()`` function or ipython's ``?`` operator and use
 introspection in ipython ("classname.<TAB>") to learn more about the
 commands.
+
+
+Documentation files
+-------------------
+
+basic.txt:   
+   Example session that shows how to process a single trajectory,
+   starting with calculating hydration sites and ending with a hopping
+   graph.
+
+advanced.txt:
+   Incomplete notes on more advanced usage such as comparing graphs.
+
+waternetwork_poster.pdf:
+   Low resolution copy of the poster presented at Biophysics
+   2009. Gives an overview over some of the capabilities.
+
+
+Not everything is documented externally yet. Please let me know what
+you would like to do and I can tell you if it is already in there (but
+undocumented), easy to do, or rather difficult.
 
 
 examples directory
