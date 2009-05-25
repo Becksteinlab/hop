@@ -1,43 +1,45 @@
 $Id$
 
+
+Please do not hesitate to contact Oliver Beckstein
+<orbeckst@gmail.com> if problems occur or if you have suggestions how
+to improve the package or these instructions.
+
+
 Hop -- Water network analysis tools
 ===================================
 
 This is a collection of python modules to analyze (primarily) water
-densities in MD simulations. The idea is to find regions with a
-density above a given threshold and then catalogue those sites. Once
-this is done, one can analyze water movement in terms of hops between
-those sites.
+behaviour in MD simulations. The idea is to find regions with a
+density above a given threshold (hydration sites) and catalogue those
+sites. Once this is done, one can analyze water movement in terms of
+hops between those sites. The complicated solvation dynamics is thus
+represented as a graph in which hydration sites are the nodes (or
+vertices) and movements between sites are the edges.
 
-The package is called Hop (no clever acronym, just quick to type).
+The package is called 'hop' (no clever acronym, just quick to type).
 
 Hop requires a bunch of other home-grown modules (notably my OpenDX
 module) which are also included.
 
-The package makes heavy use of MDAnalysis. To generate the densities
-one can either use MDAnalysis or VMD's VolMap plugin or read in any
-appropriate OpenDX file. Hop provides functions to do this. The
-default in the hop.interactive module is to use VMD to generate a
-density because the atom selection in VMD is more flexible than in
-MDAnalysis. For this to work one must be able to start VMD from the
-command line.
-
-Currently it requires some experimental features that are only found
-in the newest pre-release:
-
-Either get the tar ball
-
-  http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
-
-or get the development version via subversion:
-
- svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
+The package makes heavy use of MDAnalysis
+(http://mdanalysis.googlecode.com/). Currently it requires some
+experimental features that are only found in the newest
+pre-release. See INSTALL for details.
 
 
 
 ======================
   BELOW IS OUTDATED
+  (please ignore)
 ======================
+
+To generate the densities one can either use MDAnalysis or VMD's
+VolMap plugin or read in any appropriate OpenDX file. Hop provides
+functions to do this. The default in the hop.interactive module is to
+use VMD to generate a density because the atom selection in VMD is
+more flexible than in MDAnalysis. For this to work one must be able to
+start VMD from the command line.
 
   
 1 Example session

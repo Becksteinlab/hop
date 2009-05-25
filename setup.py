@@ -26,15 +26,18 @@ hops with rate constants and fluxes derived from the MD simulations.\
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop", # not set up yet
       keywords="science 'molecular dynamics' analysis hydration water",
       packages=find_packages(exclude=['tests','examples']),
+      package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'networkx<0.99',       # **
                         'pygraphviz<0.99',     # **
-                        'matplotlib>=0.91.3',
                         ],
       # also requires:  'MDAnalysis>0.5.1',
       # http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
-      # but this does not work automagically yet
-      extras_require={'heatmap': ['rpy']},     # optional      
+      # but this does not work automagically yet. See INSTALL
+      extras_require={
+          'plotting': ['matplotlib>=0.91.3'], # probably already installed
+          'heatmap': ['rpy']                  # optional,used for heatmaps
+          },
 )
 
 #**) The code has not been updated yet to use the new NetworkX 1.0 API

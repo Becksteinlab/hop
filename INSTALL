@@ -5,37 +5,53 @@ should be installed before Hop and Hop's installation process. The
 latter should be painless because it only consists of pure python
 scripts at the moment.
 
+Please do not hesitate to contact Oliver Beckstein
+<orbeckst@gmail.com> if problems occur or if you have suggestions how
+to improve the package or these instructions.
 
 
 Requirements
 ============
 
-Tested with python 2.3, 2.4, 2.5
+The future the Hop installer should handle some of these dependencies
+automatically; if not you will have to install packages manually. This
+is true in particular for MDAnalysis at the moment. matplotlib is also
+desirable but failed to install cleanly automatically.
 
-Required python modules:
 
-numpy         >=1.0.3               http://numpy.scipy.org/
+* Tested with python 2.4, 2.5 (2.3 might still work, too) on Linux and
+  Mac OS X.
+
+* Required python modules:
+
 MDAnalysis*   >= 0.6 or UNSTABLE    http://mdanalysis.googlecode.com
+numpy         >=1.0.3               http://numpy.scipy.org/
 NetworkX**    <0.99                 https://networkx.lanl.gov/
 pygraphviz    0.36                  https://networkx.lanl.gov/pygraphviz/
 
 *)  MDAnalysis requires additional modules; see the instructions at
-    its home page
+    its home page. Get the latest snapshot
+       http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
+    or get the development version via subversion:
+       svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
+
 **) Hop has not been updated yet to use the new NetworkX 1.0 API
     hence only earlier versions (e.g. 0.36) are going to work reliably.
 
 
+
 Optional modules (reduced functionality if not present):
 
-pylab            >=0.91.3           http://matplotlib.sourceforge.net/ 
+matplotlib       >=0.91.3           http://matplotlib.sourceforge.net/ 
 rpy (and R)                         http://rpy.sourceforge.net/
 
-(When these are missing the code will raise an ImportError when
-attempting to use these modules; their absence is not handled
-gracefuly and it is very much suggested to install them.)
+When these modules are missing the code will raise an ImportError when
+attempting to use them; their absence is not handled gracefuly and it
+is suggested to install at least matplotlib/pylab. R and rpy are only
+used for an experimental heatmap analysis and can be safely ignored.
 
 
-Many packages are found through the local package manager (eg apt,
+Many packages can be found through the local package manager (eg apt,
 fink, yum, rpm). networkx is available at the above URL or with the
 `easy_install' command from python setuptools.
 
@@ -48,8 +64,21 @@ In Debian/Ubuntu/fink:
    easy_install pygraphviz
 
 
-In the future the Hop installer should handle some of these
-dependencies automatically.
+Interactive use and ipython
+---------------------------
+
+When Hop was developed, interactive use from a python command shell
+turned out to be a very convenient application paradigm. 'ipython' is
+very much recommended because of its ease to obtain interactive help
+via '?' and '??' and to inspect objects via TAB-completion. This is
+especially helpful because most of the documentation is provided as
+python doc strings, both at the module and at the class level.
+
+For instance, to get an overview over interactive usage, load the
+hop.interactive module and query the top level doc string:
+
+ import hop.interactive
+ hop.interactive ?
 
 
 
