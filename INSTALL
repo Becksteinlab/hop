@@ -10,6 +10,21 @@ Please do not hesitate to contact Oliver Beckstein
 to improve the package or these instructions.
 
 
+Quick instructions
+==================
+
+If you are familiar with ``easy_install`` from ``setuptools`` then try
+
+  easy_install Hop-0.1rc1.tar,gz
+
+or 
+
+  cd Hop-0.1rc1
+  python setup.py install
+
+Otherwise read the Requirements and Installation instructions below.
+
+
 Requirements
 ============
 
