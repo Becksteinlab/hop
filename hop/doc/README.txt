@@ -1,0 +1,123 @@
+$Id$
+See also
+http://gonzo.med.jhmi.edu/woolfwiki/index.php/Water_network_analysis_tools
+
+Water network analysis tools
+
+Oli wrote some python modules to analyze (primarily) water densities
+in MD simulations. The idea is to find regions with a density above a
+given threshold and then catalogue those sites. Once this is done, one
+can analyze water movement in terms of hops between those sites.
+
+The module is called hop and is visible on svn:oliver/Library/python/hop
+
+Because hop requires a bunch of other modules (notably my OpenDX
+module) I recommend to checkout the whole python-lib directory and to
+put it in your PYTHONPATH:
+
+  svn co http://gonzo.med.jhmi.edu/repos/users/oliver/Library/python ./python-lib
+  export PYTHONPATH=$PWD/python-lib:$PYTHONPATH
+
+In addition, the module makes heavy use of MDAnalysis. To generate the
+densities one can either use MDAnalysis or VMD's VolMap plugin or read
+in any appropriate OpenDX file. hop provides functions to do this. The
+default in the hop.interactive module is to use VMD to generate a
+density because the atom selection in VMD is more flexible than in
+MDAnalysis. For this to work one must be able to start VMD from the
+command line.
+
+Currently it requires some experimental features that are only found
+in the UNSTABLE branch:
+
+ svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
+
+
+1 Example session
+
+An example session in ipython goes as follows:
+
+   from hop.interactive import *
+   density = make_density('./NPT/ifabp_water.psf','./NPT/ifabp_water_1_rmsfit.dcd','water',delta=1.0,atomselection='name OH2')
+   hops = map_sites(density,'hops_water',threshold=1.65,export_map=False)
+   tgraph = build_hoppinggraph(hops)
+
+   h = tgraph.hopgraph       # main result is the 'hopgraph'
+   h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
+   h.tabulate_k()            # show all calculated rate constants (filtered graph)
+   h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
+   h.export('water')         # write dot file to visualize (filtered) graph
+
+hopgraph.export(file) writes the 'dot' file file.dot that can be
+rendered with, for instance, GraphViz (Mac OS X). Alternatively,
+supply a format such as format='png' to export() to let pygraphviz do
+the rendering.
+
+
+
+2 Adding sites
+
+To make this kind of analysis useful one needs to add a site for bulk:
+This allows calculation of exchange with the bulk. At the moment this
+is a hack:
+
+   1. calculate a second density (density_bulk) for water which is at
+      a distance greater than 3.5 Å. This only works with VMD and not
+      with MDAnalysis because of the complicated atom selection.
+   2. map the sites of this density at a low threshold (eg 0.6 of the bulk density).
+   3. insert the largest site (number 1) into the list of high density sites
+   4. recompute the map
+   5. then proceed with the hopping trajectory 
+
+   from hop.interactive import *
+   # water density
+   density = make_density('./NPT/ifabp_water.psf','./NPT/ifabp_water_1_rmsfit.dcd',
+			  'water',delta=1.0,atomselection='name OH2')
+   # bulk water density
+   density_bulk = make_density('./NPT/ifabp_water.psf','./NPT/ifabp_water_1_rmsfit.dcd',
+			       'bulk',delta=1.0,atomselection='name OH2 and not within 3.5 of protein',
+			       load_new=False)
+
+   # threshold
+   density.map_sites(1.65)
+   density_bulk.map_sites(0.6)
+
+   # add the biggest bulk site at position 1
+   density.sites_insert_bulk(density_bulk.sites)   # hack!
+   density.save()
+   del density_bulk
+
+   # continue with standard protocol
+   hops = make_hoppingtraj(density,'hop_water+bulk')
+   tgraph = build_hoppinggraph(hops)
+
+   h = tgraph.hopgraph       # main result is the 'hopgraph'
+   h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
+   h.tabulate_k()            # show all calculated rate constants (filtered graph)
+   h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
+   h.export('water')         # write dot file to visualize (filtered) graph
+
+Retrieved from "http://gonzo.med.jhmi.edu/woolfwiki/index.php/Water_network_analysis_tools"
+
+
+2 Example
+
+import hop.interactive, hop.sitemap, hop.graph
+
+class Struct:
+      pass
+
+dens.holo = hop.sitemap.Density(filename='2IFB/water_remapped_1IFC')
+
+hoptrj = Struct()
+hoptrj.holo = hop.interactive.make_hoppingtraj(density)
+hoptrj.holo = hop.interactive.make_hoppingtraj(dens.holo,'hoptraj_remapped')
+
+tn =Struct()
+tn.holo = hop.graph.TransportNetwork(hoptrj.holo,dens.holo)
+hg.holo = tn.holo.HoppingGraph()
+hg.holo.save('hg_remapped_1IFC')
+
+
+
+cg = hop.graph.CombinedGraph(g0=hg.apo,g1=hg.holo); cg.filter(exclude={'bulk':True, 'outliers':True})
+cg.plot(1,filename='op1',max_node_size=900,linewidths=(0.1,))

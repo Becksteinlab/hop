@@ -1,0 +1,265 @@
+compute_residency_timestn.compute_site_times_naive()
+naive_theta = tn.theta.copy()
+
+tn.compute_site_times()
+
+for i in tn.theta:
+    print "%3d   %6.0f   %6.0f" % (i, naive_theta[i].sum(), tn.theta[i].sum())    
+
+  1   1075764   1031160
+  2      290       12
+  3      168      518
+  4      331      474
+  5      264      580
+  6      236      511
+  7      279      496
+  8      255      816
+  9      282      512
+ 10      254       78
+ 11      200      312
+ 12      272      146
+ 13      138      396
+ 14      183      545
+ 15      126      391
+ 16       76      213
+ 17      231      293
+ 18      109      348
+ 19      155      336
+ 20      143      490
+ 21      227      211
+ 22      178      465
+ 23      108      366
+ 24      148      306
+ 25       81      398
+ 26      149      233
+ 27      126      266
+ 28       70      224
+ 29      121      422
+ 30      125      462
+ 31      109      305
+ 32      118      382
+ 33      111      246
+ 34       92      269
+ 36      117      276
+ 37      110      330
+ 38      108      302
+ 39       96      286
+ 40      126      461
+ 41       72       95
+ 42       89      293
+ 43      154      308
+ 44       61      185
+ 45      113      309
+ 46       94      345
+ 47       58      233
+ 48      126      395
+ 49       88      206
+ 50      133      374
+ 51      104      267
+ 52       71      260
+ 53       62      333
+ 54      108      276
+ 55       44      187
+ 56       77      231
+ 57       77      312
+ 58       57      214
+ 59       60      379
+ 60       81      175
+ 61      122      138
+ 62       63      237
+ 63       78      180
+ 64       70      187
+ 65       75      161
+ 66       57      172
+ 67       58      165
+ 68       32      110
+ 69       45      104
+ 70       55      307
+ 71       96      235
+ 72       21       42
+ 73       80      572
+ 74       57      171
+ 75       70       68
+ 76       82      214
+ 77      121      291
+ 78       57      137
+ 79       66      157
+ 80       42       95
+ 81       52      118
+ 82       89      320
+ 83       36      206
+ 84       68       96
+ 85       98      332
+ 86       44      141
+ 87      101      280
+ 88       63      235
+ 89       44      180
+ 90       75      351
+
+
+In [71]: tn.hopgraph.graph.out_edges(2)
+Out[71]:
+[(2, 73, (0.953324050484, 0, 1)),
+ (2, 12, (0.402190131452, 0, 1)),
+ (2, 78, (0.0405171597119, 0, 1))]
+
+In [72]: tn.hopgraph.graph.in_edges(2)
+Out[72]: [(12, 2, (0.00914254615033, 0.00914254615033, 2))]
+
+In [73]: tn.hopgraph.properties[(2,73)]
+Out[73]:
+{'frame': array([125]),
+ 'iatom': array([1963]),
+ 'tau': array([ 1.]),
+ 'tbarrier': array([ 54.])}
+
+In [74]: tn.hopgraph.properties[(2,12)]
+Out[74]:
+{'frame': array([35]),
+ 'iatom': array([1356]),
+ 'tau': array([ 2.]),
+ 'tbarrier': array([ 1.])}
+
+In [75]: tn.hopgraph.properties[(12,2)]
+Out[75]:
+{'frame': array([ 32, 162]),
+ 'iatom': array([1356, 1356]),
+ 'tau': array([  28.,  118.]),
+ 'tbarrier': array([ 0.,  9.])}
+
+In [76]: tn.hopgraph.properties[(2,78)]
+Out[76]:
+{'frame': array([131]),
+ 'iatom': array([2025]),
+ 'tau': array([ 9.]),
+ 'tbarrier': array([ 117.])}
+
+Visualize in VMD:
+
+- export site map for 2, 12, 78
+- load
+
+vmd NPT/ifabp_water.psf  NPT/ifabp_water_1_rmsfit.dcd -m site_maps/sitemap_0002__1.65.dx
+
+Need to figure out how to translate the 'iatom' number back to a psf
+index. Should keep a translation table when I make the selection.
+The hop.psf keeps the original numbers; then just count...
+
+
+awk 'BEGIN {iatom=0};
+     $5 == "OH2" {serial=$1; res=$2; resn=$3; segname=$4; type=$5; 
+                  printf "%6d %6d %3s %5d\n",iatom,serial,res,resn; iatom++}' hops_water.psf > iatom2serial.dat
+awk -v iatom=2025 '$1 == iatom {serial=$2; printf "serials %d to %d\n",serial,serial+2;}' iatom2serial.dat
+
+==> iatom 2025 --> serial 8189
+    	  1356 --> serial 6182
+	  1963 --> serial 8003
+
+
+2008-01-07
+
+* combined graph 2IFB test: have site 58 in graph but not in site map
+  --> bombs when trying to buil nodes2labels (or so...)
+
+
+2008-01-26
+
+             # size of new graph
+             # count common sites in graphs
+             ncommon = numpy.zeros(len(self.graphs),dtype=numpy.int_) # number of sites common in graphs (should be same!)
+             nunique = numpy.zeros(len(self.graphs),dtype=numpy.int_) # number of sites unique to graph
+             for ig,g in enumerate(self.graphs):
+                 ncommon[ig] = len(numpy.where(g.site_properties.description.strip() != '')[0]) + 1  #+1 = interstitial
+                 nunique[ig] = g.graph.order() - ncommon[ig]
+             # sanity check
+             if not numpy.all(ncommon == ncommon[0]):
+                 raise ValueError('Input graphs do not have the same number of common sites: '+str(ncommon))
+
+
+2008-01-29 -- making equivalence sites
+
+
+        esite_properties = []
+        for idensity in densities_to_update:
+            labels = numpy.arange(len(density[idensity].site_labels(label='all',exclude_interstitial=False)),N_sites)
+            volumes = numpy.zeros(N_sites)
+            centers = numpy.zeros(N_sites)
+            occ_avg,occ_std = numpy.zeros(N_sites),numpy.zeros(N_sites)
+            equivalence_name = [' '*10] * N_sites  # fieldwidth 10
+            equivalence_site = [0] * N_sites       # link to 'equivalence_site', see find_equivalence_sites_with()
+            esite_properties.append(numpy.rec.fromarrays([         # This is a CRUCIAL data structure.
+                    labels,                      # site number (id)
+                    volumes,                     # volume
+                    occ_avg,occ_std,             # occupancy: avg,stdev
+                    centers,                     # geometric centre
+                    equivalence_name,            # empty, use it to label common sites
+                    equivalence_site,            # label (int) of the equivalent site that contains this site
+                    ], names='label,volume,occupancy_avg,occupancy_std,center,equivalence_name,equivalence_site'))
+            
+
+psf = '1IFC/NPT/ifabp_water.psf'
+dcd = '1IFC/NPT/rmsfit_ifabp_water_1.dcd'
+time d_apo = hop.interactive.make_density(psf,dcd,'1IFC/water3')
+
+return numpy.array(ts[self.indices()])  # does not fix distance.dist_array() bug
+CPU times: user 87.98 s, sys: 18.34 s, total: 106.32 s
+Wall time: 139.12
+
+return ts[self.indices()]
+CPU times: user 88.68 s, sys: 18.13 s, total: 106.81 s
+Wall time: 242.12
+
+
+1IFC density:
+
+MDAnalysis, threshold 1.65: large sites and continuous patches
+	    threshold 2.72: well localized sites
+VMD, threshold 1.65: well localized sites, similar to MDAnalysis@2.72
+
+VMD's Gaussian smearing improves localisation.
+
+
+
+== XGMML ==
+
+Write module for networkx that write out a graph as XGMML.
+http://www.cs.rpi.edu/~puninj/XGMML/draft-xgmml.html#Intro
+
+* input graph, nodeprops (dict), edgeprops (dict)
+* <node>, <edge? from graph
+* all <att> from *props
+* make 'marshalling' and type conversion automatic
+  types: list, string, real, integer
+
+
+== Versioning ==
+
+Each object that can be pickled should have a unique
+identifier. Objects should also record the identifiers of data
+structures that were used to create them. This would allow
+
+- checking at a later stage, correct data are combined (eg using the
+  same density that was used to create the hop trajectory)
+
+- fully automated searching for missing data files:
+  1) Index all data files in a filesystem hierarchy by location and
+     identifier
+  2) Allow functions to access the index and load the correct version
+     of the object that is required
+
+Objects:
+
+- RMS-fitted trajectory (but it is external and the header is not very
+  safe; eg it is rewritten by catdcd)
+
+- Density
+
+- Hopping trajectory (header and psf comments)
+
+- Hopping graph
+
+Data structure:
+
+Class that can be chained in a tree. The 'family' tree of an object
+allows one to see all the dependencies. This should also allow for
+consistency checks.

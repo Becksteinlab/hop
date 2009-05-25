@@ -1,0 +1,386 @@
+$Id$
+
+Idea for water network analysis
+===============================
+
+The referees of Hirsh's paper suggested that more analysis would be
+interesting. I thought of a general scheme to transform MD trajectory
+data into a graph of high-occupancy sites in which nodes describe
+sites and edges kinetic pathways between the sites.
+
+
+Outline
+-------
+
+1) obtain density on a grid
+
+2) define water sites: a site is a collection of grid cells which
+   fullfil:
+   1) the local density n(x) >= c (c can be the bulk density)
+   2) the cell is adjacent to at least one other cell with n(x') >= c
+      Adjacency is defined as being in the first cubic 'shell' of 26
+      neighbouring cells, i.e. sharing a face, an edge, or a corner.
+
+   Any cell not part of a site is denoted 'interstitial' (symbol '-').
+
+   [See below for algorithm(s) to define those sites automatically.]
+
+3) analyse water dynamics in terms of water sites: For each water i,
+   record the site s at time t: s_i(t) [the hopping trajectory]
+
+   [This means reprocessing the trajectory a second time and binning
+   water molecules into sites/interstitial. It may be simplest to
+   write a new trajectory (s_0(t), s_1(t),...,s_N(t)); otherwise we
+   need to do the accounting in 4) on a frame-by-frame basis. This is
+   feasible and probably saves a lot of memory/time.]
+
+4) convert the hopping trajectory in a directed graph (self-loops
+   allowed, forward and backward edges are different)
+
+   - calculate average residency time in a site (and standard deviation)
+   - calculate hopping rates between sites
+
+   [not sure if I need the graph for the calculations, see algorithms
+   below, though it may work well as an organizing principle: I just
+   need to attach the book keeping counters to the nodes and edges.]
+
+5) compute fluxes etc from the graph; see also Extensions below.
+
+
+
+Context
+------- 
+
+R Henchman & McCammon did this in an even more elaborate way in their
+2002 papers (ARC/TAP). See also Garcia & Hummer 2000 (cytochrome c).
+
+Henchman uses 7x bulk density to define a large number of sites with
+average occupancy close to 1. My definition of sites is more geared
+towards describing free energy basins. Because my regions are larger
+one may not learn as much from them as from Henchman's approach. Also,
+I am working in a laboratory coordinate frame (or, if the protein is
+rms-fitted and does not undergo large conformational changes, the
+protein reference frame) but Henchman argues that a local reference
+frame ('ARC') is more appropriate to describe water sites (relative to
+neighbouring residues) and gives better resolution. They are using
+'TAP' (time-averaged water positions over ~3ps) to avoid spurious
+off-site events. Perhaps a clean analysis that avoids 'self-loops' can
+avoid this.
+
+A new approach would be to see the site-network as a coarse grained
+model of water around the protein and compute long-time properties
+from the network.
+
+
+
+Algorithms
+----------
+
+2 Defining high density sites
+
+The literature seems to know this problem as 'finding density contour
+clusters' (eg W. Jang,
+http://ftp.stat.duke.edu/WorkingPapers/05-22.html).
+
+My idea is to use a graph to express adjacency: Make a graph of cells
+(vertices) G where adjacency creates an edge. Then use an algorithm that
+finds all the connected components of G.
+
+
+(The Boost graph library implements 'connected components'
+http://www.boost.org/libs/graph/doc/connected_components.html. A more
+easily usable package is NetworkX, which has the
+connected_components(G) function,
+https://networkx.lanl.gov/reference/networkx/)
+
+An alternative idea would be to 'grow' a site into a high density
+region but then it becomes hard to keep track of the grid cells that
+still need to be visited. One would probably build a list of
+neighbours and and advance on those 'neighbour shells'. Perhaps
+backtracking and some clever tree structures might help with the book
+keeping but in the end it may still look like a graph problem. Given
+that there are packages available for the graph approach I will try
+that one first.
+
+
+4 Calculating physical properties on the graph
+
+Given is the hopping trajectory for all 1<= i <= N water molecules over the
+time 0 <= t <= T at discrete time steps t.
+
+A trajectory for water 1,2,3 and sites 1, 2, and 4 (and interstitial '-')
+may look like this:
+
+     t1   t2   t3   t4   t5   t6   t7   t8   t9   t10
+w1   -    1    1    -    -    2    1    1    -    -
+w2   1    1    1    1    -    -    -    -    1    1
+w3   -    2    -    2    -    -    -    4    4    -
+
+      _	  ____>____
+     / \ /     	   \
+     \__1      	    2--->--4
+	 \____<____/
+
+
+What kind of fine-grained hops have we got?
+* hops from site A to interstitial {A,-}
+* hops from interstitial to A {-,A}
+* direct hops between sites {A,B}
+* hops in interstitial {-,-}
+* hops in sites {A,A}
+
+Physically interesting are the following sequences of hops that are
+condensed into an edge in the graph (read left to right), as they are
+related to the hopping rates between sites.
+
+* self-loops   (A,A) = {A,-} {-,-}* {-,A}
+* site hops    (A,B) = {A, B} |
+                       {A,-} {-,-}* {-,B}
+
+The fine-grained hops {A,A} are important for the residency time.
+
+
+4.1 Residency time
+
+The residency time of water molecules at a site s be denoted
+theta(s). For the residency time we only consider hops {A,A} [note: we
+should also consider {X,A} {A,X} as occupancy of 1*dt --- this is NOT
+captured by the formula below but by the algorithm].
+
+   theta(s) = <delta[s,s(t)] * dt * Sum delta[s(t),s(t-1)]>_t
+
+Written for a single water; the average requires the number of
+occupancy periods:
+
+   N(s) =  Sum delta[s,s(t)] (1 - delta[s(t),s(t-1)] ) + C
+            t
+
+This counts whenever the particle _enters_ the site s at time t. The
+sum is the number of enter events into site s. C = 0 or 1, depending
+on if the molecule started out at site s.)
+
+
+Calculate the average of all unbroken time stretches for a given
+site. Do not distinguish between different water molecules. Also
+calculate the variance of the average.
+
+The average consists of a time average for a given water molecule
+whenever it visits the site and and the ensemble average for all
+waters. In practice, this is the occupancy times the time step.
+
+One algorithm is essentially a state machine that reads the site
+trajectories:
+
+Data structures:
+
+  s[i] == s_i[t] site of atom i at current time step
+  slast[i] == s_i[t-1]
+                 site of atom i at previous (last) time step
+  theta[s]       list of all residency times at site s
+  atheta[i]      current residency time of atom i at site s[i] or
+                 slast[i] --- a helper array
+ 
+Algorithm:
+
+        at t0: atheta(i) = dt
+          t = t0 + dt
+              |
+	      |
+  +--> s_i(t) == s_i(t-1)--->--------yes---------+
+  |           |		       (stays on site)	 |
+  |	      no (hopped)	 		 |
+  |	      |	    	 	 		 |
+  | append old atheta(i)	                 |
+  | to list of all theta(s_i(t-1))	  	 |
+  | [i.e. the accumulator list	 	  	 |
+  | for the site in question]	 	  	 |
+  |           |			 	  	 |
+  |	      |			 	  	 |
+  |      reset atheta(i):                        |
+  |      atheta(i) = dt				 |
+  |	      |					 |
+  |           |		                theta(s_i(t)) += dt
+  |           |					 |
+  |	      |					 |
+  +----<--- t += dt ---------------<-------------+
+
+(The actual algorithm in code may be different and actually seems to
+work. OB 2008-01-25)
+
+The algorithm also accumulates the average time in the interstitial.
+
+The list of residency times at each site serves as the basis for
+calculating averages, standard deviations, histograms, ...
+
+
+4.2 Hopping rate between sites
+
+The hopping rate between sites s1 and s2 be denoted k(s1,s2). It is
+the inverse of the average hopping time tau(s1,s2).
+
+        s_i,prev = s_i(t0)
+        t_i,prev = t0
+               t = t0 + dt
+                |
+                |
+        s_i(t) <> s_i,prev
+  +->--        &&            ---->--no------+
+  |   s_i(t) <> interstitial		    |
+  |             |		      no hop|
+  |            yes (hop)	      (either on site
+  |             |		      or in interstitial)
+  |    		|			    |
+  |    	 tau(s_i(t),s_i,prev)		    |
+  |        = t - t_i,prev		    |
+  |      and append to list		    |
+  |      for edge (s_i,prev,s_i(t))	    |
+  |             |			    |
+  |		|			    |
+  |     s_i,prev = s_i(t)		    |
+  |     t_i,prev = t			    |
+  |             |			    |
+  |		|			    |
+  +---------t += dt -------------<----------+
+
+(The actual algorithm in code may be different and actually seems to
+work. OB 2008-01-25)
+
+
+From the list of hopping times, averages and statistics can be
+computed for each edge. Note that edges are directed: tau(A,B) is
+different from tau(B,A).
+
+
+Subject: Re: water network analysis idea
+From:   orbeckst@jhmi.edu
+Date: 27 September, 2007 10:52:12 GMT-04:00
+To:   tbw.jhmi@gmail.com
+
+I think I had an error in my original description of computing hopping
+times in that what is needed to compute rates for site hops is not the
+transition time (time to cross the barrier, i.e. the hop through the
+interstitial, t_b in Zuckerman's formalism, and what I described under
+4.2) but rather the distribution of waiting times t for hops from site
+i to site j: f_ji(t)
+
+   f_ji(t) = <Theta(tau_ji - t)>
+
+tau_ji is the time a water on site i waits on i until it successfuly
+hops to site j. Theta(t) is the Heaviside function, and the average is
+over all waters and all starting times. (As an aside, tau_ji does not
+contain t_b,ji.)
+
+Can we then determine the value of the rate of jumps i -> j from a fit
+
+   f_ij(t) ~ exp(-k_ji * t)
+
+or is a simple average k_ji = <1/tau_ji> or [1/<tau_ji> ???] more
+appropriate? The simple average will heavily favour short events.
+
+
+The residency time is (according to Henchman & McCammon) determined by
+the site survival function
+
+   S_i(t): fraction of waters that haven't left site i at time t.
+
+I would say that we can compute S_i(t) from the f_ji(t) as
+
+   S_i(t) = 1/N Sum_j f_ji(t)
+
+(N: number of connected sites j). The residency time t_i of site i is
+extracted from the fit
+
+   S_i(t) ~ exp(-t/t_i).
+
+
+The 'intersite survival function' for site j, S'_j(t) is the fraction
+of water molecules that are about to jump to site j at time t.
+
+   S'_j(t) = 1/N Sum_i f_ji(t) [Does this equation capture what the
+	      	    	    description above says?]
+
+and the average rate into site j can be determined from a fit
+
+   S'_j(t) = const * exp(-k_j*t)
+
+
+
+4.3 Flux between sites
+
+Something like the sum of the inverse hopping times?
+
+4.4 Coordination number
+
+Other authors (Henchman, Hummer) also look at the coordination number
+of water molecules. For a water on a site I should also calculate the
+coordination number --- perhaps using MDAnalysis.selectAtom --- and
+get statistics on coordination number per site.
+
+Or use Charmm or something faster than python and then 'merge' the
+output trajectory (t atom property) with the hopping trajectory (t
+atom site). This may be faster (and more generic) than implementing
+everything here.
+
+
+Extensions
+----------
+
+o Refine the site definitions based on the network: if two sites allow
+  fast transfer of water (high k(i,j)) then lump them together.
+
+o Define a 'bulk' site by lumping together all 'external' sites. Then
+  it would be easy to measure the exchange of internal waters with the
+  bulk. This should be useful to compare to exchange experiments.
+
+o Use the fluctuations on sites to measure (somehow) chemical
+  potential. [Chaikin & Lubensky, p128]: Variational derivative of the
+  free energy by the density is the chemical potential:
+
+       delta F(T,V,<n(x)>)
+       ------------------- = mu(x)
+         delta <n(x)>
+
+  Shouldn't be there some useful connection between density
+  fluctuations and the chemical potential? (See also one of the
+  referees' comments.)
+
+o Map the free energy differences between sites i and j. This is simply
+
+    delta F(i,j) = -kT ln theta_i/theta_j
+
+o Map the free energy barriers between sites i and j. I should be able
+  to do this when I have k_ij and k_ji --- perhaps need some
+  assumptions such as TST or Kramers?
+
+
+
+Notes on the implementation
+===========================
+
+Philosophy: 
+
+Incrementally compute results and be able to store intermediate
+results that are costly to recompute (such as the densities and the
+hopping trajectories). This aids in development, debugging, and
+modularizing.
+
+
+Graphs:
+
+* Nodes are always represented integers; these 'labels' can be used
+  als indices into arrays
+
+* The interstitial has label 0, the bulk label 1. This is defined in
+  hop.constants.SITELABEL and should not be changed because there are
+  some functions that assume that these two special 'sites' are the
+  first two in the list.
+
+* With a graph, store properties as attributes of the enclosing
+  structure. One could store them with the networkx graph itself but I
+  often use a 'filtered graph' for representation and analysis and
+  that would need to copy properties.
+
+* Node properties are numpy arrays that, when indexed with the node
+  label, return the value of this node's property.
+
+* Edge properties are dictionaries with the edge tupel as the key.
