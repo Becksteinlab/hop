@@ -1,0 +1,95 @@
+$Id$
+
+This document gives an overview over additional requirements that
+should be installed before Hop and Hop's installation process. The
+latter should be painless because it only consists of pure python
+scripts at the moment.
+
+
+
+Requirements
+============
+
+Tested with python 2.3, 2.4, 2.5
+
+Required python modules:
+
+numpy         >=1.0.3               http://numpy.scipy.org/
+MDAnalysis*   >= 0.6 or UNSTABLE    http://mdanalysis.googlecode.com
+NetworkX**    <0.99                 https://networkx.lanl.gov/
+pygraphviz    0.36                  https://networkx.lanl.gov/pygraphviz/
+
+*)  MDAnalysis requires additional modules; see the instructions at
+    its home page
+**) Hop has not been updated yet to use the new NetworkX 1.0 API
+    hence only earlier versions (e.g. 0.36) are going to work reliably.
+
+
+Optional modules (reduced functionality if not present):
+
+pylab            >=0.91.3           http://matplotlib.sourceforge.net/ 
+rpy (and R)                         http://rpy.sourceforge.net/
+
+(When these are missing the code will raise an ImportError when
+attempting to use these modules; their absence is not handled
+gracefuly and it is very much suggested to install them.)
+
+
+Many packages are found through the local package manager (eg apt,
+fink, yum, rpm). networkx is available at the above URL or with the
+`easy_install' command from python setuptools.
+
+In Debian/Ubuntu/fink:
+
+   apt-get install python-setuptools pkg-config
+
+   apt-get install graphviz graphviz-dev
+   easy_install networkx
+   easy_install pygraphviz
+
+
+In the future the Hop installer should handle some of these
+dependencies automatically.
+
+
+
+Installation
+============
+
+Standard EasyInstall installation
+---------------------------------
+
+The Hop package can be installed with 'EasyInstall' which is part of
+'setuptools' (http://peak.telecommunity.com/DevCenter/setuptools).
+
+If you have setuptools already installed you should be able to simply
+install with
+
+   easy_install Hop-0.1-rc1.tar.gz
+
+You can install 'setuptools' by following the instructions at
+http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
+or on Linux distributions such as Debian or Ubuntu by a
+commandline similar to
+
+   apt-get install python-setuptools
+
+Note that easy_install tries to download additional packages via the
+internet if it cannot find them installed already.
+
+
+Installation in a custom location
+---------------------------------
+
+If you want to install Hop somewhere else but the system default
+please have a look at
+http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations
+which describes custom installations.
+
+
+
+
+
+
+
+

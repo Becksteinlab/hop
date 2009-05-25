@@ -1,12 +1,13 @@
 $Id$
 
-Idea for water network analysis
-===============================
+Water network analysis
+======================
 
-The referees of Hirsh's paper suggested that more analysis would be
-interesting. I thought of a general scheme to transform MD trajectory
+The Hop module implements a general scheme to transform MD trajectory
 data into a graph of high-occupancy sites in which nodes describe
 sites and edges kinetic pathways between the sites.
+
+It follows from ideas by Pettifor and later Henchman.
 
 
 Outline
@@ -341,8 +342,7 @@ o Use the fluctuations on sites to measure (somehow) chemical
          delta <n(x)>
 
   Shouldn't be there some useful connection between density
-  fluctuations and the chemical potential? (See also one of the
-  referees' comments.)
+  fluctuations and the chemical potential?
 
 o Map the free energy differences between sites i and j. This is simply
 

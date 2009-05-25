@@ -1,37 +1,45 @@
 $Id$
-See also
-http://gonzo.med.jhmi.edu/woolfwiki/index.php/Water_network_analysis_tools
 
-Water network analysis tools
+Hop -- Water network analysis tools
+===================================
 
-Oli wrote some python modules to analyze (primarily) water densities
-in MD simulations. The idea is to find regions with a density above a
-given threshold and then catalogue those sites. Once this is done, one
-can analyze water movement in terms of hops between those sites.
+This is a collection of python modules to analyze (primarily) water
+densities in MD simulations. The idea is to find regions with a
+density above a given threshold and then catalogue those sites. Once
+this is done, one can analyze water movement in terms of hops between
+those sites.
 
-The module is called hop and is visible on svn:oliver/Library/python/hop
+The package is called Hop (no clever acronym, just quick to type).
 
-Because hop requires a bunch of other modules (notably my OpenDX
-module) I recommend to checkout the whole python-lib directory and to
-put it in your PYTHONPATH:
+Hop requires a bunch of other home-grown modules (notably my OpenDX
+module) which are also included.
 
-  svn co http://gonzo.med.jhmi.edu/repos/users/oliver/Library/python ./python-lib
-  export PYTHONPATH=$PWD/python-lib:$PYTHONPATH
-
-In addition, the module makes heavy use of MDAnalysis. To generate the
-densities one can either use MDAnalysis or VMD's VolMap plugin or read
-in any appropriate OpenDX file. hop provides functions to do this. The
+The package makes heavy use of MDAnalysis. To generate the densities
+one can either use MDAnalysis or VMD's VolMap plugin or read in any
+appropriate OpenDX file. Hop provides functions to do this. The
 default in the hop.interactive module is to use VMD to generate a
 density because the atom selection in VMD is more flexible than in
 MDAnalysis. For this to work one must be able to start VMD from the
 command line.
 
 Currently it requires some experimental features that are only found
-in the UNSTABLE branch:
+in the newest pre-release:
+
+Either get the tar ball
+
+  http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
+
+or get the development version via subversion:
 
  svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
 
 
+
+======================
+  BELOW IS OUTDATED
+======================
+
+  
 1 Example session
 
 An example session in ipython goes as follows:
