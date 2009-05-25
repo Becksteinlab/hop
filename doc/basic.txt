@@ -81,7 +81,7 @@ The example session in ipython begins with the computation of the density::
 			       cutoff=3.5,backend='MDAnalysis')
 
    # threshold
-   density.map_sites(1.65)
+   density.map_sites(2.71)
    density_bulk.map_sites(0.6)
 
    # add the biggest bulk site at position 1
@@ -137,18 +137,21 @@ with ``hops = hop.trajectory.HoppingTrajectory(filename='hop_water+bulk')``.
 Hopping graph
 =============
 
-The hopping trajectory is used together with the density (in the
-``hops`` object) to build a transport graph object ``tgraph``; the
-transport graph object itself is  not really important but its
-``hopgraph`` attribute is the final desired *hopping graph*::
+The hopping trajectory is used together with the density to build a
+transport graph object ``tgraph``; the transport graph object itself
+is not really important but its ``hopgraph`` attribute is the final
+desired *hopping graph*::
 
-   tgraph = build_hoppinggraph(hops)  # this can take a while (hours) for big systems... 
+   # this can take a while (hours) for big systems...
+   # (ignore 'Warning: Number of calls to function has reached maxfev = 800.')
+   tgraph = build_hoppinggraph(hops,density)
    h = tgraph.hopgraph       # main result is the 'hopgraph'
-   h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
-   h.tabulate_k()            # show all calculated rate constants (filtered graph)
+   h.tabulate_k()            # show all calculated rate constants
+   h.filter(exclude={'outliers':True, 'Nmin':2})     # see h.filter docs
    h.plot_fits()             # plot rate constant fits
+   h.filter(exclude={'outliers':True, 'bulk':True})  # see h.filter docs
    h.export('water')         # write XGMML to visualize (filtered) graph 
-   h.save()                  # save hopgraph for further analysis
+   h.save('hopgraph')        # save hopgraph for further analysis
 
    #------------------------
    # end of example session
