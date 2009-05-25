@@ -1,0 +1,49 @@
+The scripts here are examples of how to do typical tasks with hop;
+they also show how submit jobs to the Sun Gridengine queuing system
+using the staging.SunGridEngine framework: files are copied to local
+scratch directories to improve performance.
+
+
+Using the SGE scripts
+---------------------
+
+1) Prepare trajectories: RMS fit to a common reference frame (eg first
+   frame of the apo simulation or representative  crystal structure of
+   a related protein)
+
+   1    rmsfit.py 
+
+   (Note that it is MUCH faster (20x) to only fit the first frame of,
+   say, the crystal structure to the reference and then use Charmm or
+   Gromacs's trjconv to fit the trajectory to the rms-fitted crystal
+   structure. Those tools are also capable of properly recentering the
+   solvent about the protein and making whole molecules.)
+
+   Care is needed at this step because everything else relies on
+   properly aligned trajectories.
+
+2) HOP analysis
+
+   1    fulldensity.py
+   2*   equivalencesites.py  ---> gives a remapped density for holo:
+                                  use this density for further work!
+   3    hoptraj.py
+   4    graph.py
+   5*   combinedgraph.py
+
+Each script has to be run for each simulation separately except the
+starred numbers for which results from two runs are combined. The apo
+state is throughout taken as the reference simulation and density.
+
+Or calculate the densities and then do steps 2 to 4 together
+
+  2    hopanalysis.py
+
+
+3) Statistics
+
+       analysis.py
+
+4) Site-resolved properties
+
+       siteanalysis.py

@@ -25,7 +25,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       license="GPL2+",
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop", # not set up yet
       keywords="science 'molecular dynamics' analysis hydration water",
-      packages=find_packages(exclude=['tests','examples']),
+      packages=find_packages(exclude=['tests','examples','doc/developer']),
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'networkx<0.99',       # **
@@ -38,6 +38,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
           'plotting': ['matplotlib>=0.91.3'], # probably already installed
           'heatmap': ['rpy']                  # optional,used for heatmaps
           },
+      zip_safe=False,          # __FILE__ needed to find vmd tcl script
 )
 
 #**) The code has not been updated yet to use the new NetworkX 1.0 API

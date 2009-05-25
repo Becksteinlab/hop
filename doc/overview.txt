@@ -1,0 +1,31 @@
+$Id$
+
+=======================
+ Documentation for Hop
+=======================
+
+Most of the documentation exists in the python doc strings. Use the
+python ``help()`` function or ipython's ``?`` operator and use
+introspection in ipython ("classname.<TAB>") to learn more about the
+commands.
+
+
+examples directory
+------------------
+
+The examples/ directory contains a bunch of scripts that were used in
+production. The make use of the ``staging`` package for submitting jobs to
+a cluster (via Sun Gridengine (SGE)). ``staging`` can be found in
+extras/staging. Just drop it your PYTHONPATH if you want to use
+it. Note that the staging scripts can be run from the commandline,
+too, and do not actually require SGE. In this case they simply operate
+on local files and do not copy data to and from a staging directory.
+
+
+
+ 
+
+
+
+
+
