@@ -22,12 +22,13 @@ hops with rate constants and fluxes derived from the MD simulations.\
 """,
       author="Oliver Beckstein",
       author_email="orbeckst@gmail.com",
-      license="GPL2+",
+      license="GPLv3",
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop", # not set up yet
       keywords="science 'molecular dynamics' analysis hydration water",
       packages=find_packages(exclude=['tests','extras','doc/examples']),
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
+                        'scipy',
                         'networkx<0.99',       # **
                         'pygraphviz<0.99',     # **
       #                  'MDAnalysis>0.5.1',

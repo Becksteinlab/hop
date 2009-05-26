@@ -1,8 +1,9 @@
 # $Id$
-# Copyright (c) 2007, 2008 Oliver Beckstein <orbeckst@gmail.com>
-# Released under the GNU Public License.
+# gridDataFormats --- python modules to read and write gridded data
+# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright CSC, 2005
 
-__doc__ = """
+"""NOT IMPLEMENTED YET
 
 gOpenMol http://www.csc.fi/english/pages/g0penMol plt format.
 

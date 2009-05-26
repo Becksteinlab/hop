@@ -1,6 +1,7 @@
 # $Id$
-# Copyright (c) 2007, 2008 Oliver Beckstein <orbeckst@gmail.com>
-# Released under the GNU Public License.
+# gridDataFormats --- python modules to read and write gridded data
+# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Released under the GNU Lesser Public License, version 3 or later.
 
 __doc__ = """
 The OpenDX format for multi-dimensional grid data. This

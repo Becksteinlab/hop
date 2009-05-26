@@ -1,6 +1,7 @@
 # $Id$
-# Copyright (c) 2007, 2008 Oliver Beckstein <orbeckst@gmail.com>
-# Released under the GNU Public License.
+# gridDataFormats --- python modules to read and write gridded data
+# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Released under the GNU Lesser Public License, version 3 or later.
 
 """Classes and functions that are independent of the grid data
 format. In particular this module contains the Grid class that acts as
@@ -208,7 +209,7 @@ class Grid(object):
 
         comments = [
             'OpenDX density file written by',
-            '$Id: sitemap.py 2158 2008-08-08 22:13:44Z oliver $',
+            '$Id$',
             'File format: http://opendx.sdsc.edu/docs/html/pages/usrgu068.htm#HDREDF',
             'Data are embedded in the header and tied to the grid positions.',
             'Data is written in C array order: In grid[x,y,z] the axis z is fastest',

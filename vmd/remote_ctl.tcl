@@ -1,4 +1,8 @@
 # $Id$
+# vmd remote control --- client/server scripts to run VMD from python
+# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Released under the GNU Lesser Public License, version 3 or later.
+#
 # based on bounce.tcl and vmdcollab.tcl
 # from http://www.ks.uiuc.edu/Research/vmd/script_library/scripts/vmdcollab/
 # with help from Justin Gullingsrud <justin@ks.uiuc.edu>
