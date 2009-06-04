@@ -754,7 +754,7 @@ class HeatmapAnalysis:
 
 def _add_y_ticklabel(y,s,offset=-1,**kwargs):
     import pylab
-    kwargs = dict(fontsize=6,
+    textargs = dict(fontsize=6,
                     verticalalignment='center',horizontalalignment='right')
     textargs.update(kwargs)
     x = offset  # -1 == left of axis, in image coords
