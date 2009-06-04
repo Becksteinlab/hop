@@ -56,12 +56,15 @@ Required python modules
 
 ``MDAnalysis`` requires additional modules; see the instructions at
 its home page. Get the latest snapshot::
+
   http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
+
 or get the development version via subversion::
+
   svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
 
 Hop has not been updated yet to use the new NetworkX 1.0 API hence
-only earlier versions (e.g. 0.36) are going to work reliably.
+only earlier versions (e.g. networkx 0.36) are going to work reliably.
 
 ``pygraphviz`` also requires ``graphviz``; see its own installation
 instructions.
@@ -75,9 +78,10 @@ Optional modules
    rpy (and R)                         http://rpy.sourceforge.net/
 
 When these modules are missing the code will raise an ImportError when
-attempting to use them; their absence is not handled gracefuly and it
-is suggested to install at least matplotlib/pylab. R and rpy are only
-used for an experimental heatmap analysis and can be safely ignored.
+attempting to use them; their absence is not always handled gracefuly
+and it is suggested to install at least matplotlib/pylab. R and rpy
+are only used for an experimental heatmap analysis and can be safely
+ignored.
 
 
 Hints on obtaining packages

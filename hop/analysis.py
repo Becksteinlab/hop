@@ -22,7 +22,6 @@ histograms. Use this as examples how to write your own.
 import hop.graph, hop.sitemap, hop.utilities
 from hop.utilities import msg,set_verbosity,verbosity
 import numpy
-import pylab
 import cPickle
 import pprint
 import os, os.path
@@ -364,6 +363,8 @@ class HopgraphAnalysis:
         self._occupancy_histo()
 
     def _degree_histo(self,numfig=1):
+        import pylab
+        
         def degreehisto(a):
             return  numpy.histogram(a,bins=numpy.arange(0,numpy.max(a)))
 
@@ -393,6 +394,8 @@ class HopgraphAnalysis:
         pylab.savefig(self.pdf['degree'])
 
     def _lifetime_histo(self,numfig=1):
+        import pylab
+        
         msg(1,"figure %(lifetime)s: life time histogram" % self.pdf)
         pylab.figure(numfig)
         pylab.clf()
@@ -416,6 +419,8 @@ class HopgraphAnalysis:
         pylab.savefig(self.pdf['lifetime'])
 
     def _occupancy_histo(self,numfig=1):
+        import pylab
+        
         msg(1,"figure %(occupancy)s: occupancy histograms" % self.pdf)
         pylab.figure(numfig)
         pylab.clf()
@@ -486,7 +491,7 @@ class HeatmapAnalysis:
                          in the heat map.
         verbosity        Chattiness; use at least 1 in order to be notified if you 
                          should install additional packages. Otherwise a less powerful 
-                         alternative is chose silently,
+                         alternative is chosen silently,
         prune            dict with keys that are removed from the heat map; see 
                          prune_default class attribute.
 
@@ -651,8 +656,7 @@ class HeatmapAnalysis:
                        N_colors=32,
                        )
         hm_args.update(kwargs)
-        N_colors = hm_args['N_colors']  # N_colors not a true heatmap argument
-        del hm_args['N_colors']
+        N_colors = hm_args.pop('N_colors')  # N_colors not a true heatmap argument
         if filename is not None:
             interactive = False
             def r_format():
@@ -677,7 +681,9 @@ class HeatmapAnalysis:
             r.library('colorRamps')
             r_color = r.matlab_like(N_colors) # getting somewhat close to matplotlib 'jet'
         except RException:
-            msg(1,"For matplotlib-like colors install the R-package 'colorRamps'.")
+            msg(1,"For matplotlib-like colors install the R-package 'colorRamps':\n"
+                ">>> import rpy\n"
+                ">>> rpy.r.install_packages('colorRamps',type='source')")
             r_color = r.topo_colors(N_colors)
         try:
             r.library('gplots')
@@ -701,6 +707,7 @@ class HeatmapAnalysis:
     def _heatmap_matplotlib(self,labels,filename=None,format='pdf',**kwargs):
         """Plot a un-clustered heat map using matplotlib."""
         import pylab
+        
         pylab.clf()
         pylab.imshow(self.heatmap,interpolation='nearest')
         pylab.axis('off')
@@ -734,7 +741,6 @@ class HeatmapAnalysis:
                     'observables': map(str,self.names),
                     'normalizations': ["%g" % round(x,precision) 
                                        for x in self.normalizations]}
-    
 
     def print_annotation(self):
         #pp = pprint.PrettyPrinter() # use global pp
@@ -746,36 +752,8 @@ class HeatmapAnalysis:
     def _make_idict(self,a):
         return dict(enumerate(a))
 
-def TEST_load_my_sims():
-    """Dict of CombinedGraph instances as input for HeatmapAnalysis.
-    Hard coded loader for testing.
-    """
-    ligand = {0:'apo',1:'plm'}  # state --> ligand
-    hopgraphs = {}
-
-    # hard coded list for testing, use expressive keys
-    # Single hop graphs
-    hopgraphs['PME_s_apo'] = hop.graph.HoppingGraph(filename='/Users/oliver/Biop/Projects/WaterNetworks/testcases/1IFC/hopgraph.pickle')
-    hopgraphs['PME_s_plm'] = hop.graph.HoppingGraph(filename='/Users/oliver/Biop/Projects/WaterNetworks/testcases/2IFB/hopgraph.pickle')
-
-    # combined hopgraphs. G0 == apo, G1 == holo==plm
-    cg = {}
-    cg['R13_1'] = hop.graph.CombinedGraph(filename='GSBP/R13/analysis/cg_1IFC_2IFB_1.pickle')
-    cg['R15_0'] = hop.graph.CombinedGraph(filename='GSBP/R15/analysis/cg_1IFC_2IFB_0.pickle')
-    cg['R15_1'] = hop.graph.CombinedGraph(filename='GSBP/R15/analysis/cg_1IFC_2IFB_1.pickle')
-    cg['PME_0'] = hop.graph.CombinedGraph(filename='LAMMPS/100mM/analysis/cg_1IFC_2IFB.pickle')
-    cg['PME_TAP']=hop.graph.CombinedGraph(filename='LAMMPS/100mM/analysis/cg_TAP_1IFC_2IFB.pickle')
-    cg['PME_CRBP'] = hop.graph.CombinedGraph(filename='../../../CRBPII/comparison/analysis/cg_1OPA_1OPB.pickle')
-    
-    for sim,combgraph in cg.items():
-        for state,hopgraph in enumerate(combgraph.graphs):  # assuming a CombinedGraph
-            #print "sim = %(sim)s  state = %(state)d"  % locals()
-            sim_id = str(sim)+'_'+ligand[state]
-            hopgraphs[sim_id] = hopgraph
-
-    return hopgraphs
-
 def _add_y_ticklabel(y,s,offset=-1,**kwargs):
+    import pylab
     kwargs = dict(fontsize=6,
                     verticalalignment='center',horizontalalignment='right')
     textargs.update(kwargs)
@@ -783,6 +761,7 @@ def _add_y_ticklabel(y,s,offset=-1,**kwargs):
     return pylab.text(x,y,s,**textargs)
 
 def _add_x_ticklabel(x,s,offset=-1,**kwargs):
+    import pylab
     textargs = dict(fontsize=6,
                     rotation='vertical',
                     verticalalignment='bottom',horizontalalignment='center')

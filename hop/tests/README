@@ -1,11 +1,10 @@
-Right now the test/ directory is not really functional and only
+Right now the tests/ directory is not really functional and only
 contains snippets of code I used during writing modules. Eventually,
 however, I should have proper test cases and ideally a regression
 suite.
 
-For right now, the following is a list of desirable tests; pretty much
-all of them require MDAnalysis so it's not listed in the (probable)
-dependencies.
+The following is a list of desirable tests; pretty much all of them
+require MDAnalysis so it's not listed in the (assumed) dependencies.
 
 
 * density from DCD 
