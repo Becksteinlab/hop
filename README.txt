@@ -1,4 +1,8 @@
-$Id$
+.. $Id$
+
+========
+ README
+========
 
 
 Hop -- Water network analysis tools

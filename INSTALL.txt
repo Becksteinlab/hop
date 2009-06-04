@@ -1,4 +1,8 @@
-$Id$
+.. $Id$
+
+=========
+ INSTALL
+=========
 
 This document gives an overview over additional requirements that
 should be installed before Hop and Hop's installation process. The
