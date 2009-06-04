@@ -21,7 +21,7 @@ module) which are also included.
 Installation
 ============
 
-See INSTALL for details.
+See INSTALL.txt for details.
 
 The package makes heavy use of MDAnalysis
 (http://mdanalysis.googlecode.com/). Currently it requires some

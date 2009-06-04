@@ -1,0 +1,184 @@
+$Id$
+
+This document gives an overview over additional requirements that
+should be installed before Hop and Hop's installation process. The
+latter should be painless because it only consists of pure python
+scripts at the moment.
+
+Please do not hesitate to contact Oliver Beckstein
+<orbeckst@gmail.com> if problems occur or if you have suggestions on
+how to improve the package or these instructions.
+
+
+Quick instructions
+==================
+
+If you are familiar with ``easy_install`` from ``setuptools`` then try
+
+  easy_install Hop-0.1.tar,gz
+
+or 
+
+  cd Hop-0.1
+  python setup.py install
+
+Otherwise read the `Requirements`_ and `Installation`_ instructions below.
+
+
+Requirements
+============
+
+If Hop is installed with ``easy_install`` then some dependencies are
+handled automatically; if not you will have to install packages
+manually. This is always true for ``MDAnalysis`` at the
+moment. For technical reasons, ``matplotlib`` must also be installed
+manually if plotting is desired.
+
+
+System requirements
+-------------------
+
+Tested with python 2.4, 2.5 (2.3 might still work, too) on Linux and Mac OS X.
+
+
+Required python modules
+-----------------------
+
+::
+   MDAnalysis    >= 0.6 or UNSTABLE    http://mdanalysis.googlecode.com
+   numpy         >=1.0.3               http://numpy.scipy.org/
+   NetworkX      <0.99                 https://networkx.lanl.gov/
+   pygraphviz    0.36                  https://networkx.lanl.gov/pygraphviz/
+
+``MDAnalysis`` requires additional modules; see the instructions at
+its home page. Get the latest snapshot::
+  http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
+or get the development version via subversion::
+  svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
+
+Hop has not been updated yet to use the new NetworkX 1.0 API hence
+only earlier versions (e.g. 0.36) are going to work reliably.
+
+``pygraphviz`` also requires ``graphviz``; see its own installation
+instructions.
+
+
+Optional modules
+----------------
+(reduced functionality if not present)::
+
+   matplotlib       >=0.91.3           http://matplotlib.sourceforge.net/ 
+   rpy (and R)                         http://rpy.sourceforge.net/
+
+When these modules are missing the code will raise an ImportError when
+attempting to use them; their absence is not handled gracefuly and it
+is suggested to install at least matplotlib/pylab. R and rpy are only
+used for an experimental heatmap analysis and can be safely ignored.
+
+
+Hints on obtaining packages
+---------------------------
+
+Many packages can be found through the local package manager (eg apt,
+fink, yum, rpm). networkx is available at the above URL or with the
+``easy_install`` command from python setuptools.
+
+In Debian/Ubuntu::
+
+   apt-get install python-setuptools pkg-config
+
+   apt-get install graphviz graphviz-dev python-matplotlib
+   easy_install networkx
+   easy_install pygraphviz
+
+
+
+Installation
+============
+
+Standard EasyInstall installation
+---------------------------------
+
+The Hop package can be installed with 'EasyInstall' which is part of
+``setuptools`` (http://peak.telecommunity.com/DevCenter/setuptools).
+
+If you have setuptools already installed you should be able to simply
+install with
+
+   easy_install Hop-0.1-rc1.tar.gz
+
+You can install ``setuptools`` by following the instructions at
+http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
+or on Linux distributions such as Debian or Ubuntu by a
+commandline similar to
+
+   apt-get install python-setuptools
+
+Note that ``easy_install`` tries to download additional packages via
+the internet if it cannot find them installed already.
+
+
+Installation in a custom location
+---------------------------------
+
+If you want to install Hop somewhere else but the system default
+please have a look at
+http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations
+which describes custom installations.
+
+Quick and dirty in my ``$HOME/packages`` directory::
+
+ export PYTHONPATH=~/packages/lib/python 
+ easy_install -d ~/packages Hop-0.1.tar.gz
+
+
+
+Additional software
+===================
+
+The following software is not necessary to use the package itself but
+has been found extremely useful by the author for using Hop or
+analyzing data.
+
+
+Interactive use and ``ipython``
+-------------------------------
+
+When Hop was developed, interactive use from a python command shell
+turned out to be a very convenient application paradigm. ``ipython``
+is very much recommended because of its ease to obtain interactive
+help via ``?`` and ``??`` and to inspect objects via
+TAB-completion. This is especially helpful because most of the
+documentation is provided as python doc strings, both at the module
+and at the class level.
+
+For instance, to get an overview over interactive usage, load the
+hop.interactive module and query the top level doc string::
+
+ import hop.interactive
+ hop.interactive ?
+
+
+Visualization
+-------------
+
+VMD
+  In order to visualize densities and water networks one can use VMD_
+  <http://www.ks.uiuc.edu/Research/vmd/>, which reads natively psf and
+  pdb files together with densities in OpenDX format.
+
+
+Network analysis and layout
+---------------------------
+
+graphviz
+  `graphviz <http://www.graphviz.org/>`_ is a versatile graph plotter,
+  available for Linux and Mac OS X and integrated in most package
+  systems. It is also required for ``pygraphviz``. It reads *dot*
+  files.
+
+Cytoscape
+  `Cytoscape_ <http://www.cytoscape.org/>`_ is a very powerful network
+  visualization platform; it reads *xgmml* files exported from Hop.
+
+    
