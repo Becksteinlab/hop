@@ -2,11 +2,9 @@
 # gridDataFormats --- python modules to read and write gridded data
 # Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Lesser Public License, version 3 or later.
+# See the files COPYING and COPYING.LESSER for details.
 
 """gridDataFormat module
-
-Copyright (c) 2007, 2008 Oliver Beckstein <orbeckst@gmail.com>
-Released under the GNU Public License.
 
 This module contains classes that allow importing and exporting of
 simple gridded data, A grid is an N-dimensional array that represents
@@ -31,7 +29,7 @@ See the doc string for Grid for details on **kwargs.
 Formats:
 
    OpenDX        IBM's Data Explorer, http://www.opendx.org/
-   gOpenMol      http://www.csc.fi/gopenmol/
+   gOpenMol      http://www.csc.fi/gopenmol/  ## not implemented yet
    pickle        python pickle file
 """
 
