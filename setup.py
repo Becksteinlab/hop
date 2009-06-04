@@ -34,7 +34,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       #                  'MDAnalysis>0.5.1',
                         ],
       #dependency_links = [
-      #    "http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz",
+      #    "http://code.google.com/p/mdanalysis/downloads/list",
       #    ],
       # also requires:  'MDAnalysis>0.5.1',
       # http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
@@ -43,7 +43,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
           'plotting': ['matplotlib>=0.91.3'], # probably already installed
           'heatmap': ['rpy']                  # optional,used for heatmaps
           },
-      zip_safe=False,          # __FILE__ needed to find vmd tcl script
+      zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script
 )
 
 #**) The code has not been updated yet to use the new NetworkX 1.0 API

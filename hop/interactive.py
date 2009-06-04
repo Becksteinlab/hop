@@ -15,22 +15,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__doc__ = """Interactive or high-level use of the hop trajectory package.
+__doc__ = """\
+Interactive or high-level use of the hop trajectory package
+===========================================================
 
 A typical session starts with a trajectory (which should have been
-RMS-fitted to a reference structure). With the corresponding psf, one
-builds the density of the water oxygens:
+RMS-fitted to a reference structure). You should have a psf topology
+file and a dcd trajectory file.
+
+We will use the high-level wrapper functions in hop.interactive:
 
 >>> from hop.interactive import *
 
-If your trajectory fits into your computer's RAM choose the VMD
-backend:
+
+Hydration sites
+---------------
+
+Hydration sites are sites of water density higher than the bulk
+density but one special site is the bulk. The hydration sites and the
+bulk site are computed in two separate steps.
+
+
+High density sites
+..................
+
+First build the density of the water oxygens.
+
+>>> density = make_density(psf,dcd,filename,delta=1.0)
+
+If you have VMD with the VolMap plugin installed *and* your trajectory
+fits into your computer's RAM you can also choose the VMD backend to
+compute the density (which can be marginally faster):
 
 >>> density = make_density(psf,dcd,filename,delta=1.0,backend=VMD)
 
-Otherwise use MDAnalysis/python, which is a bit slower.
-
->>> density = make_density(psf,dcd,filename,delta=1.0)
 
 The density is also saved as a pickled python object so that one can
 easily reload it. The density is also exported as a dx file for
@@ -40,22 +58,34 @@ From the density one creates the 'site map' for a given threshold:
 
 >>> density.map_sites(threshold=1.65)
 
-For proper analysis of hopping events one also needs to define a bulk
+Experiment with the threshold; hop.analysis.DensityAnalysis can help
+to systematically explore the parameter space.
+
+
+Bulk site
+.........
+
+For a full analysis of hopping events one also needs to define a bulk
 site. This is currently accomplished by calculating a second 'bulk'
 density (all water not within 3.5 A of the protein) and manually
 inserting the bulk site into the site map for the first density.
 
-If your trajectory fits into your computer's RAM choose the VMD
-backend:
->>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
-            atomselection='name OH2 and not within 3.5 of (protein and name not hydrogen)',
-            backend='VMD',load_new=False)
-or the default backend='MDAnalysis':
 >>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
             atomselection='name OH2',
             soluteselection='protein and not name H*',
             cutoff=3.5
             )
+
+Using VMD's VolMap can be potentially be faster --- try it if the
+default seems to slow to you:
+
+>>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
+            atomselection='name OH2 and not within 3.5 of (protein and name not hydrogen)',
+            backend='VMD',load_new=False)
+
+The bulk density should be a big, well defined volume so we choose a
+fairly low threshold:
+            
 >>> density_bulk.map_sites(0.6)
 
 Add the biggest bulk site at position 1 ('1' is the designated label
@@ -71,33 +101,42 @@ Statistics about the sites can be produced with
 
 The results figures will be named <figname>.pdf.
 
-If you plan on comparing site maps you MUST now compare the density to
-your reference density before proceeding. You will 
+
+Remapping for comparing site maps
+.................................
+
+This section is only relevant if you plan on comparing site maps. Then
+you **must** compare the density to your reference density now before
+proceeding. You will
 
    1) remap this density to be defined on the same grid as the reference
-   density (for this to work, this density must have been generated from
-   a trajectory that has been RMS-fitted to the same reference structure
-   as; see hop.trajectory.RMS_fit_trj() and
-   hop.trajectory.fasta2select())
+      density (for this to work, this density must have been generated from
+      a trajectory that has been RMS-fitted to the same reference structure
+      as; see hop.trajectory.RMS_fit_trj() and
+      hop.trajectory.fasta2select())
 
-   >>> ref_density = hop.sitemap.Density(filename='my_reference_density')
-   >>> remapped_density = hop.sitemap.remap_density(density,ref_density)
+      >>> ref_density = hop.sitemap.Density(filename='my_reference_density')
+      >>> remapped_density = hop.sitemap.remap_density(density,ref_density)
 
    2) find the equivalence sites in the two densities and add those sites
-   to BOTH densities:
+      to **both** densities:
 
-   >>> remapped_density.find_equivalence_sites_with(ref_density,verbosity=3)
-   >>> remapped_density.save(<filename>)
-   >>> ref_density.save()
+      >>> remapped_density.find_equivalence_sites_with(ref_density,verbosity=3)
+      >>> remapped_density.save(<filename>)
+      >>> ref_density.save()
 
-   (You must also recalculate the reference densities hopping
-   trajectory (see below) because some sites may have been merged into
-   'equivalence sites'. See docs for
-   hop.sitemap.find_equivalence_sites_with() and
-   hop.graph.CombinedGraph()).
+      (You must also recalculate the reference densities hopping
+      trajectory (see below) because some sites may have been merged into
+      'equivalence sites'. See docs for
+      hop.sitemap.find_equivalence_sites_with() and
+      hop.graph.CombinedGraph()).
 
-   From now on, work with the remapped density:
-   >>> density = remapped_density
+      From now on, work with the remapped density:
+      >>> density = remapped_density
+
+
+Hopping trajectory
+------------------
 
 Next we translate the dcd into a 'hopping trajectory' (saved in dcd
 format) in which coordinates for a given water oxygen are replaced by
@@ -109,6 +148,10 @@ All further analysis should use this hopping trajectory (from disk) as
 it is computationally much cheaper to read the trajectory than to
 re-translate the coordinate trajectory (which is done behind the
 scences if the hopping trajectory is not available).
+
+
+Hopping graph
+-------------
 
 The final step is to map out the graph of transitions between sites
 (using the hopping trajectory):
@@ -132,7 +175,7 @@ Further analysis uses tn.hopgraph:
 >>> h.tabulate_k()            # show all calculated rate constants (filtered graph)
 >>> h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
 >>> h.export('water')         # write dot file to visualize (filtered) graph
->>> h.plot_site_occupancy('siteoccupancy')  # plot site occupnacy from graph
+>>> h.plot_site_occupancy('siteoccupancy')  # plot site occupancy from graph
 >>> h.plot_residency_times('residencytimes')# residency times --- is this working ??
 
 To compare the water network based on density with another hop graph
@@ -144,7 +187,8 @@ To compare the water network based on density with another hop graph
 >>> cg.plot(1,'cg_h_ref',linewidths=(0.01,))
 
 
-See also http://gonzo.med.jhmi.edu/woolfwiki/index.php/Water_network_analysis_tools.
+TODO
+====
 
 Currently un(der)-documented:
 * Remapping densities to a reference density (see hop.sitemap.remap_density).

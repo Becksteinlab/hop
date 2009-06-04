@@ -10,6 +10,14 @@
 import asynchat, asyncore, socket
 import os, sys, readline, string, re
 
+try:
+    # part of a python egg
+    # see http://peak.telecommunity.com/DevCenter/PythonEggs#accessing-package-resources
+    from pkg_resources import resource_filename
+    REMOTE_TCL = resource_filename(__name__,'remote_ctl.tcl')
+except ImportError:
+    REMOTE_TCL = os.path.join(os.path.split(__file__)[0],'remote_ctl.tcl')
+
 services = { 'vmd' : 5555 }
 RESPONSE_TERMINATOR = '__END_OF_VMD_RESPONSE__\r\n'  # see remote_ctl.tcl
 
@@ -17,7 +25,7 @@ RESPONSE_TERMINATOR = '__END_OF_VMD_RESPONSE__\r\n'  # see remote_ctl.tcl
 class server:
     """The VMD server process."""
     def __init__(self,vmdbinary='vmd',
-                 server_tcl=os.path.join(os.path.split(__file__)[0],'remote_ctl.tcl'),
+                 server_tcl=REMOTE_TCL,
                  force=False,maxdelay=10,dispdev='text'):
         
         """Start VMD in text mode and launch the remote server.
