@@ -1,15 +1,15 @@
 # $Id$
-# setuptools installation of HOP
+# setuptools installation of Hop
 # Copyright (c) 2007-2009 Oliver Beckstein <orbeckst@gmail.com>
-# Released under the GNU Public License 2 (or higher, your choice)
-
+# Released under the GNU Public License 3 (or higher, your choice)
+# See the file COPYING for details.
 
 from ez_setup import use_setuptools
 use_setuptools()
 from setuptools import setup, find_packages
 
 setup(name="Hop",
-      version="0.1rc1",
+      version="0.1",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
