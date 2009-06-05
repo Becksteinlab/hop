@@ -31,17 +31,18 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx<0.99',       # **
                         'pygraphviz<0.99',     # **
-      #                  'MDAnalysis>0.5.1',
+      #                  'MDAnalysis>0.5.99',
                         ],
       #dependency_links = [
       #    "http://code.google.com/p/mdanalysis/downloads/list",
       #    ],
-      # also requires:  'MDAnalysis>0.5.1',
+      # also requires:  'MDAnalysis>0.5.99',
       # http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
       # but this does not work automagically yet. See INSTALL
       extras_require={
           'plotting': ['matplotlib>=0.91.3'], # probably already installed
-          'heatmap': ['rpy']                  # optional,used for heatmaps
+          'heatmap': ['rpy'],                 # optional,used for heatmaps
+          'alignment': ['biopython'],         # optional,used for trajectory.fasta2select
           },
       zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script
 )

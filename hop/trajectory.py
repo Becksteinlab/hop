@@ -782,13 +782,14 @@ def RMS_fit_trj(traj,ref,select='backbone',filename=None,prefix='rmsfit_',verbos
     trajectory it is suggested to only align one frame and then use
     that frame with a more efficient program (that otherwise could not
     easily deal with aligning different molecules).
-
-    Charmm:
-    charmm < /Users/oliver/Biop/Library/Charmm/analysis/trajectory/rmsfit.inp \
-       HEADER=str/header.str PSF=inp/crbp_apo.psf DCD=trj/1opa_100ps_ppc.dcd \
-       DCD_RMS=trj/rmsfit2_1opa_100ps_ppc.dcd  RECENTER=0 \
-       REF_PDB=coord/rmsfit_1opa_a_xtal.pdb 
     """
+
+    # Charmm (using OB's rmsfit.inp script):
+    # charmm < /Users/oliver/Biop/Library/Charmm/analysis/trajectory/rmsfit.inp \
+    #   HEADER=str/header.str PSF=inp/crbp_apo.psf DCD=trj/1opa_100ps_ppc.dcd \
+    #   DCD_RMS=trj/rmsfit2_1opa_100ps_ppc.dcd  RECENTER=0 \
+    #   REF_PDB=coord/rmsfit_1opa_a_xtal.pdb 
+
     import numpy
     import os.path
     import MDAnalysis.rms_fitting, MDAnalysis.DCD

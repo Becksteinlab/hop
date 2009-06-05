@@ -72,16 +72,33 @@ instructions.
 
 Optional modules
 ----------------
+
 (reduced functionality if not present)::
 
    matplotlib       >=0.91.3           http://matplotlib.sourceforge.net/ 
    rpy (and R)                         http://rpy.sourceforge.net/
+   biopython                           http://www.biopython.org
 
 When these modules are missing the code will raise an ImportError when
 attempting to use them; their absence is not always handled gracefuly
-and it is suggested to install at least matplotlib/pylab. R and rpy
-are only used for an experimental heatmap analysis and can be safely
-ignored.
+and it is suggested to install at least ``matplotlib`` (pylab). ``R``
+and ``rpy`` are only used for an experimental heatmap analysis and can
+be safely ignored.
+
+
+
+Optional external helper programs
+---------------------------------
+
+Some functions and classes can make use of external programs; none of
+them are necessary for the core functionality of Hop but are listed
+here for completeness.
+
+VMD
+     VMD's VolMap plugin can be used to generate densities. See
+     `Visualization`_ for details on VMD.
+
+
 
 
 Hints on obtaining packages
