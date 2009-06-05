@@ -1585,15 +1585,22 @@ class HoppingGraph(object):
                     * double exp asymmetry abs(0.5-a) > 0.49
                     * k1<0 or k2<0
 
-        Bugs:
+        :Bugs:
         * Does not switch to single exponential if double exponential fit fails
           to converge.
+
+        :Notes:
+
+        * Should probably use the integral of the double-exponential fit as an
+          approximation for the rate constant instead of just using the slower
+          one (G. Hummer, pers. comm.)
         """
 
         if method is 'survivalfunction':
             # TODO: use time step for sampling step ?
             # TODO: coarser dt for long runs, eg dt = 10 ... 100!!
             #       This can blow up in memory in survivalfunction() because of too many t (len(x) big!)
+            #       or use an interpolated survival function
             dt = 1.0                                 # 1.0 == dt in sim  # TODO: adapt dt            
             tmax = numpy.max(taus) + 1.0*dt
             N = len(taus)                            # perhaps sample N times from S ???
@@ -2297,11 +2304,16 @@ def survivalfunction(waitingtimes, block_w=200, block_t=1000):
     S(t) is a function that gives the fractional number of particles that
     have not yet left the site after time t. It is 1 at t=0 and decays to 0.
 
+    :Arguments:
+    waitingtimes          sequence of the waiting times from the simulations
     block_w               reduce memory consumption by working on chunks of
                           the waiting times of size <block_w>; reduce block_w if
                           the code crashes with 'Memory Error'.
     block_t               chunk input function arguments into blocks of
                           size block_t
+
+    :TODO:
+    * Make S(t) an interpolation function: massive speedup and fewer memory problems
     """
     S_doc = """Survival function S(t).  t can be a array.
         
@@ -2354,10 +2366,13 @@ def Unitstep(x,x0):
     Unitstep(x,x0) == Theta(x - x0) = {  0.5  if x == x0
                                        \ 0    if x <  x0
 
-    http://mathworld.wolfram.com/HeavisideStepFunction.html
     This is a numpy ufunc.
-    If both x and x0 are arrays of length > 1 then weird things are
-    going to happen because of broadcasting.
+
+    :CAVEAT:    If both x and x0 are arrays of length > 1 then weird things are
+                going to happen because of broadcasting.
+                Using nD arrays can also lead to surprising results.
+
+    :See also:  http://mathworld.wolfram.com/HeavisideStepFunction.html
     """
     _x = numpy.asarray(x)
     _x0 = numpy.asarray(x0)
