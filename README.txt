@@ -5,8 +5,8 @@
 ========
 
 
-analyzing solvent in molecular dynamics trajectories
-====================================================
+Hop: analyzing solvent in molecular dynamics trajectories
+=========================================================
 
 This is a collection of python modules to analyze (primarily) water
 behaviour in MD simulations. The idea is to find regions with a
