@@ -21,6 +21,13 @@ except ImportError:
 services = { 'vmd' : 5555 }
 RESPONSE_TERMINATOR = '__END_OF_VMD_RESPONSE__\r\n'  # see remote_ctl.tcl
 
+try:
+    # with eggs: use setuptool's PkgResources
+    # http://peak.telecommunity.com/DevCenter/PythonEggs#accessing-package-resources   
+    from pkg_resources import resource_file
+    default_server_tcl = resource_file(__name__,'remote_ctl.tcl')
+except ImportError:
+    default_server_tcl = os.path.join(os.path.split(__file__)[0],'remote_ctl.tcl')
 
 class server:
     """The VMD server process."""

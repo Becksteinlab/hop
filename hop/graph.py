@@ -181,8 +181,9 @@ class TransportNetwork(object):
             s = snow.astype(int)
 
             # Bugs of the main loop:
-            #  * still counts (-1,1) transitions (interstitial -> bulk); currently they are
+            #  * still counts (-1,1) transitions (outlier -> bulk); currently they are
             #    explicitly filtered when building the CombinedGraph
+            #  * Dan Willenbring reports that also (-1, N) show up.
             #  * code is ugly and not optimized: should be possible to do this on all atoms at once
             for iatom in xrange(self.numatoms):
                 if s[iatom] == SITELABEL['outlier']:
