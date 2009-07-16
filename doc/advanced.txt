@@ -2,7 +2,7 @@
  Advanced usage
 =================
 
-:Note: These notes can be slightly out of date.
+.. Note:: These notes can be slightly out of date.
 
 
 
@@ -255,3 +255,34 @@ Build the crystal water density
 Bugs:
  * original water resids are not kept
  * complicated 
+
+
+Analyzing total number of waters in a graph
+===========================================
+
+My second question is, do you have a way to count the number of waters
+within the hopping graph at a point in time? I would like to plot the
+number of 'non-bulk' waters over time.
+
+That's a good idea. It's not implemented right now but you can do it
+manually. As long as you only want to distinguish proper sites from
+bulk/outliers you can directly use the hopping trajectory. For each
+water it stores the site number in the x-coordinate. Thus we can
+simply count the number of waters with a site number > 1 (because 1 is
+the bulk site)::
+
+   import hop
+   import hop.trajectory
+   import numpy
+   H = hop.trajectory.HoppingTrajectory(filename='trj/hoptrj')
+   BULKSITE = hop.constants.SITELABEL['bulk']
+   # G = (frame, number of waters in graph)
+   G = numpy.array( [[ts.frame, numpy.where(ts._pos[:,0] > BULKSITE, 1, 0).sum()] for ts in  H.hoptraj] )
+
+   Nwtot = H.group.numberOfAtoms()           # total number of waters
+   B = numpy.array( [G[:,0], Nwtot - G[:,1]] )   # bulk waters for each frame
+
+   import pylab
+   pylab.xlabel('frame number')
+   pylab.ylabel('number of waters')
+   pylab.plot(G[:,0], G[:,1], label="on graph sites")
