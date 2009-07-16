@@ -1587,14 +1587,27 @@ class HoppingGraph(object):
                     * k1<0 or k2<0
 
         :Bugs:
-        * Does not switch to single exponential if double exponential fit fails
+        - Does not switch to single exponential if double exponential fit fails
           to converge.
 
         :Notes:
-
-        * Should probably use the integral of the double-exponential fit as an
+        - Should probably use the integral of the double-exponential fit as an
           approximation for the rate constant instead of just using the slower
           one (G. Hummer, pers. comm.)
+
+        :TODO: 
+
+        Implement k from integral as new method 'integral' and also
+        compare to the calculation from the expoential fits::
+
+           single exp:
+                   f(t) = exp(-kt)
+                   k = [integral_0^\infty dt f(t)] ^ -1 = k
+
+           double exponential:
+                   f(t) = a exp(-k1 t) + (1-a) exp(-k2 t)
+                   k_comb =  [integral_0^\infty dt f(t)] ^ -1 = [a/k1 + (1-a)/k2]^-1
+
         """
 
         if method is 'survivalfunction':
