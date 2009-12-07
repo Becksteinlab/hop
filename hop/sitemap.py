@@ -1252,11 +1252,14 @@ class Density(Grid):
         >>> density.export3D()
 
         :Arguments:
-        filename     prefix for output files: <filename>.psf and <filename>.pdb
+        filename     prefix for output files: 
+                     <filename>.psf, <filename>.pdb, and <filename>.vmd
         site_labels  selects sites (See site_labels())  
 
-        The method writes a psf and a pdb file from the site map, suitable
-        for visualization in, for instance, VMD.
+        The method writes a psf and a pdb file from the site map,
+        suitable for visualization in, for instance, VMD. In addition,
+        a VMD tcl file is produced. When it is sourced in VMD then the
+        psf and pdb are loaded and site labels are shown next to the sites.
 
         Sites are represented as residues of resname 'NOD'; each site
         is marked by one 'ATOM' (of type CA) at the center of geometry
