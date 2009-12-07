@@ -76,18 +76,21 @@ class ConvexHull(object):
 
         args = ['n', 'TO', "'"+self.files['planes']+"'"]
         rc = self.qconvex(args)
-        print "Wrote planes %(planes)r [%(rc)r]" % vars()
+        if rc != 0:
+            raise OSError("qconvex failed computing planes, rc=%(rc)d", vars())
+        self.planes = self.read_planes()
+        print "Wrote %d planes to %r" % (len(self.planes), self.files['planes'])
 
         args = ['p', 'TO', "'"+self.files['vertices']+"'"]
-        rc = self.qconvex(args)    
-        print "Wrote vertices %(vertices)r [%(rc)r]" % vars()
-
-        self.planes = self.read_planes()
+        rc = self.qconvex(args)
+        if rc != 0:
+            raise OSError("qconvex failed computing vertices, rc=%(rc)d", vars())
         self.vertices = self.read_vertices()
-
+        print "Wrote %d vertices to %r" % (len(self.vertices), self.files['vertices'])
 
     def qconvex(self, args):
-        with open(self.coordinates) as coord: 
+        with open(self.files['coordinates']) as coord: 
+            # must use stdin, TI option cannot deal with dots in filenames, eg 'ca.dat'
             Q = Popen(['qconvex']+args, stdin=coord)
             rc = Q.wait()
         return rc
@@ -97,15 +100,7 @@ class ConvexHull(object):
 
         Numpy array of points [[x,y,z], ...]
         """
-        with open(self.files['vertices']) as vertices:
-            vertices.readline()
-            npoints = vertices.readline()
-            a = []
-            for line in vertices:
-                a.append(map(float, line.strip().split()))
-        if len(a) != npoints:
-            raise IOError("Wrong number of datapoints %d, should be %d" % (len(a), npoints))
-        return numpy.array(a)
+        return self._data_reader('vertices')
 
     def read_planes(self):
         """Read planes from qconvex n file.
@@ -114,15 +109,7 @@ class ConvexHull(object):
 
         Planes are oriented and point outwards.
         """
-        with open(self.files['planes']) as planes:
-            planes.readline()  # dimension (3+1)
-            npoints = planes.readline()
-            a = []
-            for line in planes:
-                a.append(map(float, line.strip().split()))
-        if len(a) != npoints:
-            raise IOError("Wrong number of datapoints %d, should be %d" % (len(a), npoints))
-        return numpy.array(a)
+        return self._data_reader('planes')
 
     def _data_reader(self, name):
         """Read simple data structures from qhull files.
@@ -137,7 +124,7 @@ class ConvexHull(object):
         """
         with open(self.files[name]) as data:
             data.readline()  # dimension (3+1)
-            npoints = data.readline()
+            npoints = int(data.readline())
             a = []
             for line in data:
                 a.append(map(float, line.strip().split()))
@@ -146,7 +133,7 @@ class ConvexHull(object):
         return numpy.array(a)
         
 
-    def point_inside(self, point, planes):
+    def point_inside(self, point):
         """Check if point [x,y,z] is inside the polyhedron defined by plains.
 
         Iff for all i: plain[i](x,y,z) = ax + by +cz + d > 0 <==> (x,y,z) outside
@@ -159,9 +146,9 @@ class ConvexHull(object):
         # (Problems if ray hits a vertex.)
 
         # check ALL faces.... :-p
-        return numpy.all(numpy.dot(planes[:,:3], point) + planes[:,3] <= EPSILON)
+        return numpy.all(numpy.dot(self.planes[:,:3], point) + self.planes[:,3] <= EPSILON)
 
-    def points_inside(self, points, planes):
+    def points_inside(self, points):
         """Return bool array for all points:
 
         True: inside
@@ -175,13 +162,12 @@ class ConvexHull(object):
         [True, False, True, ...]
         """
         # crappy code, should optimize for numpy
-        return numpy.array([point_inside(point, planes) for point in points])
+        return numpy.array([self.point_inside(point) for point in points])
 
-    def write_vertices_pdb(filename, pdb="vertices.pdb"):
-        points = read_vertices(filename)
+    def write_vertices_pdb(self, pdb="vertices.pdb"):
         ppw = _PrimitivePDBWriter(pdb)
-        ppw.write(points)
-        print "Wrote points to pdb file %(pdb)r." % vars()
+        ppw.write(self.points)
+        print "Wrote vertices to pdb file %(pdb)r." % vars()
 
 
 class _PrimitivePDBWriter(object):
