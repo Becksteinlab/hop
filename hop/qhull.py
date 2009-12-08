@@ -38,21 +38,33 @@ import numpy
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
-def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat", scale=1.0):
+def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat", scale=None):
+    """Create a list of points from CA atoms in a format suitable for ``qhull``.
+
+    :Arguments:
+    - psf: psf file
+    - pdb: pdb file
+    - filename: output filename of the point list (input for :class:`ConvexHull`)
+    - scale: scale points around the centre of geometry; values of 0.5 - 0.7 typically ensure that
+      the convex hull is inside the protein; default is to not scale, i.e. scale = 1.
+    """
+
     from MDAnalysis import Universe
 
     u = Universe(psf, pdbfilename=pdb)
     CA = u.selectAtoms('name CA').coordinates()
 
-    write_coordinates(filename, CA)
+    write_coordinates(filename, CA, scale=scale)
 
-def write_coordinates(filename, points, scale=1.0):
+def write_coordinates(filename, points, scale=None):
     """Write an array of points to a file suitable for qhull."""
-    points = numpy.asarray(points)
-    if scale != 1.0:
-        center = points.mean(points, axis=0)
-        points = scale*points + (1-scale)*center  # scale*(points - center) + center
 
+    points = numpy.asarray(points)
+    if not scale is None:
+        center = points.mean(axis=0)
+        points[:] = scale*points + (1-scale)*center  # scale*(points - center) + center
+        print "Scaled coordinates by factor %(scale)g relative to center of geometry %(center)r" % vars()
+        
     with open(filename, 'w') as data:
         data.write('%d\n' % points.shape[1])  # dimension
         data.write('%d\n' % points.shape[0])  # number of points
@@ -199,7 +211,12 @@ class ConvexHull(object):
         
         grid = numpy.zeros_like(density.grid)
         grid[mask] = fillvalue        # fill the inside with high density
-        return Density(grid=grid, edges=density.edges, parameters=density.P, unit=density.unit)
+        parameters = density.P.copy()
+        try:
+            del parameters['bulk_site']
+        except KeyError:
+            pass
+        return Density(grid=grid, edges=density.edges, parameters=parameters, unit=density.unit)
 
 
 class _PrimitivePDBWriter(object):
