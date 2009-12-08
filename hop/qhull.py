@@ -19,8 +19,8 @@
 qhull
 =====
 
-Interface to some functions of the `qhull`_ and `qconvex`_ programs. These must
-be installed separately (see links).
+Interface to some functions of the `qhull`_ (or rather the `qconvex`_)
+program. `qhull`_ must be installed separately (see links).
 
 The main functionality is to define a region in space within the convex hull of
 a protein. The hull is typically defined by a selection of atoms and written as
@@ -33,29 +33,31 @@ a "density" file for use in :mod:`hop`.
 from __future__ import with_statement
 
 from subprocess import Popen
+import os, errno
+import tempfile
+import shutil
 import numpy
 
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
-def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat", scale=None):
-    """Create a list of points from CA atoms in a format suitable for ``qhull``.
+def points_from_selection(psf, pdb, selection="name CA", filename="points.dat", scale=None):
+    """Create a list of points from selected atoms in a format suitable for ``qhull``.
 
     :Arguments:
-    - psf: psf file
-    - pdb: pdb file
-    - filename: output filename of the point list (input for :class:`ConvexHull`)
+    - psf: Charmm topology file
+    - pdb: coordinates
+    - selection: MDAnalysis selectAtoms() selection string [C-alpha atoms]
+    - filename: name of the output file; used as input for :class:`ConvexHull`
     - scale: scale points around the centre of geometry; values of 0.5 - 0.7 typically ensure that
-      the convex hull is inside the protein; default is to not scale, i.e. scale = 1.
+      the convex hull is inside the protein; default is to not to scale, i.e. scale = 1.
     """
 
     from MDAnalysis import Universe
-
     u = Universe(psf, pdbfilename=pdb)
-    CA = u.selectAtoms('name CA').coordinates()
-
-    write_coordinates(filename, CA, scale=scale)
-
+    coordinates = u.selectAtoms(selection).coordinates()
+    write_coordinates(filename, coordinates, scale=scale)
+    
 def write_coordinates(filename, points, scale=None):
     """Write an array of points to a file suitable for qhull."""
 
@@ -82,19 +84,32 @@ class ConvexHull(object):
     .. _qhull: http://www.qhull.org/
     """
 
-    def __init__(self, coordinates, planes="planes.dat", vertices="vertices.dat", scale=1.0):
+    def __init__(self, coordinates, workdir=None, prefix=None):
         """Compute convex hull and populate data structures.
 
         :Arguments:
         - coordinates: input suitable for qconvex
-        - planes: filename for normal form plane file (``qconvex n``)
-        - vertices: filename for vertices coordinates file (``qconvex p``)
+        - workdir: store intermediate files in workdir (tmp dir by default)
+        - prefix: prefix for output files        
         """
+        if workdir is None:
+            self.workdir = tempfile.mkdtemp(prefix="tmp", suffix="_ConvexHull")
+            self.workdir_is_temp = True
+        else:
+            self.workdir = workdir
+            self.workdir_is_temp = False
+            try:
+                os.mkdir(self.workdir)
+            except OSError, err:
+                if err.errno != errno.EEXIST:
+                    raise
 
+        self.prefix = prefix or ""
         self.files = {'coordinates': coordinates,
-                      'planes': planes,
-                      'vertices': vertices,}
+                      'planes': self.wd(self.prefix+"planes.dat"),
+                      'vertices': self.wd(self.prefix+"vertices.dat"),}
 
+        # run qconvex
         args = ['n', 'TO', "'"+self.files['planes']+"'"]
         rc = self.qconvex(args)
         if rc != 0:
@@ -108,6 +123,10 @@ class ConvexHull(object):
             raise OSError("qconvex failed computing vertices, rc=%(rc)d", vars())
         self.vertices = self.read_vertices()
         print "Wrote %d vertices to %r" % (len(self.vertices), self.files['vertices'])
+
+    def wd(self, *args):
+        """Return path in workdir."""
+        return os.path.join(self.workdir, *args)
 
     def qconvex(self, args):
         with open(self.files['coordinates']) as coord: 
@@ -155,9 +174,11 @@ class ConvexHull(object):
         
 
     def point_inside(self, point):
-        """Check if point [x,y,z] is inside the polyhedron defined by plains.
+        """Check if point [x,y,z] is inside the polyhedron defined by planes.
 
-        Iff for all i: plain[i](x,y,z) = ax + by +cz + d > 0 <==> (x,y,z) outside
+        Iff for all i: plane[i]([x,y,z]) = n*[x,y,z] + p < 0 <==> [x,y,z] inside
+
+        (i.e. [x,y,z] is under *all* planes and the planes completely define the enclosed space
         """
         # crappy implementation, I am sure one can do this better with broadcasts
         # or a better algorithm, eg 
@@ -176,37 +197,36 @@ class ConvexHull(object):
         False: outside
 
         :Arguments:
-        - points = [[x1,y1,z1], ...]
+        - points = [[x1,y1,z1], ...] or an iterator that supplies points
         - planes: normal forms of planes
 
         :Returns:
-        [True, False, True, ...]
+        Array with truth values such as [True, False, True, ...]
         """
         # crappy code, should optimize for numpy
-        return numpy.array([self.point_inside(point) for point in points])
+        return numpy.fromiter((self.point_inside(point) for point in points), numpy.bool)
 
     def write_vertices_pdb(self, pdb="vertices.pdb"):
         ppw = _PrimitivePDBWriter(pdb)
         ppw.write(self.vertices)
         print "Wrote vertices to pdb file %(pdb)r." % vars()
 
-
     def Density(self, density, fillvalue=None):
         """Create a Density object of the interior of the convex hall.
 
-        Uses another Density object as a template for the grid.
+        Uses another Density object *density*  as a template for the grid.
 
-        Manually::
-          Q = hop.qhull.ConvexHull('ca.dat') 
-          mask = Q.points_inside(D.centers()).reshape(D.grid.shape)
+        .. Note:: This is rather slow and should be optimized.
         """
-        from sitemap import Density
+
+        from hop.sitemap import Density
         
         if fillvalue is None:
             fillvalue = 2*density.P['threshold']
 
         # TODO: OPTIMIZE
-        # this is S-L-O-W because density.centers is slow (but at least a iterator using ndindex)
+        # This is S-L-O-W because density.centers is slow (but at least a iterator using ndindex)
+        # Reshaping relies on the centers being in correct order (provided by numpy.ndindex())
         mask = self.points_inside(density.centers()).reshape(density.grid.shape)
         
         grid = numpy.zeros_like(density.grid)
@@ -217,6 +237,11 @@ class ConvexHull(object):
         except KeyError:
             pass
         return Density(grid=grid, edges=density.edges, parameters=parameters, unit=density.unit)
+
+    def __del__(self):
+        if self.workdir_is_temp:
+            shutil.rmtree(self.workdir, ignore_errors=True)
+
 
 
 class _PrimitivePDBWriter(object):
