@@ -244,5 +244,13 @@ class Grid(object):
         """
         self.export(filename,format="python")
 
+    def centers(self):
+        """Returns the coordinates of the centers of all grid cells as an iterator."""
+        # crappy
+        for idx in numpy.ndindex(self.grid.shape):
+            # TODO: CHECK that this delta*(i,j,k) is really correct, even for non-diagonal delta
+            # NOTE: origin is center of (0,0,0) (and already has index offset by 0.5)
+            yield numpy.sum(self.delta * numpy.asarray(idx), axis=0) + self.origin
+
     def __repr__(self):
         return '<Grid with '+str(self.grid.shape)+' bins>'
