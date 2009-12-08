@@ -20,6 +20,8 @@ output is produced. It also allows logging to a file.
 
 (As everyone else I am re-inventing the wheel here. Perhaps have a
 look at the stdlib class?...)
+
+XXX: use standard logger!
 """
 
 import sys
