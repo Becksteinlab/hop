@@ -320,7 +320,7 @@ def easy_load(names,baseclass,keymethod):
 # other class inherit from the base class (eg 'interactive') and make
 # verbosity a class-level variable (or whatever it is called) .
 #
-# (NOTE: this will be removed once we use the logger class)
+# (NOTE: this will be removed once we use logger)
 
 verbosity = 3
 logfile = None

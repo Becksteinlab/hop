@@ -42,7 +42,7 @@ use the module.
 
 __all__ = ['constants','sitemap','trajectory','graph','interactive',
            'utilities','external','analysis','siteanalysis','MCMC',
-           'qhull', 'logger']
+           'qhull']
 
 # Warnings
 import warnings
