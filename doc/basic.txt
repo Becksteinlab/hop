@@ -59,7 +59,7 @@ this kind of analysis useful one needs to add an additional site for
 bulk: This allows calculation of exchange with the bulk:
 
    1. calculate a second density (density_bulk) for water which is at
-      a distance greater than 3.5 Ã… (or 4 Ã…). One can use MDAnalysis
+      a distance greater than 3.5 Å (or 4 Å). One can use MDAnalysis
       as in the example below or VMD (with soluteselection='protein
       and not name H*', cutoff=3.5, backend='VMD' (but only if the
       trajectories are not big and fit into the computers main memory,

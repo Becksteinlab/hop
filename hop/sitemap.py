@@ -116,8 +116,8 @@ class Grid(hop.utilities.Saveable):
         # First set attributes that may be overriden by reading from a file
         # using load().
         self._dxfile = dxfile
-        self.P = parameters          # isDensity: set by make_density()
-        self.metadata = metadata     # use this to record arbitrary data
+        self.P = parameters    # isDensity: set by make_density()
+        self.metadata = metadata                 # use this to record arbitrary data
         self.unit = unit
         self._check_set_unit(unit)   # unit must be dict --- check here?
 
@@ -248,7 +248,16 @@ class Grid(hop.utilities.Saveable):
             return
         self.grid *= hop.constants.get_conversion_factor('density',self.unit['density'],unit)
         self.unit['density'] = unit
-                    
+      
+    def centers(self):
+        """Returns the coordinates of the centers of all grid cells as an iterator."""
+        # crappy
+        for idx in numpy.ndindex(self.grid.shape):
+            # TODO: CHECK that this delta*(i,j,k) is really correct, even for non-diagonal delta
+            # NOTE: origin is center of (0,0,0) (and already has index offset by 0.5)
+            yield numpy.sum(self.delta * numpy.asarray(idx), axis=0) + self.origin
+
+              
     def importdx(self,dxfile):
         """Initializes Grid from a OpenDX file."""
         
@@ -483,7 +492,7 @@ class Density(Grid):
             pass
         try:
             self._site_remove_bulk()
-        except ValueError:
+        except (ValueError, TypeError):
             pass
 
         # map charts the sites. It starts out with the interstitial labeled

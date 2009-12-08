@@ -38,20 +38,24 @@ import numpy
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
-def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", coordinates="ca.dat"):
+def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat"):
     from MDAnalysis import Universe
 
     u = Universe(psf, pdbfilename=pdb)
     CA = u.selectAtoms('name CA').coordinates()
 
-    with open(coordinates, 'w') as data:
-        data.write('%d\n' % CA.shape[1])  # dimension
-        data.write('%d\n' % CA.shape[0])  # number of points
-        for point in CA:
-            data.write("%f %f %f\n" % tuple(point))
+    write_coordinates(filename, CA)
 
-    print "Wrote %(coordinates)r." % vars()
-
+def write_coordinates(filename, points):
+    """Write an array of points to a file suitable for qhull."""
+    with open(filename, 'w') as data:
+        data.write('%d\n' % points.shape[1])  # dimension
+        data.write('%d\n' % points.shape[0])  # number of points
+        fmt = " ".join(["%f"]*points.shape[1]) + "\n"
+        for point in points:
+            data.write(fmt % tuple(point))
+    print "Wrote points to %(filename)r." % vars()
+    
 
 class ConvexHull(object):
     """The convex hull of a set of points.
@@ -123,7 +127,7 @@ class ConvexHull(object):
            x1 x2 x3 x4 ...
         """
         with open(self.files[name]) as data:
-            data.readline()  # dimension (3+1)
+            dimension = int(data.readline())  # eg 3+1 for planes, 3 for vertices
             npoints = int(data.readline())
             a = []
             for line in data:
@@ -166,8 +170,31 @@ class ConvexHull(object):
 
     def write_vertices_pdb(self, pdb="vertices.pdb"):
         ppw = _PrimitivePDBWriter(pdb)
-        ppw.write(self.points)
+        ppw.write(self.vertices)
         print "Wrote vertices to pdb file %(pdb)r." % vars()
+
+
+    def Density(self, density, fillvalue=None):
+        """Create a Density object of the interior of the convex hall.
+
+        Uses another Density object as a template for the grid.
+
+        Manually::
+          Q = hop.qhull.ConvexHull('ca.dat') 
+          mask = Q.points_inside(D.centers()).reshape(D.grid.shape)
+        """
+        from sitemap import Density
+        
+        if fillvalue is None:
+            fillvalue = 2*density.P['threshold']
+
+        # TODO: OPTIMIZE
+        # this is S-L-O-W because density.centers is slow (but at least a iterator using ndindex)
+        mask = self.points_inside(density.centers()).reshape(density.grid.shape)
+        
+        grid = numpy.zeros_like(density.grid)
+        grid[mask] = fillvalue        # fill the inside with high density
+        return Density(grid=grid, edges=density.edges, parameters=density.P, unit=density.unit)
 
 
 class _PrimitivePDBWriter(object):
@@ -196,16 +223,12 @@ class _PrimitivePDBWriter(object):
         self.pdb.close()
 
     def write(self,coordinates,name="CA",resname="VRT",resid=1):
-        """Write coordinates as CA.
-
-        write(points)
-        """
+        """Write coordinates as CA."""
         
         self.TITLE("points as CA")
         for i, atom in enumerate(coordinates):
             self.ATOM(serial=i+1, name=name.strip(), resName=resname.strip(), resSeq=resid,
                       x=coordinates[i,0], y=coordinates[i,1], z=coordinates[i,2])
-        # get bfactor, too?
         self.close()
 
     def TITLE(self,*title):
@@ -259,3 +282,4 @@ class _PrimitivePDBWriter(object):
         
     def __del__(self):
         self.close()
+

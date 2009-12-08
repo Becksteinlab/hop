@@ -9,9 +9,12 @@
 Analysis of individual water trajectories
 =========================================
 
-One needs to figure out how to translate the 'iatom' number back to a psf index. (TODO: should keep a translation table when I make the selection.)
+One needs to figure out how to translate the 'iatom' number back to a
+psf index. (TODO: should keep a translation table when I make the
+selection.)
 
-As a quick fix use the hop.psf, which keeps the original numbers; then just count...::
+As a quick fix use the hop.psf, which keeps the original numbers; then
+just count...::
 
    awk 'BEGIN {iatom=0};
 	$5 == "OH2" {serial=$1; res=$2; resn=$3; segname=$4; type=$5; 
@@ -245,6 +248,7 @@ of crystal waters is coded in the script.
 Build the crystal water density
 -------------------------------
 
+::
    from hop.sitemap import density_from_pdb
    d = density_from_pdb('1opa_a_xtal.psf','1opa_a_xtal.pdb')
    d.convert_density('water')
@@ -264,12 +268,12 @@ My second question is, do you have a way to count the number of waters
 within the hopping graph at a point in time? I would like to plot the
 number of 'non-bulk' waters over time.
 
-That's a good idea. It's not implemented right now but you can do it
-manually. As long as you only want to distinguish proper sites from
-bulk/outliers you can directly use the hopping trajectory. For each
-water it stores the site number in the x-coordinate. Thus we can
-simply count the number of waters with a site number > 1 (because 1 is
-the bulk site)::
+  That's a good idea. It's not implemented right now but you can do it
+  manually. As long as you only want to distinguish proper sites from
+  bulk/outliers you can directly use the hopping trajectory. For each
+  water it stores the site number in the x-coordinate. Thus we can
+  simply count the number of waters with a site number > 1 (because 1 is
+  the bulk site)::
 
    import hop
    import hop.trajectory

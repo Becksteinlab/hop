@@ -93,7 +93,7 @@ except NameError:
             L.reverse()
         return L
     
-class DXclass:
+class DXclass(object):
     """'class' object as defined by OpenDX"""
     def __init__(self,classid):
         """id is the object number"""
@@ -372,7 +372,7 @@ class Token:
     def __repr__(self):
         return '<token '+str(self.code)+','+str(self.value())+'>'
 
-class DXInitObject:
+class DXInitObject(object):
     """Storage class that holds data to initialize one of the 'real'
     classes such as OpenDX.array, OpenDX.gridconnections, ...
 
@@ -401,7 +401,7 @@ class DXInitObject:
     def __repr__(self):
         return '<DXInitObject instance type='+str(self.type)+', id='+str(self.id)+'>'
 
-class DXParser:
+class DXParser(object):
     """Brain-dead baroque implementation to read a simple (VMD) dx file.
 
     Requires a OpenDX.field instance.
