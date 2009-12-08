@@ -38,7 +38,7 @@ import numpy
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
-def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat"):
+def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat", scale=1.0):
     from MDAnalysis import Universe
 
     u = Universe(psf, pdbfilename=pdb)
@@ -46,8 +46,13 @@ def make_ca_points(psf="1ifc_xtal.psf", pdb="1ifc_xtal.pdb", filename="ca.dat"):
 
     write_coordinates(filename, CA)
 
-def write_coordinates(filename, points):
+def write_coordinates(filename, points, scale=1.0):
     """Write an array of points to a file suitable for qhull."""
+    points = numpy.asarray(points)
+    if scale != 1.0:
+        center = points.mean(points, axis=0)
+        points = scale*points + (1-scale)*center  # scale*(points - center) + center
+
     with open(filename, 'w') as data:
         data.write('%d\n' % points.shape[1])  # dimension
         data.write('%d\n' % points.shape[0])  # number of points
@@ -65,7 +70,7 @@ class ConvexHull(object):
     .. _qhull: http://www.qhull.org/
     """
 
-    def __init__(self, coordinates, planes="planes.dat", vertices="vertices.dat"):
+    def __init__(self, coordinates, planes="planes.dat", vertices="vertices.dat", scale=1.0):
         """Compute convex hull and populate data structures.
 
         :Arguments:
