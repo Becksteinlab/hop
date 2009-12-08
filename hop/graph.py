@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Graph module
+"""
+:mod:`hop.graph` module
+=======================
 
 Interprete the high density sites as graph ('transport graph'), with
 the sites as vertices and transitions (sampled by the simulation) as
@@ -27,14 +29,14 @@ represents the fitted function to the survival times.
 
 Each vertex (site) is decorated with the average residency time (and stdev, N).
 
-Typical use of the module:
+Typical use of the module::
 
   TN = TransportNetwork(hoppingTrajectory,density)
   hopgraph = TN.HoppingGraph()
   hopgraph.save('hopgraph')
 
-The basic object is the HoppingGraph; see its documentation for
-further analysis methods.
+The basic object is the :class:`hop.graph.HoppingGraph`; see its
+documentation for further analysis methods.
 """
 
 import hop.constants, hop.trajectory
@@ -79,13 +81,12 @@ class TransportNetwork(object):
     def graph_alltransitions(self):
         """Constructs the graph that contains all transitions in the trajectory.
 
-        graph_alltransitions()
-
         Populates TransportGraph.graph with a graph that contains all
         sites and one edge for each transition that was observed in
         the trajectory. Useful for an initial appraisal of the
         complexity of the problem.
-        (Erases any previous contents of graph.)
+
+        .. Warning:: Erases any previous contents of graph.
         """
         self.graph = NX.DiGraph()
         self.graph.name = "Transitions between all sites, including interstitial and outliers"
@@ -122,22 +123,19 @@ class TransportNetwork(object):
     def _analyze_hops(self,verbosity=0):
         """Core function to compute the waiting times tau_ji for hops i->j
 
-        self._analyze_hops()
+        :Results:
 
-        Results:
+        self.graph             
+            directed graph of all transitions
+        self.graph_properties  
+            Each edge (i,j) has a dictionary associated, containing
+            the waiting times tau for hops from i --> j, the barrier
+            crossing times tbarrier (the time the particle was in the
+            interstitial when hopping), the atom index numbers iatom,
+            and the frames when site i was exited for the hop.
 
-        self.graph             directed graph of all transitions
-        self.graph_properties  Each edge (i,j) has a dictionary
-                               associated, containing the waiting
-                               times tau for hops from i --> j, the
-                               barrier crossing times tbarrier (the
-                               time the particle was in the
-                               interstitial when hopping), the atom
-                               index numbers iatom, and the frames
-                               when site i was exited for the hop.
-
-        iatom can be translated to the original atom serila numbers
-        with the hopping trajectory psf.
+            iatom can be translated to the original atom serial
+            numbers with the hopping trajectory psf.
 
         (Note: runs a few percent faster with verbosity=0)
         """
@@ -261,9 +259,7 @@ class TransportNetwork(object):
     def compute_site_times(self,verbosity=3):
         """Compute the 'residency' time of each water molecule on each site.
 
-        compute_site_times()
-
-        The 'site time' of a site i is computed as
+        The 'site time' of a site i is computed as::
 
           theta[i] = 1/T_sim ( Sum_j tau[j,i] + Sum tau[i] )
 
@@ -272,15 +268,14 @@ class TransportNetwork(object):
         site i.
          
 
-        ## The function updates self.theta[site] for each site with an
+        The function updates self.theta[site] for each site with an
         array of residency times (in ps).
 
         It uses the residency times and thus requires
         compute_residency_times() was run previously.
 
-        TODO:
-
-        * Maybe use the barrier time as well (or a portion thereof,
+        :TODO:
+          Maybe use the barrier time as well (or a portion thereof,
           perhaps proportional to the barrier height (related to the
           kji) --- rate theory??)
         """
@@ -303,22 +298,23 @@ class TransportNetwork(object):
     def compute_site_occupancy(self):
         """Computes occupancies from the residency times theta and updates self.occupancy.
 
-        compute_site_occupancy()
-
-        occupancy:
+        occupancy::
                       N_i
            o[i] = 1/T Sum theta[i,k]
                       k=1
 
-           where T is the total trajectory time and the sum runs over
-           all residency times that were recorded for the site i.
+        where T is the total trajectory time and the sum runs over
+        all residency times that were recorded for the site i.
 
-        attributes:
+        :Attributes:
 
-        self.occupancy        numpy array with occupancies, site label == index
-        self.occupancy_error  numpy array with error estimates for occupancies
-                              (Delta = Delta(theta)/T; this is a biased estimate because
-                              Delta(theta) is calculated with N instead of N-1)
+        self.occupancy        
+                         numpy array with occupancies, site label == index
+        self.occupancy_error  
+                         numpy array with error estimates for
+                         occupancies (Delta = Delta(theta)/T; this is
+                         a biased estimate because Delta(theta) is
+                         calculated with N instead of N-1)
         """
         try:
             if len(self.theta) == 0:
@@ -468,28 +464,43 @@ class HoppingGraph(object):
     sites as nodes and transitions as edges.
 
     :Attributes:
-    graph                 graph with edges; edges contain rates, fit functions, etc
-    properties            raw data for edges
-    trjdata               metadata of the original trajectory
-    site_properties       density-derived node properties, imported from hop.sitemap.Density
-
-    theta                 dict of nodes with residence times (see compute_site_times())
-    occupancy_avg         average occupancy with standard deviation (see compute_site_occupancy())
-    occupancy_std         (numpy array)
+    graph                 
+        graph with edges; edges contain rates, fit functions, etc
+    properties
+        raw data for edges
+    trjdata
+        metadata of the original trajectory
+    site_properties
+        density-derived node properties, imported from hop.sitemap.Density
+    theta
+        dict of nodes with residence times (see compute_site_times())
+    occupancy_avg
+        average occupancy with standard deviation (see compute_site_occupancy())
+    occupancy_std
+        (numpy array)
     
     :Methods:
-    compute_site_occupancy()  Computes occupancies from the residency times theta
-                              and updates self.occupancy_avg and self.occupancy_std.
-    compute_site_times()      Computes residency time theta.
-    save()                    save graph as a pickled file
-    load()                    reinstantiate graph from saved file; typically just use the
-                              constructor with the filename argument
-    filter()                  make a filtered graph for further analysis and visualization;
-                              most plot/export functions require a filtered graph
-    plot_fits()               plot fits of the survival time against the data
-    tabulate_k()              table of rate constants
-    export()                  export graph as a dot file that can be used with graphviz
-    export3D()                export graph as a psf/pdb file combination for visualization in VMD
+    compute_site_occupancy()
+        Computes occupancies from the residency times theta and
+        updates self.occupancy_avg and self.occupancy_std.
+    compute_site_times()      
+        Computes residency time theta.
+    save()                    
+        save graph as a pickled file
+    load()                    
+        reinstantiate graph from saved file; typically just use the
+        constructor with the filename argument
+    filter()
+        make a filtered graph for further analysis and visualization;
+        most plot/export functions require a filtered graph
+    plot_fits()
+        plot fits of the survival time against the data
+    tabulate_k()
+        table of rate constants
+    export()                  
+        export graph as a dot file that can be used with graphviz
+    export3D()
+        export graph as a psf/pdb file combination for visualization in VMD
     
     Properties for nodes are always stored as numpy arrays so that one
     can directly index with the node label (==site label), which is an
@@ -508,41 +519,51 @@ class HoppingGraph(object):
           h = HoppingGraph(filename='HoppingGraph.pickle')
 
         :Arguments:
-        graph          networkx graph with nodes (i) and edges (i,j)
-        properties     dictionary of edges: For each edge e, properties
-                       contains a dictionary, which contains under the key
-                       'tau' a list of observed waiting times tau_ji.
-                       nodes are also listed if they do not participate in a 
-                       transition
-        trjdata        dictionary describing properties of the trajectory
-                       such as time step 'dt' or name of 'dcd' and 'psf'.
-                       Attributes that are in use:
-                         dt          time between saved snapshots in ps
-                         hoppsf      hopping trajectory psf file name
-                         hopdcd      hopping trajectory dcd file name
-                         density     pickle file of the density with the sites
-                         totaltime   length of trajectory in ps*
-                       Not used:
-                         time_unit   'ps'
+        graph
+           networkx graph with nodes (i) and edges (i,j)
+        properties     
+           dictionary of edges: For each edge e, properties contains a
+           dictionary, which contains under the key 'tau' a list of
+           observed waiting times tau_ji.  nodes are also listed if
+           they do not participate in a transition
+        trjdata   
+           dictionary describing properties of the trajectory
+           such as time step 'dt' or name of 'dcd' and 'psf'.
+        
+           Attributes that are in use:
+              dt
+                 time between saved snapshots in ps
+              hoppsf
+                 hopping trajectory psf file name
+              hopdcd
+                 hopping trajectory dcd file name
+              density
+                 pickle file of the density with the sites
+              totaltime
+                 length of trajectory in ps[*]_
 
-                       *) required for compute_occupancy()
+           Not used:
+              time_unit
+                 'ps'
+
+           .. _[*]: required for :meth:`compute_occupancy`
+
         site_properties
-                       list of site properties: hop.sitemap.Density.site_properties
-                       (add if you want graphs with mapped labels)
-                       (Really required for most things...!)        
+           list of site properties:
+           :attr:`hop.sitemap.Density.site_properties` (add if you want graphs
+           with mapped labels) (**Really required for most things...!**)
 
         When the graph is built from edges and properties then the
         rate constants are calculated. For graphs with many hopping
         events this can take a long time (hours...).
 
-        The decorated and directed graph is accessible as
-          h.graph
+        The decorated and directed graph is accessible as :attr:`HoppingGraph.graph`
 
-        BUGS:
-        * trjdata is  required for full functionality but it is currently the user's
-          responsibility to fill it appropriately (although TransportNetwork.compute_residency_times()
+        :BUGS:
+        * *trjdata* is  required for full functionality but it is currently the user's
+          responsibility to fill it appropriately (although :meth:`TransportNetwork.compute_residency_times`
           already adds some data)
-        * site_properties ARE required and must be added with the constructor
+        * *site_properties* **are** required and must be added with the constructor
         """
         if isinstance(trjdata,dict):
             self.trjdata = trjdata   # overwritten when load()ing unless none present in saved
