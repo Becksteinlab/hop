@@ -29,6 +29,46 @@ a "density" file for use in :mod:`hop`.
 .. _qhull: http://www.qhull.org/html/index.htm
 .. _qconvex: http://www.qhull.org/html/qconvex.htm
 
+Example
+-------
+
+In this example the convex hull of the C-alpha atoms is
+computed. Initially, points must be extracted from the structure to a file::
+
+  hop.qhull.make_ca_points(psf='protein.psf', pdb='protein.pdb', filename='ca_100%.dat')
+
+and saved to file ``ca_100%.dat``.
+
+This is usually too large and also entails regions of the hydration
+shell outside of interal cavities. A relatively robust workaround for
+roughly globular proteins is to shrink the convex hull, using the
+``scale`` argument of :func:`hop.qhull.make_ca_points`. Shrinking to
+70% appears to be a good starting point::
+
+  hop.qhull.make_ca_points(psf='protein.psf', pdb='protein.pdb', filename='ca_70%.dat', scale=0.7)
+
+The convex hull itself is generated from the datafile of the points::
+
+  Q70 = hop.qhull.ConvexHull('ca_70%.dat', workdir='cavity70%')
+
+Another density grid ``b`` (such as a real water density for the bulk) is
+currently required to generate a pseudo density based on the convex
+hull. The real density provides the grid on which the convex hull is
+mapped::
+
+  b = hop.sitemap.Density(filename='bulk')
+  QD70 = Q70.Density(b)
+
+(This maps out sites at the threshold level set in ``b``; change it
+with the :meth:`hop.sitemap.Density.map_sites` method if required.)
+
+Insert a bulk density::  
+  QD70.site_insert_bulk(b)
+  
+
+
+  
+
 """
 from __future__ import with_statement
 
