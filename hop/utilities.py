@@ -69,7 +69,8 @@ def filename_function(self,filename=None,ext=None,set_default=False,use_my_ext=F
     if my_ext and use_my_ext:  
         ext = my_ext
     if ext is not None:
-        if ext[0] == '.': ext = ext[1:]  # strip a dot to avoid annoying mistakes
+        if ext.startswith('.'):
+            ext = ext[1:]  # strip a dot to avoid annoying mistakes
         filename = filename + '.' + ext
     return filename
 
@@ -77,7 +78,8 @@ def fileextension(filename,default=None):
     """Return the file extension without the leading dot or the default."""
     ext = os.path.splitext(filename)[1]
     if len(ext) > 1:
-        if ext[0] == '.': ext = ext[1:]
+        if ext.startswith('.'):
+            ext = ext[1:]
         return ext
     else:
         return default
@@ -164,7 +166,8 @@ class Saveable(object):
         # TODO: should initialize _XXX_attributes[] via __init__() and use super(cls,Saveable).__init__()
         #       in subclasses
         kwargs.setdefault('filename',None)
-        super(Saveable,self).__init__()    # Multiple Inheritance is probably NOT going to work...
+        # Multiple Inheritance is probably NOT going to work...                  
+        super(Saveable,self).__init__()        # XXX: ... shouldn't this take *args,**kwargs ?? OB-2009-06-10
         if kwargs['filename'] is not None:
             self.load(kwargs['filename'],'pickle')   # sets _saved_attributes in __dict__
         else:
@@ -228,7 +231,8 @@ class Saveable(object):
         if my_ext and use_my_ext:  
             ext = my_ext
         if ext is not None:
-            if ext[0] == '.': ext = ext[1:]  # strip a dot to avoid annoying mistakes
+            if ext.startswith('.'):
+                ext = ext[1:]  # strip a dot to avoid annoying mistakes
             filename = filename + '.' + ext
         return filename
 
@@ -682,11 +686,10 @@ def averaged_autocorrelation(series,length=None,sliding_window=None,**kwargs):
 # set()
 # set not used at moment
 try:
-    set([None])
-    set = set
+    set([2,2])
 except NameError:
-    import sets
-    set = sets.Set
+    from sets import Set as set
+
 
 # sorted()
 # --- (can also use numpy.sort function instead) ---
@@ -715,11 +718,6 @@ except NameError:
         if reverse:
             L.reverse()
         return L
-
-try:
-    set([2,2])
-except NameError:
-    from sets import Set as set
 
 try:
     import collections
