@@ -25,14 +25,19 @@ import hop.constants
 from hop.constants import SITELABEL
 import hop.utilities
 from hop.utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
-     set, DefaultDict, fixedwidth_bins, iterable, asiterable
+     DefaultDict, fixedwidth_bins, iterable, asiterable
 import numpy  # need v >= 1.0
 import sys
 import os,os.path,errno
 import cPickle
 import warnings
 
-from gridDataFormats import OpenDX  # from <orbeckst@gmail.com> or MDAnalysis
+try:
+    set([])
+except NameError:
+    from sets import Set as set
+
+from gridDataFormats import OpenDX
 import networkx as NX               # https://networkx.lanl.gov/
 
 class Grid(hop.utilities.Saveable):
