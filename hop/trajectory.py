@@ -21,13 +21,14 @@ dynamics trajectory into a trajectory of site hops.
 You will also need the following modules to create the input for HoppingTraj:
 hop.sitemap, MDAnalysis
 """
+import numpy
+import MDAnalysis
 
 import hop.constants
 from hop.constants import SITELABEL
-import numpy
 import hop.utilities
 from hop.utilities import msg,set_verbosity
-import MDAnalysis
+from hop import SelectionError
 
 def totaltime(trajectory,targetunit='ps',sourceunit='AKMA'):
     """Returns the total trajectory time from the DCDReader object."""
@@ -792,7 +793,6 @@ def RMS_fit_trj(traj,ref,select='backbone',filename=None,prefix='rmsfit_',verbos
 
     import numpy
     import os.path
-    import MDAnalysis.rms_fitting, MDAnalysis.DCD
 
     set_verbosity(verbosity)
 
@@ -818,8 +818,7 @@ def RMS_fit_trj(traj,ref,select='backbone',filename=None,prefix='rmsfit_',verbos
                                           frames.delta,
                                           remarks='RMS fitted trajectory to ref')
     elif isinstance(frames,MDAnalysis.PDB.PDBReader):
-        writer = MDAnalysis.PDB.PDBWriter(frames.pdb,
-                                          filename,
+        writer = MDAnalysis.PDB.PDBWriter(filename, universe=traj,
                                           remarks='RMS fitted pdb frame to ref')
     else:
         raise TypeError('traj must either contain a DCD or a PDB.')
