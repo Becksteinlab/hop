@@ -65,11 +65,8 @@ with the :meth:`hop.sitemap.Density.map_sites` method if required.)
 Insert a bulk density::  
   QD70.site_insert_bulk(b)
   
-
-
-  
-
 """
+
 from __future__ import with_statement
 
 from subprocess import Popen
@@ -247,7 +244,7 @@ class ConvexHull(object):
         return numpy.fromiter((self.point_inside(point) for point in points), numpy.bool)
 
     def write_vertices_pdb(self, pdb="vertices.pdb"):
-        ppw = _PrimitivePDBWriter(pdb)
+        ppw = PrimitivePDBWriter(pdb)
         ppw.write(self.vertices)
         print "Wrote vertices to pdb file %(pdb)r." % vars()
 
@@ -283,90 +280,93 @@ class ConvexHull(object):
             shutil.rmtree(self.workdir, ignore_errors=True)
 
 
-
-class _PrimitivePDBWriter(object):
-    """PDB writer that implements a subset of the PDB 3.2 standard.
-    http://www.wwpdb.org/documentation/format32/v3.2.html
-    """
-    #          1         2         3         4         5         6         7         8
-    # 123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.
-    # ATOM__seria nameAres CressI   xxxxxxxxyyyyyyyyzzzzzzzzOCCUPAtempft          elCH
-    # ATOM  %5d   %-4s %-3s %4d %1s %8.3f   %8.3f   %8.3f   %6.2f %6.2f           %2s
-    #                 %1s  %1s                                                      %2d
-    #            =        =      ===                                    ==========
-    # ATOM  %5d %-4s%1s%-3s %1s%4d%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2d
-    # ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d
-
-    fmt = {'ATOM':   "ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d\n",
-           'REMARK': "REMARK     %s\n",
-           'TITLE':  "TITLE    %s\n",
-           }
-
-    def __init__(self,filename):
-        self.filename = filename
-        self.pdb = open(self.filename,'w')
-
-    def close(self):
-        self.pdb.close()
-
-    def write(self,coordinates,name="CA",resname="VRT",resid=1):
-        """Write coordinates as CA."""
-        
-        self.TITLE("points as CA")
-        for i, atom in enumerate(coordinates):
-            self.ATOM(serial=i+1, name=name.strip(), resName=resname.strip(), resSeq=resid,
-                      x=coordinates[i,0], y=coordinates[i,1], z=coordinates[i,2])
-        self.close()
-
-    def TITLE(self,*title):
-        """Write TITLE record.
-        http://www.wwpdb.org/documentation/format32/sect2.html
-        """        
-        line = " ".join(title)    # should do continuation automatically
-        self.pdb.write(self.fmt['TITLE'] % line)
-
-    def REMARK(self,*remark):
-        """Write generic REMARK record (without number).
-        http://www.wwpdb.org/documentation/format32/remarks1.html
-        http://www.wwpdb.org/documentation/format32/remarks2.html
+# should simply import from MDAnalysis
+try:
+    from MDAnalysis.coordinates.PDB import PrimitivePDBWriter
+except ImportError:
+    class PrimitivePDBWriter(object):
+        """PDB writer that implements a subset of the PDB 3.2 standard.
+        http://www.wwpdb.org/documentation/format32/v3.2.html
         """
-        line = " ".join(remark)
-        self.pdb.write(self.fmt['REMARK'] % line)
-        
-    def ATOM(self,serial=None,name=None,altLoc=None,resName=None,chainID=None,
-             resSeq=None,iCode=None,x=None,y=None,z=None,occupancy=1.0,tempFactor=0.0,
-             element=None,charge=0):
-        """Write ATOM record. 
-        http://www.wwpdb.org/documentation/format32/sect9.html
-        Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.
+        #          1         2         3         4         5         6         7         8
+        # 123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.
+        # ATOM__seria nameAres CressI   xxxxxxxxyyyyyyyyzzzzzzzzOCCUPAtempft          elCH
+        # ATOM  %5d   %-4s %-3s %4d %1s %8.3f   %8.3f   %8.3f   %6.2f %6.2f           %2s
+        #                 %1s  %1s                                                      %2d
+        #            =        =      ===                                    ==========
+        # ATOM  %5d %-4s%1s%-3s %1s%4d%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2d
+        # ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d
 
-        All inputs are cut to the maximum allowed length. For integer
-        numbers the highest-value digits are chopped (so that the
-        serial and reSeq wrap); for strings the trailing characters
-        are chopped.
+        fmt = {'ATOM':   "ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d\n",
+               'REMARK': "REMARK     %s\n",
+               'TITLE':  "TITLE    %s\n",
+               }
 
-        Note: Floats are not checked and can potentially screw up the format.
-        """
-        for arg in ('serial','name','resName','resSeq','x','y','z',
-                    'occupancy','tempFactor','charge'):
-            if locals()[arg] is None:
-                raise ValueError('parameter '+arg+' must be defined.')
-        serial = int(str(serial)[-5:])  # check for overflow here?
-        name = name[:4]
-        if len(name) < 4:
-            name = " "+name   # customary to start in column 14
-        altLoc = altLoc or " "
-        altLoc= altLoc[:1]
-        resName = resName[:3]
-        chainID = chainID or ""   # or should we provide a chainID such as 'A'?
-        chainId = chainID[:1]
-        resSeq = int(str(resSeq)[-4:]) # check for overflow here?
-        iCode = iCode or ""
-        iCode = iCode[:1]
-        element = element or name.strip()[0]  # could have a proper dict here...
-        element = element[:2]
-        self.pdb.write(self.fmt['ATOM'] % vars())        
-        
-    def __del__(self):
-        self.close()
+        def __init__(self,filename):
+            self.filename = filename
+            self.pdb = open(self.filename,'w')
+
+        def close(self):
+            self.pdb.close()
+
+        def write(self,coordinates,name="CA",resname="VRT",resid=1):
+            """Write coordinates as CA."""
+
+            self.TITLE("points as CA")
+            for i, atom in enumerate(coordinates):
+                self.ATOM(serial=i+1, name=name.strip(), resName=resname.strip(), resSeq=resid,
+                          x=coordinates[i,0], y=coordinates[i,1], z=coordinates[i,2])
+            self.close()
+
+        def TITLE(self,*title):
+            """Write TITLE record.
+            http://www.wwpdb.org/documentation/format32/sect2.html
+            """        
+            line = " ".join(title)    # should do continuation automatically
+            self.pdb.write(self.fmt['TITLE'] % line)
+
+        def REMARK(self,*remark):
+            """Write generic REMARK record (without number).
+            http://www.wwpdb.org/documentation/format32/remarks1.html
+            http://www.wwpdb.org/documentation/format32/remarks2.html
+            """
+            line = " ".join(remark)
+            self.pdb.write(self.fmt['REMARK'] % line)
+
+        def ATOM(self,serial=None,name=None,altLoc=None,resName=None,chainID=None,
+                 resSeq=None,iCode=None,x=None,y=None,z=None,occupancy=1.0,tempFactor=0.0,
+                 element=None,charge=0):
+            """Write ATOM record. 
+            http://www.wwpdb.org/documentation/format32/sect9.html
+            Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.
+
+            All inputs are cut to the maximum allowed length. For integer
+            numbers the highest-value digits are chopped (so that the
+            serial and reSeq wrap); for strings the trailing characters
+            are chopped.
+
+            Note: Floats are not checked and can potentially screw up the format.
+            """
+            for arg in ('serial','name','resName','resSeq','x','y','z',
+                        'occupancy','tempFactor','charge'):
+                if locals()[arg] is None:
+                    raise ValueError('parameter '+arg+' must be defined.')
+            serial = int(str(serial)[-5:])  # check for overflow here?
+            name = name[:4]
+            if len(name) < 4:
+                name = " "+name   # customary to start in column 14
+            altLoc = altLoc or " "
+            altLoc= altLoc[:1]
+            resName = resName[:3]
+            chainID = chainID or ""   # or should we provide a chainID such as 'A'?
+            chainId = chainID[:1]
+            resSeq = int(str(resSeq)[-4:]) # check for overflow here?
+            iCode = iCode or ""
+            iCode = iCode[:1]
+            element = element or name.strip()[0]  # could have a proper dict here...
+            element = element[:2]
+            self.pdb.write(self.fmt['ATOM'] % vars())        
+
+        def __del__(self):
+            self.close()
 

@@ -683,13 +683,6 @@ def averaged_autocorrelation(series,length=None,sliding_window=None,**kwargs):
 
 # Compatibility layer for running in python 2.3
 
-# set()
-# set not used at moment
-try:
-    set([2,2])
-except NameError:
-    from sets import Set as set
-
 
 # sorted()
 # --- (can also use numpy.sort function instead) ---

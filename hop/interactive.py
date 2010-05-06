@@ -361,7 +361,7 @@ def make_hoppingtraj(density,filename,**hopargs):
     
     u = MDAnalysis.Universe(density.metadata['psf'],density.metadata['dcd'])
     group = u.selectAtoms(density.metadata['atomselection'])
-    hops = hop.trajectory.HoppingTrajectory(u.dcd,group,density,**hopargs)
+    hops = hop.trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
     hops.write(filename)
     return hops
 
