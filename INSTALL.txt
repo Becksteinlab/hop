@@ -1,4 +1,4 @@
-.. $Id$
+.. Hop Installation instructions
 
 =========
  INSTALL
@@ -19,11 +19,11 @@ Quick instructions
 
 If you are familiar with ``easy_install`` from ``setuptools`` then try
 
-  easy_install Hop-0.1.tar,gz
+  easy_install Hop-0.2.1.tar,gz
 
 or 
 
-  cd Hop-0.1
+  cd Hop-0.2.1
   python setup.py install
 
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
@@ -42,26 +42,26 @@ manually if plotting is desired.
 System requirements
 -------------------
 
-Tested with python 2.4, 2.5 (2.3 might still work, too) on Linux and Mac OS X.
+Tested with python 2.5, 2.6 (2.3 will not work anymore) on Linux and Mac OS X.
 
 
 Required python modules
 -----------------------
 
 ::
-   MDAnalysis    >= 0.6 or UNSTABLE    http://mdanalysis.googlecode.com
+   MDAnalysis    >= 0.6.2              http://mdanalysis.googlecode.com
    numpy         >=1.0.3               http://numpy.scipy.org/
-   NetworkX      <0.99                 https://networkx.lanl.gov/
-   pygraphviz    0.36                  https://networkx.lanl.gov/pygraphviz/
+   NetworkX      <0.99?                https://networkx.lanl.gov/
+   pygraphviz    0.36?                 https://networkx.lanl.gov/pygraphviz/
 
 ``MDAnalysis`` requires additional modules; see the instructions at
-its home page. Get the latest snapshot::
+its home page. Get the latest snapshot from
 
-  http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.0-rc1.tar.gz
+  http://mdanalysis.googlecode.com/files/
 
 or get the development version via subversion::
 
-  svn checkout http://mdanalysis.googlecode.com/svn/branches/development-UNSTABLE-orbeckst MDAnalysis_UNSTABLE 
+  svn checkout http://mdanalysis.googlecode.com/svn/trunk MDAnalysis 
 
 Hop has not been updated yet to use the new NetworkX 1.0 API hence
 only earlier versions (e.g. networkx 0.36) are going to work reliably.
@@ -79,7 +79,7 @@ Optional modules
    rpy (and R)                         http://rpy.sourceforge.net/
    biopython                           http://www.biopython.org
 
-When these modules are missing the code will raise an ImportError when
+When these modules are missing the code will raise an :exc:`ImportError` when
 attempting to use them; their absence is not always handled gracefuly
 and it is suggested to install at least ``matplotlib`` (pylab). ``R``
 and ``rpy`` are only used for an experimental heatmap analysis and can
@@ -130,7 +130,7 @@ The Hop package can be installed with 'EasyInstall' which is part of
 If you have setuptools already installed you should be able to simply
 install with
 
-   easy_install Hop-0.1-rc1.tar.gz
+   easy_install Hop-0.2.1.tar.gz
 
 You can install ``setuptools`` by following the instructions at
 http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
@@ -154,7 +154,7 @@ which describes custom installations.
 Quick and dirty in my ``$HOME/packages`` directory::
 
  export PYTHONPATH=~/packages/lib/python 
- easy_install -d ~/packages Hop-0.1.tar.gz
+ easy_install -d ~/packages Hop-0.2.1.tar.gz
 
 
 

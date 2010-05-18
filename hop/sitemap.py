@@ -32,13 +32,15 @@ import os,os.path,errno
 import cPickle
 import warnings
 
+from gridDataFormats import OpenDX
+import networkx as NX               # https://networkx.lanl.gov/
+
+# set() for older versions of python (<2.4)
 try:
-    set([])
+    set([2,2])
 except NameError:
     from sets import Set as set
 
-from gridDataFormats import OpenDX
-import networkx as NX               # https://networkx.lanl.gov/
 
 class Grid(hop.utilities.Saveable):
     """Class to manage a multidimensional grid object.
@@ -1770,7 +1772,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     """
     try:
         universe.selectAtoms('all')
-        universe.dcd.ts
+        universe.trajectory.ts
     except AttributeError:
         raise TypeError("The universe must be a proper MDAnalysis.Universe instance.")
     u = universe
@@ -1790,7 +1792,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     # mild warning; typically this is run on RMS-fitted trajectories and
     # so the box information is rather meaningless
-    box,angles = u.dcd.ts.dimensions[:3], u.dcd.ts.dimensions[3:]    
+    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]    
     if tuple(angles) <> (90.,90.,90.):
         raise NotImplementedError("Only rectangular simulation cells are supported.")
 
@@ -1813,29 +1815,29 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     grid *= 0.0
     h = grid.copy()
 
-    for ts in u.dcd:
+    for ts in u.trajectory:
         msg(3,"Histograming %6d atoms in frame %5d/%d  [%5.1f%%]\r" % \
-            (len(coord), ts.frame,u.dcd.numframes,100.0*ts.frame/u.dcd.numframes))
+            (len(coord), ts.frame,u.trajectory.numframes,100.0*ts.frame/u.trajectory.numframes))
         coord = current_coordinates()
         if len(coord) == 0: continue
         h[:],edges[:] = numpy.histogramdd(coord, bins=bins, range=arange, normed=False)
         grid += h  # accumulate average histogram
-    numframes = u.dcd.numframes / u.dcd.skip
+    numframes = u.trajectory.numframes / u.trajectory.skip
     grid /= float(numframes)
 
     # pick from kwargs
     metadata = kwargs.pop('metadata',{})
     metadata['psf'] = u.filename
-    metadata['dcd'] = u.dcd.filename
+    metadata['dcd'] = u.trajectory.filename
     metadata['atomselection'] = atomselection
     metadata['numframes'] = numframes
-    metadata['totaltime'] = round(u.dcd.numframes * u.dcd.delta * u.dcd.skip_timestep \
+    metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
                                   * hop.constants.get_conversion_factor('time','AKMA','ps'), 3)
-    metadata['dt'] = u.dcd.delta * u.dcd.skip_timestep * \
+    metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
                      hop.constants.get_conversion_factor('time','AKMA','ps')
     metadata['time_unit'] = 'ps'
-    metadata['dcd_skip'] = u.dcd.skip_timestep  # frames
-    metadata['dcd_delta'] = u.dcd.delta         # in AKMA
+    metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
+    metadata['dcd_delta'] = u.trajectory.delta         # in AKMA
     if cutoff > 0 and soluteselection is not None:
         metadata['soluteselection'] = soluteselection
         metadata['cutoff'] = cutoff             # in Angstrom

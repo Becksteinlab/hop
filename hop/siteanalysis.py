@@ -931,7 +931,7 @@ class Collection(hop.utilities.Saveable):
             # calculate anew from raw data
             self.universe = selection.atoms[0].universe
             self.selection = selection
-            self.data_dcd = self.universe.dcd
+            self.data_dcd = self.universe.trajectory
             self.hop_dcd = hoptraj.hoptraj
             self.data_ts = self.data_dcd.ts   # pointers to the changing time step object
             self.hop_ts = self.hop_dcd.ts
@@ -1147,8 +1147,8 @@ class Collection(hop.utilities.Saveable):
 
     def _next_frame(self,start=None):
         if start is None:
-            data_ts = self.data_dcd._read_next_timestep()
-            hop_ts = self.hop_dcd._read_next_timestep()
+            data_ts = self.data_dcd.next()
+            hop_ts = self.hop_dcd.next()
         else: # or should this be coded with repeated next() to avoid random access bugs?
             data_ts = self.data_dcd[start]
             hop_ts = self.hop_dcd[start]

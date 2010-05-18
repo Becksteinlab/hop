@@ -65,12 +65,12 @@ class HoppingTrajectory(object):
 
     :Methods:
 
-    ## [start:stop]        object can be used as an iterator over the
-    ##                     hopping trajectory (disabled du to problems when doing random
-    ##                     access on large dcds; either a bug in DCDReader or python)
-    next_timestep()      advances time step in the hopping trajectory
-    map_dcd()            iterator that updates the ts and maps the trajectory
-                         coordinates to site labels
+    ## [start:stop]       object can be used as an iterator over the
+    ##                    hopping trajectory (disabled du to problems when doing random
+    ##                    access on large dcds; either a bug in DCDReader or python)
+    next()                advances time step in the hopping trajectory
+    map_dcd()             iterator that updates the ts and maps the trajectory
+                          coordinates to site labels
     _map_next_timestep()  map next coordinate trajectory step to hopping time step
     _read_next_timestep() read next timestep from hopping trajectory
 
@@ -118,9 +118,7 @@ class HoppingTrajectory(object):
         set_verbosity(self.verbosity)
 
         if not (trajectory is None or group is None or density is None):
-            self.traj  = trajectory        # MDAnalysis.Universe.dcd
-            if not isinstance(self.traj,MDAnalysis.DCD.DCDReader):
-                raise TypeError('trajectory must be a <MDAnalysis.DCD.DCDReader> instance.')
+            self.traj  = trajectory        # MDAnalysis.Universe.trajectory
             self.tgroup = group            # atom selection for trajectory
             if not isinstance(self.tgroup,MDAnalysis.AtomGroup.AtomGroup):
                 raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
@@ -131,7 +129,7 @@ class HoppingTrajectory(object):
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val            
             self.totaltime = totaltime(trajectory,'ps')
-            self.traj._reset_dcd_read()    # make sure to start from frame 0
+            self.traj.rewind()             # make sure to start from frame 0
             self._GD = density             # sitemap.Density object
             self.map   = self._GD.map                  # map of sites
             self.edges = self._GD.edges                # N+1 edges of bins 
@@ -153,11 +151,12 @@ class HoppingTrajectory(object):
             self.buffered_map = SITELABEL['outlier'] * \
                                 numpy.ones(tuple(numpy.asarray(self.map.shape) + 2))
 
+            # Here we commit to writing a DCD hopping trajectory:
             self.ts = MDAnalysis.DCD.Timestep(Natoms)   # empty time step for N atoms
             self.ts.frame = self.traj.ts.frame          # current frame
             numlabels = float(self.map.max() - self.map.min() + 2) # naive... but not crucial
             # fake unit cell for visualization
-            # Layout of unitcell is [A, alpha, B, beta, gamma, C] (sic!)
+            # Layout of DCD unitcell is [A, alpha, B, beta, gamma, C] (sic!)
             self.ts._unitcell = numpy.array((numlabels,90, numlabels,90, 90,1),dtype=numpy.float32)        
             # current hopping trajectory frame is in ts._pos[]
             # _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0
@@ -177,7 +176,7 @@ class HoppingTrajectory(object):
             u = MDAnalysis.Universe(hoppsf,hopdcd)
             group = u.selectAtoms('type *')   
             self.group = group      # group that refers to hopping trajectory
-            self.hoptraj = u.dcd    # DCD trajectory object
+            self.hoptraj = u.dcd    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
             self.numframes = self.hoptraj.numframes
             self.totaltime = totaltime(self.hoptraj,'ps')
@@ -186,10 +185,10 @@ class HoppingTrajectory(object):
 
     filename = hop.utilities.filename_function
 
-    def next_timestep(self):
+    def next(self):
         """Provides the next time step of a hopping trajectory.
 
-        ts = next_timestep()
+        ts = next()
 
         If a hopping trajectory file exists then this is
         used. Otherwise, the coordinate trajectory is mapped on the
@@ -205,11 +204,11 @@ class HoppingTrajectory(object):
         """Read next timestep from coordinate trajectory and set up the
         hopping trajectory time step        
         """
-        return self._coord2hop(self.traj._read_next_timestep())        
+        return self._coord2hop(self.traj.next())        
 
     def _read_next_timestep(self):
         """Read next time step from hopping trajectory"""
-        return self.hoptraj._read_next_timestep()
+        return self.hoptraj.next()
 
     def write(self,filename,start=None,step=None,delta=None,load=True):
         """Write hopping trajectory as standard dcd file, together with a minimal psf.
@@ -219,7 +218,7 @@ class HoppingTrajectory(object):
         Arguments:
 
         load = True     Immediately loads the trajectory so that further
-                        calls to next_timestep() will use the computed
+                        calls to next() will use the computed
                         trajectory and don't use expensive mapping.
         
         Ignore the other options and leave them at the
@@ -463,7 +462,7 @@ class TAPtrajectory(object):
 
     ## [start:stop]         object can be used as an iterator over the
     ##                      hopping trajectory (disabled due to dcdreader bug)
-    next_timestep()      advances time step in the hopping trajectory
+    next()      advances time step in the hopping trajectory
     map_dcd()            iterator that updates the ts and maps the trajectory
                          coordinates to site labels
     _map_next_timestep()  map next coordinate trajectory step to hopping time step
@@ -535,9 +534,7 @@ class TAPtrajectory(object):
         set_verbosity(self.verbosity)
 
         if not (trajectory is None or group is None):
-            self.traj  = trajectory        # MDAnalysis.Universe.dcd
-            if not isinstance(self.traj,MDAnalysis.DCD.DCDReader):
-                raise TypeError('trajectory must be a <MDAnalysis.DCD.DCDReader> instance.')
+            self.traj  = trajectory                      # MDAnalysis.Universe.trajectory
             self.tgroup = group                          # atom selection for trajectory
             self.tgroup_indices = self.tgroup.indices()  # cache indices
             if not isinstance(self.tgroup,MDAnalysis.AtomGroup.AtomGroup):
@@ -550,9 +547,9 @@ class TAPtrajectory(object):
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val 
             self.totaltime = totaltime(trajectory,'ps')
-            self.traj._reset_dcd_read()    # make sure to start from frame 0
+            self.traj.rewind()             # make sure to start from frame 0
             self.ts = self.traj.ts         # output will look like input (no copy, see _coord2TAP!)
-            self.TAPtraj = None                     # no TAP trajectory available
+            self.TAPtraj = None            # no TAP trajectory available
             self.TAPradius = TAPradius
             self.TAPsteps = TAPsteps
             # store last TAPsteps in __lastframes
@@ -579,21 +576,21 @@ class TAPtrajectory(object):
             u = MDAnalysis.Universe(psf,dcd)
             group = u.selectAtoms('type *')   # TODO: why do I need this?
             self.group = group      # group that refers to hopping trajectory
-            self.TAPtraj = u.dcd    # DCD trajectory object
+            self.TAPtraj = u.trajectory    # DCD trajectory object
             self.ts = self.TAPtraj.ts
             self.numframes = self.TAPtraj.numframes
             self.totaltime = totaltime(self.TAPtraj,'ps')
             # DCD object that can be slotted into another universe
-            self.dcd = u.dcd
+            self.dcd = u.trajectory
         else:
             raise ValueError('Not sufficient data to create a TAP trajectory.')
 
     filename = hop.utilities.filename_function
 
-    def next_timestep(self):
+    def next(self):
         """Provides the next time step of a TAP trajectory.
 
-        ts = next_timestep()
+        ts = next()
 
         If a TAP trajectory file exists then this is used. Otherwise,
         the coordinate trajectory is mapped on the fly (which is
@@ -605,21 +602,21 @@ class TAPtrajectory(object):
             nextTS = self._map_next_timestep
         return nextTS()
 
-    def reset_timestep(self):
+    def rewind(self):
         if self.TAPtraj:
-            self.TAPtraj._reset_dcd_read()
+            self.TAPtraj.rewind()
         else:
-            self.traj._reset_dcd_read()
+            self.traj.rewind()
 
     def _map_next_timestep(self):
         """Read next timestep from coordinate trajectory and set up the
         TAP trajectory time step        
         """
-        return self._coord2TAP(self.traj._read_next_timestep())        
+        return self._coord2TAP(self.traj.next())        
 
     def _read_next_timestep(self):
         """Read next time step from a TAP trajectory on disk"""
-        return self.TAPtraj._read_next_timestep()
+        return self.TAPtraj.next()
 
     def write(self,filename,start=None,step=None,delta=None,load=True):
         """Write hopping trajectory as standard dcd file.
@@ -629,7 +626,7 @@ class TAPtrajectory(object):
         :Arguments:
 
         load = True     Immediately loads the trajectory so that further
-                        calls to next_timestep() will use the computed
+                        calls to next() will use the computed
                         trajectory and don't use expensive mapping.
         
         Ignore the other options and leave them at the defaults. Currently,
@@ -1061,14 +1058,16 @@ class ThinDCDReader(MDAnalysis.DCD.DCDReader):
         # use the classes/methods from the feeder class:
         self.ts = D.ts
         self.__iter__ = D.__iter__        
-        self._read_next_timestep = D.next_timestep
-        self._reset_dcd_read = D.reset_timestep
+        self.next = D.next  # feeder needs next()
+        self.rewind = D.rewind
     def __getitem__(self,frame):
         """Slow sequential 'read forward' implementation."""
         for ts in self:
             if ts.frame == frame+1:  # frames are 1-based
                 break
         return ts
+    def rewind(self):
+        self[0]
     def timeseries(self,*args,**kwargs):
         raise NotImplementedError
     def correl(self,*args,**kwargs):
