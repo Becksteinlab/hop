@@ -28,8 +28,7 @@ Installation
 See INSTALL.txt for details.
 
 The package makes heavy use of MDAnalysis
-(http://mdanalysis.googlecode.com/). Currently it requires some
-experimental features that are only found in the newest pre-release.
+(http://mdanalysis.googlecode.com/).
 
 
 Documentation

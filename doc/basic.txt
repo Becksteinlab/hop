@@ -19,6 +19,9 @@ For analysis, one needs
 
 Example SGE python scripts are in doc/examples.
 
+(Note that the input trajectory formats are really only determined by
+MDAnalysis; with the latest version one can also read Gromacs XTC
+trajectories.)
 
 
 Example session
