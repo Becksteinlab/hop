@@ -30,15 +30,12 @@ hops with rate constants and fluxes derived from the MD simulations.\
       install_requires=['numpy>=1.0.3',
                         'scipy',
                         'networkx>=1.0',       # ** XXX testing 
-                        'pygraphviz',     # **
-                        'MDAnalysis>0.6.1',
+                        'pygraphviz',          # **
+                        'MDAnalysis>=0.6.2',
                         ],
       dependency_links = [
         "http://code.google.com/p/mdanalysis/downloads/list",
         ],
-      # also requires:  'MDAnalysis>0.6.1',
-      # http://mdanalysis.googlecode.com/files/MDAnalysis-0.6.2.tar.gz
-      # but this does not work automagically yet. See INSTALL
       extras_require={
           'plotting': ['matplotlib>=0.91.3'], # probably already installed
           'heatmap': ['rpy'],                 # optional,used for heatmaps

@@ -23,6 +23,7 @@ hop.sitemap, MDAnalysis
 """
 import numpy
 import MDAnalysis
+import MDAnalysis.coordinates
 
 import hop.constants
 from hop.constants import SITELABEL
@@ -1041,7 +1042,7 @@ def fasta2select(fastafilename,is_aligned=False,
     target_selection =  " or ".join(sel[1])
     return {'reference':ref_selection, 'target':target_selection}
 
-class ThinDCDReader(MDAnalysis.DCD.DCDReader):
+class ThinDCDReader(MDAnalysis.coordinates.DCD.DCDReader):
     """DCD-like object that supports a subsection of the DCDReader
     interface such as iteration over frames and most attributes. The
     important part is that the __iter__() method is overriden to
