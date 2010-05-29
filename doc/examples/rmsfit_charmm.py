@@ -47,6 +47,9 @@ charmm = os.path.join(os.environ['CHARMM'],'bin','charmm')
 charmm_args = "HEADER=%(HEADER)s PSF=%(PSF)s DCD=%(DCD)s REF_PDB=%(REF_PDB)s "\
     "DCD_RMS=%(DCD_RMS)s "\
     "RECENTER=1" % job.filenames
+#
+# XXX --- SHOULDN"T WE ALSO 'ORIENT=1' ???!?!?!?
+#
 inp = os.path.join(os.environ['CHARMM'],'analysis','trajectory','rmsfit.inp')
 log = job.filenames['CHARMM_LOG']   # put name in locals()
 cmd = "%(charmm)s %(charmm_args)s  <%(inp)s | tee %(log)s" % locals()
