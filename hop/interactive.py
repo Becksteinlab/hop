@@ -77,7 +77,7 @@ inserting the bulk site into the site map for the first density.
             )
 
 Using VMD's VolMap can be potentially be faster --- try it if the
-default seems to slow to you:
+default seems too slow to you:
 
 >>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
             atomselection='name OH2 and not within 3.5 of (protein and name not hydrogen)',
