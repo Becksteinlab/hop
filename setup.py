@@ -29,8 +29,8 @@ hops with rate constants and fluxes derived from the MD simulations.\
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
-                        'networkx>=1.0',       # ** XXX testing 
-                        'pygraphviz',          # **
+                        'networkx<0.99',       # ** incomp. with >1.0
+                        'pygraphviz<0.99',     # **
                         'MDAnalysis>=0.6.2',
                         ],
       dependency_links = [
@@ -46,5 +46,8 @@ hops with rate constants and fluxes derived from the MD simulations.\
 
 #**) The code has not been updated yet to use the new NetworkX 1.0 API
 #    hence only earlier versions (e.g. 0.36) are going to work reliably.
+#    You might also have to patch the version of networkx, see doc
+#    (those patches have been incorporated into later versions of 
+#    networkx .. 0.37?)
 
       

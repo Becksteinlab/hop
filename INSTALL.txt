@@ -64,7 +64,10 @@ or get the development version via subversion::
   svn checkout http://mdanalysis.googlecode.com/svn/trunk MDAnalysis 
 
 Hop has not been updated yet to use the new NetworkX 1.0 API hence
-only earlier versions (e.g. networkx 0.36) are going to work reliably.
+only earlier versions (e.g. networkx 0.37) are going to work reliably.
+
+See also :doc:`doc/README_networkx.txt` for details.
+
 
 ``pygraphviz`` also requires ``graphviz``; see its own installation
 instructions.
