@@ -498,8 +498,8 @@ class TAPtrajectory(object):
           
           u = Universe(psf,dcd)
           oxy = u.selectAtoms('name OH2')
-          TAP = TAPtrajectory(u.dcd,oxy)
-          u.dcd = TAP.dcd    # <--- replace orig dcd with TAP !!
+          TAP = TAPtrajectory(u.trajectory,oxy)
+          u.trajectory = TAP.dcd    # <--- replace orig dcd with TAP !!
           dens = hop.sitemap.density_from_Universe(u,atomselection='name OH2')
 
         NOTE: In the current implementation residues are often ripped apart
@@ -1042,6 +1042,7 @@ def fasta2select(fastafilename,is_aligned=False,
     target_selection =  " or ".join(sel[1])
     return {'reference':ref_selection, 'target':target_selection}
 
+# move to MDAnalysis & make it work with 0.6.2
 class ThinDCDReader(MDAnalysis.coordinates.DCD.DCDReader):
     """DCD-like object that supports a subsection of the DCDReader
     interface such as iteration over frames and most attributes. The
@@ -1067,8 +1068,6 @@ class ThinDCDReader(MDAnalysis.coordinates.DCD.DCDReader):
             if ts.frame == frame+1:  # frames are 1-based
                 break
         return ts
-    def rewind(self):
-        self[0]
     def timeseries(self,*args,**kwargs):
         raise NotImplementedError
     def correl(self,*args,**kwargs):
