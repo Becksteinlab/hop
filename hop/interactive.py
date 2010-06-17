@@ -112,7 +112,7 @@ proceeding. You will
    1) remap this density to be defined on the same grid as the reference
       density (for this to work, this density must have been generated from
       a trajectory that has been RMS-fitted to the same reference structure
-      as; see hop.trajectory.RMS_fit_trj() and
+      as; see hop.trajectory.rms_fit_trj() and
       hop.trajectory.fasta2select())
 
       >>> ref_density = hop.sitemap.Density(filename='my_reference_density')

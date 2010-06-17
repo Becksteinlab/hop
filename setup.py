@@ -9,7 +9,7 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 setup(name="Hop",
-      version="0.2.1",
+      version="0.2.2",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
@@ -31,7 +31,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx<0.99',       # ** incomp. with >1.0
                         'pygraphviz<0.99',     # **
-                        'MDAnalysis>=0.6.2',
+                        'MDAnalysis>=0.6.3',
                         ],
       dependency_links = [
         "http://code.google.com/p/mdanalysis/downloads/list",
