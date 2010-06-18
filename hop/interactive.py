@@ -47,7 +47,7 @@ If you have VMD with the VolMap plugin installed *and* your trajectory
 fits into your computer's RAM you can also choose the VMD backend to
 compute the density (which can be marginally faster):
 
->>> density = make_density(psf,dcd,filename,delta=1.0,backend=VMD)
+>>> density = make_density(psf,dcd,filename,delta=1.0,backend='VMD')
 
 
 The density is also saved as a pickled python object so that one can
@@ -171,17 +171,20 @@ strictly necessary for the hopgraph itself).
 Further analysis uses tn.hopgraph:
 
 >>> h = tn.hopgraph           # main result is the 'hopgraph'
+>>> h.save('hopgraph')        # save the hopping graph (necessary for cg part)
 >>> h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
 >>> h.tabulate_k()            # show all calculated rate constants (filtered graph)
 >>> h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
+>>> h.plot_fits()
 >>> h.export('water')         # write dot file to visualize (filtered) graph
->>> h.plot_site_occupancy('siteoccupancy')  # plot site occupancy from graph
->>> h.plot_residency_times('residencytimes')# residency times --- is this working ??
+>>> h.plot_site_occupancy('siteoccupancy')  # plot site occupancy from graph ---is NOT working
+>>> h.plot_residency_times('residencytimes')# residency times --- is NOT working
 
 To compare the water network based on density with another hop graph
 (based on ref_density), construct the CombinedGraph:
 
->>> h_ref = hop.graph.HoppingGraph(filename=<filename>)
+>>> h_ref = hop.graph.HoppingGraph(filename=<filename>) --- basically repeat steps from 
+###                                                     --- ref_density only with differ labels
 >>> cg = hop.graph.CombinedGraph(g0=h,g1=h_ref)
 >>> cg.plot(0,'cg_h',linewidths=(0.01,))
 >>> cg.plot(1,'cg_h_ref',linewidths=(0.01,))

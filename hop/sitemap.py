@@ -1102,19 +1102,22 @@ class Density(Grid):
 
         msg(5,"equivalence sites: finding mapping and analysing equivalence graph\n")
         m = find_common_sites(densities[SELF],densities[REF]) # mapping site_i(0) <--> site_k(1)
-        edges = numpy.zeros((len(m),2,2),dtype=numpy.int16)   # (0,site_i(0)) <---> (1,site_k(1))
+	edges = numpy.zeros((len(m),2,2),dtype=numpy.int16)   # (0,site_i(0)) <---> (1,site_k(1))
         edges[...,0] = [SELF,REF]       # identifier for density 0 and density 1
         edges[...,1] = m                # fill second field with corresponding node/site label
-        ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
+	ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
         g = NX.Graph()
         g.add_edges_from(ebunch)
         commonsites = NX.connected_components(g)  # each item: collection of equivalent sites
+
+	# liz overlap
+	overlap = find_overlap_coeff(densities[SELF],densities[REF])
 
         if update_reference:
             densities_to_update = {SELF:densities[SELF],REF:densities[REF]}
         else:
             densities_to_update = {SELF:densities[SELF]}
-
+	
         # Book keeping: site_properties is the central and messy data
         # structure; see _annotate_sites()
         #
@@ -1172,11 +1175,13 @@ class Density(Grid):
                 sitelabels = c[c[:,0] == idensity][:,1] # [23,2,...] for idensity == SELF==0
                 density.site_properties.equivalence_site[sitelabels] = label
                             
-        # statistics
+        # statistics and liz's stupid hack for probability overlap of equivalent sites
         if msg(3):
             msg(3,"equivalence sites: statistics for %d equivalent sites\n" \
                     % len(commonsites))
-            msg(3,"[%5s]  %5s  %5s %5s  |   %s\n" % ('label','total','self','ref','sites'))
+	    msg(3,"self density sites are now labelled according to the remapped density: thus density.sites[n] will"
+	          " NOT be equal to 'n' in 'sites' (0,n)")
+            msg(3,"[%5s]  %5s  %5s %5s  |   %s   | %s | %s\n" % ('label','total','self','ref','sites','overlap coeff','total_overlap'))
             for isite,commonsite in enumerate(commonsites):
                 label = SITELABEL['bulk'] + isite + 1    # labels start after 'bulk'
                 labelstr = fmt % label
@@ -1185,8 +1190,11 @@ class Density(Grid):
                 for idensity in [SELF,REF]:
                     sitelabels = c[c[:,0] == idensity][:,1]
                     nsites[idensity] = len(sitelabels)
-                msg(3,"[%5s]  %5d  %5d %5d  |   %s\n" % 
-                    (labelstr,len(commonsite),nsites[SELF],nsites[REF],str(sorted(commonsite))))
+		# liz getting the probability overlap
+		oc = overlap[isite]
+		print oc
+                msg(3,"[%5s]  %5d  %5d %5d  |   %s   | %s | %s\n" % 
+                    (labelstr,len(commonsite),nsites[SELF],nsites[REF],str(sorted(commonsite)),str(oc),str(sum(overlap))))
         if msg(7):
             msg(7,"Plotting the equivalent sites graph; blue in this density, red in reference density\n")
             import pylab
@@ -1702,6 +1710,50 @@ def find_common_sites(a,b,use_equivalencesites=None):
     if not numpy.any(m):
         m = numpy.array([[],[]])                   # return empty mapping
     return m
+
+def find_overlap_coeff(a,b):
+    """Find sites that overlap in space in Density a and b.
+    
+    m = find_overlap_coeff(a,b)
+	
+    :Arguments:
+    a        Density instance
+    b        Density instance
+
+    :Returns:
+    array sites in a and b that overlap
+       and array of probability of overlap for overlapped sites
+    m[:,0]     site labels in a
+    m[:,1]     site labels in b
+    oc         amount of overlap
+    """
+    #### liz hack to beautiful code
+    common = (a.map > SITELABEL['bulk']) & (b.map > SITELABEL['bulk'])
+    m = numpy.array([a.map[common],b.map[common]]) # multiple entries == overlap vol
+    m = numpy.unique(map(tuple,m.transpose()))     # remove multiple entries
+    oc = numpy.zeros(len(m[:,0]))
+    for isite, i in enumerate(m):
+    	coeff = 0
+	#a_cellvol = a.delta[0][0]*a.delta[1][1]*a.delta[2][2]  # calc vol of grid cell for a
+	#b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
+	sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
+	sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
+	#f_a = hop.constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
+	#f_b = hop.constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
+	#a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
+	#b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
+	#print a_cellvol, b_cellvol
+    	for j in a.sites[i[0]]:
+		for k in b.sites[i[1]]:
+			if j == k:
+				#print a.grid[j], b.grid[k],j,i[0],i[1], a_bulk_density, b_bulk_density
+				if a.grid[j] < b.grid[k]:
+					# density of grid cell point normalized to bulk density in a single grid cell
+					coeff = coeff + (a.grid[j]/sum_a) #/a_bulk_density)
+				else:
+					coeff = coeff + (b.grid[k]/sum_b) #b_bulk_density)
+    	oc[isite] = coeff 
+    return oc 
 
 def density_from_dcd(psf,dcd,**kwargs):
     """Create a density grid from a trajectory.
