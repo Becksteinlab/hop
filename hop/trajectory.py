@@ -27,12 +27,15 @@ import MDAnalysis.coordinates
 
 # used to be here, migrated to MDAnalysis
 import warnings
-from MDAnalysis.analysis.fitting import rms_fit_trj, fasta2select
-def RMS_fit_trj(*args, **kwargs):
-    warnings.warn("RMS_fit_trj is deprecated and will be removed. Use rms_fit_trj",
+try:
+    from MDAnalysis.analysis.fitting import rms_fit_trj, fasta2select
+    def RMS_fit_trj(*args, **kwargs):
+    	warnings.warn("RMS_fit_trj is deprecated and will be removed. Use rms_fit_trj",
                   category=DeprecationWarning)
-    return rms_fit_trj(*args, **kwargs)
-RMS_fit_trj.__doc__ = rms_fit_trj.__doc__
+    	return rms_fit_trj(*args, **kwargs)
+    RMS_fit_trj.__doc__ = rms_fit_trj.__doc__
+except ImportError:
+    pass
 
 import hop.constants
 from hop.constants import SITELABEL
