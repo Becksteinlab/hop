@@ -165,7 +165,7 @@ class HoppingTrajectory(object):
                                 numpy.ones(tuple(numpy.asarray(self.map.shape) + 2))
 
             # Here we commit to writing a DCD hopping trajectory:
-            self.ts = MDAnalysis.DCD.Timestep(Natoms)   # empty time step for N atoms
+            self.ts = MDAnalysis.coordinates.DCD.Timestep(Natoms)   # empty time step for N atoms
             self.ts.frame = self.traj.ts.frame          # current frame
             numlabels = float(self.map.max() - self.map.min() + 2) # naive... but not crucial
             # fake unit cell for visualization
@@ -259,7 +259,7 @@ class HoppingTrajectory(object):
         if delta is None:
             delta = self.traj.delta          # length of ts (AKMA units)
             
-        dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.numatoms,
+        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='Hopping trajectory: x=site y=orbit_site z=0')
         for ts in self.map_dcd():
