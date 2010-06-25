@@ -1,0 +1,9 @@
+============================
+ Update to networkx 1.x API
+============================
+
+0.37 --> 0.99
+  http://networkx.lanl.gov/reference/api_0.99.html
+
+0.99 --> 1.x
+  http://networkx.lanl.gov/reference/api_1.0.html

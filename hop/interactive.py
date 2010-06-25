@@ -176,7 +176,7 @@ Further analysis uses tn.hopgraph:
 >>> h = tn.hopgraph           # main result is the 'hopgraph'
 >>> h.save('hopgraph')        # save the hopping graph (necessary for cg part)
 >>> h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
->>> h.tabulate_k()            # show all calculated rate constants (filtered graph)
+>>> h.show_rates()            # show all calculated rate constants (filtered graph)
 >>> h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
 >>> h.plot_fits()
 >>> h.export('water')         # write dot file to visualize (filtered) graph

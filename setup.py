@@ -1,6 +1,6 @@
 # $Id$
 # setuptools installation of Hop
-# Copyright (c) 2007-2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2007-2010 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Public License 3 (or higher, your choice)
 # See the file COPYING for details.
 
@@ -9,7 +9,7 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 setup(name="Hop",
-      version="0.2.2",
+      version="0.3.0",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
@@ -23,15 +23,15 @@ hops with rate constants and fluxes derived from the MD simulations.\
       author="Oliver Beckstein",
       author_email="orbeckst@gmail.com",
       license="GPLv3",
-      url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop", # not set up yet
+      url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop",
       keywords="science 'molecular dynamics' analysis hydration water",
       packages=find_packages(exclude=['tests','extras','doc/examples']),
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
-                        'networkx<0.99',       # ** incomp. with >1.0
-                        'pygraphviz<0.99',     # **
-                        'MDAnalysis>0.6.2',
+                        'networkx>1.0',
+                        'pygraphviz',        # not sure what the latest version is
+                        'MDAnalysis>0.6.2',  # get at least 0.6.3-dev from svn
                         ],
       dependency_links = [
         "http://code.google.com/p/mdanalysis/downloads/list",
@@ -39,15 +39,6 @@ hops with rate constants and fluxes derived from the MD simulations.\
       extras_require={
           'plotting': ['matplotlib>=0.91.3'], # probably already installed
           'heatmap': ['rpy'],                 # optional,used for heatmaps
-          'alignment': ['biopython'],         # optional,used for trajectory.fasta2select
           },
       zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script
 )
-
-#**) The code has not been updated yet to use the new NetworkX 1.0 API
-#    hence only earlier versions (e.g. 0.36) are going to work reliably.
-#    You might also have to patch the version of networkx, see doc
-#    (those patches have been incorporated into later versions of 
-#    networkx .. 0.37?)
-
-      
