@@ -243,11 +243,13 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
                  fraction of the density of bulk TIP3P water
     """
     if backend == 'MDAnalysis':
-        density = hop.sitemap.density_from_dcd(psf,dcd,delta=delta,atomselection=atomselection,
-                                               verbosity=3,**kwargs)
+        density = hop.sitemap.density_from_trajectory(
+            psf,dcd,delta=delta,atomselection=atomselection,
+            verbosity=3,**kwargs)
     elif backend == 'VMD':
-        density = hop.sitemap.density_from_volmap(psf,dcd,delta=delta,atomselection=atomselection,
-                                                  verbosity=3,**kwargs)
+        density = hop.sitemap.density_from_volmap(
+            psf,dcd,delta=delta,atomselection=atomselection,
+            verbosity=3,**kwargs)
     else:
         raise ValueError("Unknown backend '%s'." % backend)
     density.convert_density('TIP3P')
