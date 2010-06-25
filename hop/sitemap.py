@@ -1755,72 +1755,108 @@ def find_overlap_coeff(a,b):
     	oc[isite] = coeff 
     return oc 
 
-def density_from_dcd(psf,dcd,**kwargs):
+def density_from_dcd(*args,**kwargs):
+    import warnings
+    warnings.warn("density_from_dcd() is deprecated and will be removed. "
+                  "Use density_from_trajectory().", category=DeprecationWarning)
+    return density_from_trajectory(*args,**kwargs)
+
+def density_from_trajectory(*args,**kwargs):
     """Create a density grid from a trajectory.
 
-    dens = density_from_dcd(psf, dcd, delta=1.0, atomselection='name OH2', ...)
+       density_from_trajectory(PSF, DCD, delta=1.0, atomselection='name OH2', ...) --> density
 
-    psf     Charmm psf topology file
-    dcd     Charmm trajectory
-    atomselection
+    or
+
+       density_from_trajectory(PDB, XTC, delta=1.0, atomselection='name OH2', ...) --> density
+
+    :Arguments:
+      psf/pdb/gro     
+            topology file 
+      dcd/xtc/trr/pdb
+            trajectory; if reading a single PDB file it is sufficient to just provide it
+            once as a single argument
+
+    :Keywords:
+      atomselection
             selection string (MDAnalysis syntax) for the species to be analyzed
-    delta   approximate bin size for the density grid (same in x,y,z)
+            ["name OH2"]
+      delta
+            approximate bin size for the density grid in Angstroem (same in x,y,z)
             (It is slightly adjusted when the box length is not an integer multiple
-            of delta.)
-    metadata
+            of delta.) [1.0]
+      metadata
             dictionary of additional data to be saved with the object
-    padding increase histogram dimensions by padding (on top of initial box size)
-    soluteselection
-    cutoff  With cutoff, select '<atomsel> NOT WITHIN <cutoff> OF <solutesel>'
-            (Special routines that are faster than the standard AROUND selection)
-    verbosity=int  level of chattiness; 0 is silent, 3 is verbose
+      padding 
+            increase histogram dimensions by padding (on top of initial box size)
+            in Angstroem [2.0]
+      soluteselection
+            MDAnalysis selection for the solute, e.g. "protein" [``None``]
+      cutoff  
+            With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
+            (Special routines that are faster than the standard AROUND selection) [0]
+      verbosity: int  
+            level of chattiness; 0 is silent, 3 is verbose [3]
     
-    Returns a Density object.
+    :Returns: :class:`hop.sitemap.Density`
 
-    See also docs for density_from_Universe() (defaults for kwargs are defined there).
+    :TODO:
+      * Should be able to also set skip and start/stop for data collection.
 
-    TODO:
-    * Should be able to also set skip and start/stop for data collection.
+    .. Note::
+        * In order to calculate the bulk density, use
 
-    Note:
-    * In order to calculate the bulk density, use
-        atomselection='name OH2',soluteselection='protein and not name H*',cutoff=3.5
-      This will select water oxygens not within 3.5 A of the protein heavy atoms.
-      Alternatively, use the VMD-based  density_from_volmap() function.
-    * The histogramming grid is determined by the initial frames min and max.
-    * metadata will be populated with psf, dcd, and a few other items.
-      This allows more compact downstream processing.
+              atomselection='name OH2',soluteselection='protein and not name H*',cutoff=3.5
+  
+          This will select water oxygens not within 3.5 A of the protein heavy atoms.
+          Alternatively, use the VMD-based  :func:`density_from_volmap` function.
+        * The histogramming grid is determined by the initial frames min and max.
+        * metadata will be populated with psf, dcd, and a few other items.
+          This allows more compact downstream processing.
+
+    .. SeeAlso:: docs for :func:`density_from_Universe` (defaults for kwargs are defined there).
     """
     import MDAnalysis
-    return density_from_Universe(MDAnalysis.Universe(psf,dcd),**kwargs)
+    return density_from_Universe(MDAnalysis.Universe(*args),**kwargs)
 
 def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
                           metadata=None,padding=2.0,cutoff=0,soluteselection=None,verbosity=3,
                           use_kdtree=True, **kwargs):
     """Create a density grid from a MDAnalysis.Universe object.
 
-    dens = density_from_dcd(universe, delta=1.0, atomselection='name OH2', ...)
+      density_from_dcd(universe, delta=1.0, atomselection='name OH2', ...) --> density
+   
+    :Arguments:
+      universe
+            :class:`MDAnalysis.Universe` object with a trajectory   
 
-    universe
-            MDAnalysis.Universe object with a dcd defined   
-    atomselection
+    :Keywords:
+      atomselection
             selection string (MDAnalysis syntax) for the species to be analyzed
-    delta   approximate bin size for the density grid (same in x,y,z)
+            ["name OH2"]
+      delta
+            approximate bin size for the density grid in Angstroem (same in x,y,z)
             (It is slightly adjusted when the box length is not an integer multiple
-            of delta.)
-    padding increase histogram dimensions by padding (on top of initial box size)
-    soluteselection
-    cutoff  With cutoff, select '<atomsel> NOT WITHIN <cutoff> OF <solutesel>'
-            (Special routines that are faster than the standard AROUND selection)
-    verbosity=int  level of chattiness; 0 is silent, 3 is verbose
-
-    **kwargs  metadata, parameters are modified and passed on to Density()
-    metadata    dict of additional data to be saved with the object
-    parameters  dict with some special parameters for Density() (see doc)          
+            of delta.) [1.0]
+      metadata
+            dictionary of additional data to be saved with the object
+      padding 
+            increase histogram dimensions by padding (on top of initial box size)
+            in Angstroem [2.0]
+      soluteselection
+            MDAnalysis selection for the solute, e.g. "protein" [``None``]
+      cutoff  
+            With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
+            (Special routines that are faster than the standard AROUND selection) [0]
+      verbosity: int  
+            level of chattiness; 0 is silent, 3 is verbose [3]
+      parameters  
+            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)          
+      kwargs  
+            metadata, parameters are modified and passed on to :class:`~hop.sitemap.Density`
     
-    Returns a Density object.
+    :Returns: :class:`hop.sitemap.Density`
 
-    See docs for density_from_dcd().
     """
     try:
         universe.selectAtoms('all')
@@ -1908,24 +1944,28 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
 
 def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, use_kdtree=True):
-    """Generate optimized selection for '<sel1> not within cutoff of <sel2>
+    """Generate optimized selection for '*sel1* not within *cutoff* of *sel2*'
 
-    notwithin_coordinates = notwithin_coordinates_factory(universe,
-                          'name OH2','protein and not name H*',3.5)
-    ...
-    coord = notwithin_coordinates()        # changes with time step
-    coord = notwithin_coordinates(cutoff2) # can use different cut off
+    Example usage::
+      notwithin_coordinates = notwithin_coordinates_factory(universe, 'name OH2','protein and not name H*',3.5)
+      ...
+      coord = notwithin_coordinates()        # changes with time step
+      coord = notwithin_coordinates(cutoff2) # can use different cut off
 
-    not_within      True: selection behaves as 'not within' (As described above)
-                    False: selection is a <sel1> WITHIN <cutoff> OF <sel2>'
-    use_kdtree      True: use fast kd-tree based selections (requires new MDAnalysis >= 0.6)
-                    False: use distance matrix approach
-    Note:
-    * Periodic boundary conditions are NOT taken into account: the naive
-      minimum image convention employed in the distance check is currently
-      not being applied to remap the coordinates themselves, and hence it
-      would lead to counts in the wrong region.
-    * The selections are static and do not change with time steps.
+    :Keywords:
+      not_within
+         True: selection behaves as 'not within' (As described above)
+         False: selection is a <sel1> WITHIN <cutoff> OF <sel2>'
+      use_kdtree
+         True: use fast kd-tree based selections (requires new MDAnalysis >= 0.6)
+         False: use distance matrix approach
+
+    .. Note::
+        * Periodic boundary conditions are NOT taken into account: the naive
+          minimum image convention employed in the distance check is currently
+          not being applied to remap the coordinates themselves, and hence it
+          would lead to counts in the wrong region.
+        * The selections are static and do not change with time steps.
     """
     # Benchmark of FABP system (solvent 3400 OH2, protein 2100 atoms) on G4 powerbook, 500 frames
     #                    cpu/s    relative   speedup       use_kdtree

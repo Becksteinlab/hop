@@ -20,13 +20,16 @@ Interactive or high-level use of the hop trajectory package
 ===========================================================
 
 A typical session starts with a trajectory (which should have been
-RMS-fitted to a reference structure). You should have a psf topology
-file and a dcd trajectory file.
+RMS-fitted to a reference structure). Any topology and trajectory file
+suitable for MDAnalysis_ can be used such as PSF+DCD, PDB+XTC or a
+single PDB. In the following Charmm/NAMD psf and dcd files are used as
+examples.
 
 We will use the high-level wrapper functions in hop.interactive:
 
 >>> from hop.interactive import *
 
+.. _MDAnalysis:: http://mdanalysis.googlecode.com
 
 Hydration sites
 ---------------
