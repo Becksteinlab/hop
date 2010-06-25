@@ -251,13 +251,22 @@ class HoppingTrajectory(object):
         psfname = self.filename(filename,'psf')
         dcdname = self.filename(filename,'dcd')
 
-        # see MDAnalysis/src/dcd/dcd.c for explanations
+        # see MDAnalysis/src/dcd/dcd.c for explanations;
+        # other trajectories do not have certain values so we just fake them...
         if start is None:
-            start = self.traj.start_timestep # starting time step for DCD file
+            try:
+                start = self.traj.start_timestep # starting time step for DCD file
+            except AttributeError:
+                start = 1
         if step is None:
-            step = self.traj.skip_timestep   # NSAVC (# ts between written DCD frames)
+            try:
+                step = self.traj.skip_timestep   # NSAVC (# ts between written DCD frames)
+            except AttributeError:
+                step = 1
         if delta is None:
-            delta = self.traj.delta          # length of ts (AKMA units)
+            from MDAnalysis.core.units import get_conversion_factor
+            delta_ps = self.traj.convert_time_from_native(self.traj.delta)  # length of ts in ps
+            delta = get_conversion_factor('time', 'ps', 'AKMA') * delta_ps
             
         dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
