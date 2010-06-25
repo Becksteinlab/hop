@@ -355,10 +355,10 @@ class HoppingTrajectory(object):
                            'resname':atom.resname[:4], 'name':atom.name[:4], 'type':atom.type,
                            'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
                 # emergency stop if we cannot handle the size of the system
-                if atom.resid >= 10**3 or atom.number+1 >= 10**8:
-                    raise NotImplementedError("Sorry, too many atoms %d or resids %d for the standard "
+                if atom.resid >= 10**4 or atom.number+1 >= 10**8:
+                    raise NotImplementedError("Sorry, too many atoms (%d) or resids (%d) for the standard "
                                               "PSF format. File a bug at http://github.com/orbeckst/hop/issues"
-                                              % (atom.resid, atom.number+1)) 
+                                              % (atom.number+1, atom.resid)) 
             # ignore all the other sections (enough for MDAnalysis, VMD, and me)
         finally:
             psf.close()
