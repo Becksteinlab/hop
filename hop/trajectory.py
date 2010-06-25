@@ -334,28 +334,35 @@ class HoppingTrajectory(object):
         # (This is not a problem as the fields are properly lined up!)
         #    2114 XWAT 1    TIP3 OH2    75  -0.834000       15.9994           0
 
+        # EXT (no CHEQ) format (read by MDAnalysis.topology.PSFParser)
+        #expanded format EXT:
+        #  (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,I4,1X,2G14.6,I8)  charmm
+        #   II     SEGID RESID RESNM ANAME TYPE  CHARGE MASS IMOVE 
+
+        psf_EXT_ATOM_format = \
+            '%(iatom)10d %(segid)8s %(resid)-8d %(resname)8s ' \
+            '%(name)-8s %(type)4s %(charge)-14.6f%(mass)-14.4f%(imove)8d\n'
+
         psf = open(filename,'w')
 
-        psf.write('PSF\n\n')
+        psf.write('PSF EXT\n\n')
         psf.write('%7d !NTITLE\n' % 3)
         psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
                   '* See http://github.com/orbeckst/hop\n'
                   '* This is NOT a fully functional psf but should work for visualization.\n')
         psf.write('\n')
 
-        psf.write('%6d !NATOM\n' % len(self.tgroup))
+        psf.write('%10d !NATOM\n' % len(self.tgroup))
         imove = 0    # no fixed atoms
         try:
             for atom in self.tgroup:
                 # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
-                # WARNING: this format will break when resid > 10^4-1 or iatom > 10^8-1;
-                #          long segids, resnames, atomnames are chopped
-                psf.write(psf_ATOM_format % 
-                          {'iatom':atom.number+1, 'segid':atom.segid[:4], 'resid':atom.resid,
-                           'resname':atom.resname[:4], 'name':atom.name[:4], 'type':atom.type,
+                psf.write(psf_EXT_ATOM_format % 
+                          {'iatom':atom.number+1, 'segid':atom.segid[:8], 'resid':atom.resid,
+                           'resname':atom.resname[:8], 'name':atom.name[:8], 'type':atom.type,
                            'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
                 # emergency stop if we cannot handle the size of the system
-                if atom.resid >= 10**4 or atom.number+1 >= 10**8:
+                if atom.resid >= 10**8 or atom.number+1 >= 10**10:
                     raise NotImplementedError("Sorry, too many atoms (%d) or resids (%d) for the standard "
                                               "PSF format. File a bug at http://github.com/orbeckst/hop/issues"
                                               % (atom.number+1, atom.resid)) 
