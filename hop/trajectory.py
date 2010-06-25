@@ -338,21 +338,30 @@ class HoppingTrajectory(object):
 
         psf.write('PSF\n\n')
         psf.write('%7d !NTITLE\n' % 3)
-        psf.write('* Hopping trajectory written by\n'+\
-                  '* $Id$\n'+\
+        psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
+                  '* See http://github.com/orbeckst/hop\n'
                   '* This is NOT a fully functional psf but should work for visualization.\n')
         psf.write('\n')
 
         psf.write('%6d !NATOM\n' % len(self.tgroup))
         imove = 0    # no fixed atoms
-        for atom in self.tgroup:
-            # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
-            psf.write(psf_ATOM_format % 
-                      {'iatom':atom.number+1, 'segid':atom.segid, 'resid':atom.resid,
-                       'resname':atom.resname, 'name':atom.name, 'type':atom.type,
-                       'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
-        # ignore all the other sections (enough for MDAnalysis, VMD, and me)
-        psf.close()
+        try:
+            for atom in self.tgroup:
+                # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
+                # WARNING: this format will break when resid > 10^4-1 or iatom > 10^8-1;
+                #          long segids, resnames, atomnames are chopped
+                psf.write(psf_ATOM_format % 
+                          {'iatom':atom.number+1, 'segid':atom.segid[:4], 'resid':atom.resid,
+                           'resname':atom.resname[:4], 'name':atom.name[:4], 'type':atom.type,
+                           'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
+                # emergency stop if we cannot handle the size of the system
+                if atom.resid >= 10**3 or atom.number+1 >= 10**8:
+                    raise NotImplementedError("Sorry, too many atoms %d or resids %d for the standard "
+                                              "PSF format. File a bug at http://github.com/orbeckst/hop/issues"
+                                              % (atom.resid, atom.number+1)) 
+            # ignore all the other sections (enough for MDAnalysis, VMD, and me)
+        finally:
+            psf.close()
 
     def map_dcd(self,start=None,stop=None,skip=1):
         """Generator to read the trajectory from start to stop and map
