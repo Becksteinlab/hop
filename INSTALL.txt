@@ -51,8 +51,8 @@ Required python modules
 ::
    MDAnalysis    >= 0.6.2              http://mdanalysis.googlecode.com
    numpy         >=1.0.3               http://numpy.scipy.org/
-   NetworkX      <0.99?                https://networkx.lanl.gov/
-   pygraphviz    0.36?                 https://networkx.lanl.gov/pygraphviz/
+   NetworkX      >=1.0                 https://networkx.lanl.gov/
+   pygraphviz                          https://networkx.lanl.gov/pygraphviz/
 
 ``MDAnalysis`` requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
