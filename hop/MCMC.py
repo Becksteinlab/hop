@@ -85,17 +85,17 @@ class MCMCsampler(hop.utilities.Saveable):
             # may look into sparse matrices... 
 
             # fast lookup of neighbours
-            self.out_neighbors = dict( [ (i,numpy.sort(self.graph.out_neighbors(i))) 
+            self.out_neighbors = dict( [ (i,numpy.sort([e[1] for e in self.graph.out_edges(i)])) 
                                          for i in self.graph.nodes()] )
-            self.in_neighbors  = dict( [ (i,numpy.sort(self.graph.in_neighbors(i)))
+            self.in_neighbors  = dict( [ (i,numpy.sort([e[0] for e in self.graph.in_edges(i)]))
                                          for i in self.graph.nodes()] )
 
             # probably slow but simple ... actually, fast enough so that I don't care
             # format of a edge in the graph:
-            # i : { j1: (k, N, fit_instance), j2: {...}, ...}
+            # i : { j1: {'k':k, 'N':N, 'fit':fit_instance}, j2: {...}, ...}
             # i : {
-            # {1: (0.100953823261, 32, <fitExp2[ 0.95889814  0.10095382  0.00467457]>)},
-            # {12: (0.00272870618459, 1, <fitExp [0.00272870618459]>)}
+            # {1: {'k':0.100953823261, 'N':32, 'fit':<fitExp2[ 0.95889814  0.10095382  0.00467457]>}},
+            # {12: {'k':0.00272870618459, 'N':1, 'fit':<fitExp [0.00272870618459]>}}
             # }
 
             # probability to exit i to j = k(i->j)/Z with Z = Sum_l k(i-->l)
@@ -103,12 +103,12 @@ class MCMCsampler(hop.utilities.Saveable):
             # probability to enter i from j:
             #                              N_ij/Y with Y = Sum_l N_il
             for i in self.graph.nodes():
-                Nout = numpy.sum( [A[i][j][1] for j in self.out_neighbors[i]] )  # total exiting from i
-                Nin  = numpy.sum( [A[j][i][1] for j in self.in_neighbors[i]] )   # total entering into i
+                Nout = numpy.sum( [A[i][j]['N'] for j in self.out_neighbors[i]] )  # total exiting from i
+                Nin  = numpy.sum( [A[j][i]['N'] for j in self.in_neighbors[i]] )   # total entering into i
                 for j in self.out_neighbors[i]:
-                    self.T[j,i] = A[i][j][1] * 1.0 / Nout
+                    self.T[j,i] = A[i][j]['N'] * 1.0 / Nout
                 for j in self.in_neighbors[i]:
-                    self.R[i,j] = A[j][i][1] * 1.0 / Nin
+                    self.R[i,j] = A[j][i]['N'] * 1.0 / Nin
 
             # cumulative prob. distrib. of exit nodes (could sort by decreasing
             # probability to optimize for more probable hits but then must sort
