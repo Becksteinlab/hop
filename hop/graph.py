@@ -1524,7 +1524,7 @@ class HoppingGraph(object):
             pdb_occupancy = self.connectedness(node)
             pdb_beta = identity    # volume, occupancy, degree, identity
             B.init_residue('NOD',' ',node,' ') # choose same identifiers as in write_psf
-            B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA')
+            B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA', element='C')
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
