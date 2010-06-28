@@ -1328,7 +1328,7 @@ class Density(Grid):
             pdb_occupancy = occ    # this should be customizable and selected from
             pdb_beta = identity    # volume, occupancy, degree, identity
             B.init_residue('SIT',' ',node,' ') # choose same identifiers as in write_psf
-            B.init_atom(aname,pos,pdb_beta,pdb_occupancy,' ','OH')
+            B.init_atom(aname,pos,pdb_beta,pdb_occupancy,' ','OH', element='O')
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
