@@ -1,4 +1,3 @@
-# $Id$
 # setuptools installation of Hop
 # Copyright (c) 2007-2010 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Public License 3 (or higher, your choice)
@@ -31,7 +30,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx>1.0',
                         'pygraphviz',        # not sure what the latest version is
-                        'MDAnalysis>0.6.2',  # get at least 0.6.3-dev from svn
+                        'MDAnalysis>=0.6.3',  # or get 0.6.4-dev from svn
                         ],
       dependency_links = [
         "http://code.google.com/p/mdanalysis/downloads/list",
