@@ -1,7 +1,31 @@
+=========================
+ Hop example SGE scripts
+=========================
+
 The scripts here are examples of how to do typical tasks with hop;
 they also show how submit jobs to the Sun Gridengine queuing system
 using the staging.SunGridEngine framework: files are copied to local
 scratch directories to improve performance.
+
+In general beginners are better off doing a first run through the hop
+protoicol interactively as described in :doc:`doc/basic.txt` and the
+help text for the :mod:`hop.interactive` module. In python (indicated
+by the ">>>" prompt which is not typed)::
+  >>> import hop.interactive
+  >>> help(hop.interactive)
+
+
+.. Note:: The "example" scripts will *not* just run. They are examples of what
+   the author used successfully in the past. Probably the most
+   productive use is to look through the lower third of each script to
+   see how certain tasks can be accomplished with hop.
+
+If you want to use the scripts as they are you will also install the
+``staging`` module somewhere where python can find it. The ``staging``
+module can be found in the hop distribution in the ``extras``
+directory. Copy the ``staging`` directory to a location that is on
+your :envvar:`PYTHONPATH`.
+
 
 
 Using the SGE scripts
