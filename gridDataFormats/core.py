@@ -1,16 +1,20 @@
 # $Id$
 # gridDataFormats --- python modules to read and write gridded data
-# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2009-2010 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Lesser Public License, version 3 or later.
 
-"""Classes and functions that are independent of the grid data
-format. In particular this module contains the Grid class that acts as
-a universal constructor for specific formats.
+"""
+:mod:`gridDataFormats.core` --- Core functionality for storing n-D grids
+========================================================================
+ 
+Classes and functions that are independent of the grid data
+format. In particular this module contains the :class:`Grid` class that acts as
+a universal constructor for specific formats::
 
  g = Grid(**kwargs)           # construct
- g.export(filename, format)   # export to the desire format
+ g.export(filename, format)   # export to the desired format
 
-Some formats can also be read:
+Some formats can also be read::
 
  g = Grid()                   # make an empty Grid
  g.load(filename)             # populate with data from filename
@@ -42,38 +46,44 @@ class Grid(object):
         """
         Create a Grid object from data.
 
-        From a numpy.histogramdd():
+        From a numpy.histogramdd()::
           grid,edges = numpy.histogramdd(...)
           g = Grid(grid,edges=edges)
 
-        From an arbitrary grid:
+        From an arbitrary grid::
           g = Grid(grid,origin=origin,delta=delta)
 
-        From a saved file:
+        From a saved file::
+          g = Grid(filename)
+        or
           g = Grid()
           g.load(filename)
  
         :Arguments:
-        
-        grid       histogram or density, defined on numpy nD array
-        edges      list of arrays, the lower and upper bin edges along the axes
-                   (both are output by numpy.histogramdd())
-        origin     cartesian coordinates of the center of grid[0,0,...,0]
-        delta      Either n x n array containing the cell lengths in each dimension, 
-                   or n x 1 array for rectangular arrays.
-        metadata   a user defined dictionary of arbitrary values
-                   associated with the density; the class does not touch
-                   metadata[] but stores it with save()
-
-        :Returns:
-        g          a Grid object
-
+          grid       
+            histogram or density, defined on numpy nD array
+          edges
+            list of arrays, the lower and upper bin edges along the axes
+            (both are output by numpy.histogramdd())
+          origin
+            cartesian coordinates of the center of grid[0,0,...,0]
+          delta
+            Either n x n array containing the cell lengths in each dimension, 
+            or n x 1 array for rectangular arrays.
+          metadata
+            a user defined dictionary of arbitrary values
+            associated with the density; the class does not touch
+            metadata[] but stores it with save()
         """
 
-        if metadata is None: metadata = {}
+        if metadata is None: 
+            metadata = {}
         self.metadata = metadata     # use this to record arbitrary data
 
-        if not (grid is None or edges is None):
+        if type(grid) is str:
+            # read from a file
+            self.load(grid)
+        elif not (grid is None or edges is None):
             # set up from histogramdd-type data
             self.grid = numpy.asarray(grid)
             self.edges = edges
@@ -251,6 +261,71 @@ class Grid(object):
             # TODO: CHECK that this delta*(i,j,k) is really correct, even for non-diagonal delta
             # NOTE: origin is center of (0,0,0) (and already has index offset by 0.5)
             yield numpy.sum(self.delta * numpy.asarray(idx), axis=0) + self.origin
+
+    def check_compatible(self, other):
+        """Check if *other* can be used in an algebraic operation.
+
+        1) *other* is a scalar
+        2) *other* is a grid defined on the same edges
+        
+        :Raises: :exc:`TypeError` if not compatible.
+        """
+        if not (numpy.isscalar(other) or 
+                numpy.all(numpy.concatenate(self.edges) == numpy.concatenate(other.edges))):
+            raise TypeError("The argument can not be algebraically combined with the grid. "
+                            "It must be a scalar or a grid with identical edges.")
+        return True
+
+    def __add__(self, other):
+        """Return a new :class:`Grid` with the point-wise sum of the data.
+
+        g.__add__(h) <==> g + h
+
+        :Returns: :class:`Grid`
+        """
+        self.check_compatible(other)
+        return Grid(self.grid + other.grid, edges=self.edges)
+
+    def __sub__(self, other):
+        """Return a new :class:`Grid` with the point-wise difference of the data.
+
+        g.__sub__(h) <==> g - h
+
+        :Returns: :class:`Grid`
+        """
+        self.check_compatible(other)
+        return Grid(self.grid - other.grid, edges=self.edges)
+
+    def __mul__(self, other):
+        """Return a new :class:`Grid` with the point-wise product of the data.
+
+        g.__mul__(h) <==> g * h
+
+        :Returns: :class:`Grid`
+        """
+        self.check_compatible(other)
+        return Grid(self.grid * other.grid, edges=self.edges)
+
+    def __div__(self, other):
+        """Return a new :class:`Grid` with the point-wise quotient of the data.
+
+        g.__div__(h) <==> g/h
+
+        :Returns: :class:`Grid`
+        """
+        self.check_compatible(other)
+        return Grid(self.grid / other.grid, edges=self.edges)
+
+    def __pow__(self, other):
+        """Return a new :class:`Grid` with the point-wise power of the data.
+
+        g.__pow__(h) <==> numpy.power(g, h)
+
+        :Returns: :class:`Grid`
+        """
+        self.check_compatible(other)
+        return Grid(numpy.power(self.grid, other.grid), edges=self.edges)
+
 
     def __repr__(self):
         return '<Grid with '+str(self.grid.shape)+' bins>'

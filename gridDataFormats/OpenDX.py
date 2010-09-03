@@ -1,9 +1,12 @@
 # $Id$
 # gridDataFormats --- python modules to read and write gridded data
-# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2009-2010 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Lesser Public License, version 3 or later.
 
-__doc__ = """
+"""
+:mod:`OpenDX` --- routines to read and write simple OpenDX files
+================================================================
+
 The OpenDX format for multi-dimensional grid data. This
 module only implements a primitive subset, sufficient to represent
 n-dimensional regular grids. OpenDX is a free visualization software,
@@ -105,7 +108,10 @@ class DXclass(object):
         """write the 'object' line; additional args are packed in string"""
         classid = str(self.id)
         if quote: classid = '"'+classid+'"'
-        file.write('object '+classid+' class '+str(self.name)+'  '+\
+        # Only use a *single* space between tokens; both chimera's and pymol's DX parser
+        # does not properly implement the OpenDX specs and produces garbage with multiple
+        # spaces. (Chimera 1.4.1, PyMOL 1.3)
+        file.write('object '+classid+' class '+str(self.name)+' '+\
                    optstring+'\n')
         
     def read(self,file):

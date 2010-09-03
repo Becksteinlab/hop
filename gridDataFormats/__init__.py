@@ -1,10 +1,12 @@
 # $Id$
 # gridDataFormats --- python modules to read and write gridded data
-# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2009-2010 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Lesser Public License, version 3 or later.
 # See the files COPYING and COPYING.LESSER for details.
 
-"""gridDataFormat module
+"""
+:mod:`gridDataFormat` -- Handling grids of data
+===============================================
 
 This module contains classes that allow importing and exporting of
 simple gridded data, A grid is an N-dimensional array that represents
@@ -14,26 +16,51 @@ we also store the edges, which are are (essentially) the cartesian
 coordinates of the intersections of the grid (mesh) lines on the
 axes. In this way the grid is anchored in space.
 
-The Grid class acts as a universal constructor for specific formats.
+Reading grid data files
+-----------------------
 
- g = Grid(**kwargs)           # construct
+Some Formats_ can be read directly from a file on disk::
+
+ g = Grid(filename)
+
+*filename* could be, for instance, "density.dx".
+
+
+Constructing a Grid
+-------------------
+
+Data from an n-dimensional array can be packaged as a :class:`Grid`
+for convenient handling (especially export to other formats).  The
+:class:`Grid` class acts as a universal constructor::
+
+ g = Grid(ndarray, edges=edges)                 # from histogramdd
+ g = Grid(ndarray, origin=origin, delta=delta)  # from arbitrary data
+
  g.export(filename, format)   # export to the desire format
 
-Some formats can also be read:
+See the doc string for :class:`Grid` for details.
 
- g = Grid()                   # make an empty Grid
- g.load(filename)             # populate with data from filename
 
-See the doc string for Grid for details on **kwargs.
+Formats
+-------
 
-Formats:
+The following formats are available:
 
-   OpenDX        IBM's Data Explorer, http://www.opendx.org/
-   gOpenMol      http://www.csc.fi/gopenmol/  ## not implemented yet
-   pickle        python pickle file
+   :mod:`OpenDX`
+        IBM's Data Explorer, http://www.opendx.org/
+   :mod:`gOpenMol`
+        http://www.csc.fi/gopenmol/  ## not implemented yet
+   pickle
+        python pickle file (:mod:`pickle`)
+
+Exceptions
+----------
+
+.. autoexception:`gridDataWarning`
+
 """
 
-__all__ =  ['core','OpenDX','gOpenMol']
+__all__ =  ['Grid', 'OpenDX','gOpenMol']
 
 import warnings
 
