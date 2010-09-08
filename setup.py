@@ -30,14 +30,17 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx>1.0',
                         'MDAnalysis>=0.6.3',  # or get 0.6.4-dev from svn
+                        'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
                         ],
       dependency_links = [
         "http://code.google.com/p/mdanalysis/downloads/list",
+        "http://sbcb.bioch.ox.ac.uk/oliver/download/Python/",
+        "http://github.com/orbeckst/GridDataFormats/downloads/",
         ],
       extras_require={
           'plotting': ['matplotlib>=0.91.3', # probably already installed
                        'pygraphviz',         # only needed when plotting, not needed for graph building
-                       ]
+                       ],
           'heatmap': ['rpy'],                # optional,used for heatmaps
           },
       zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script

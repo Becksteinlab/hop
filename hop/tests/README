@@ -20,7 +20,7 @@ require MDAnalysis so it's not listed in the (assumed) dependencies.
   - from pickled file
     sitemap  
   - from dx file
-    sitemap, [gridDataFormats]
+    sitemap, [gridData]
 
 * sitemap
 
