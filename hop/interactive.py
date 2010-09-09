@@ -272,6 +272,22 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
     print "Run map_sites(density,...) next"
     return density
 
+def make_xstal_density(pdb,filename,**kwargs):
+    """Generate a density from the crystalwaters in a PDB.
+
+    For arguments see :func:`make_density`.
+
+    (These water are typically named HOH.)
+
+    .. SeeAlso:: Water molecules are counted as point-like
+       particles. One can also use
+       :class:`hop.sitemap.BfactorDensityCreator` to broaden water
+       molecules according to their B-factor.
+
+    """
+    kwargs.setdefault('atomselection', "resname HOH")
+    return make_density(pdb,filename,**kwargs)
+
 def analyze_density(density,figure='sitestats'):
     """Site statistics based on the density alone.
 
