@@ -1,6 +1,5 @@
-# $Id$
 # Hop --- a framework to analyze solvation dynamics from MD simulations
-# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2007-2010 Oliver Beckstein <orbeckst@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,8 +31,8 @@ import os,os.path,errno
 import cPickle
 import warnings
 
-from gridDataFormats import OpenDX
-import networkx as NX               # https://networkx.lanl.gov/
+from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats 
+import networkx as NX          # https://networkx.lanl.gov/
 
 # set() for older versions of python (<2.4)
 try:

@@ -1,8 +1,18 @@
-.. $Id$
-
 ========
  README
 ========
+
+ +--------------------------------------------------------------
+ | DEVELOPMENT VERSION of hop
+ |
+ | Please note that this is a beta version of the package. It is
+ | still in heavy development. Feedback is very welcome (see below).
+ |
+ | The package is NOT publicly distributed yet. Please do not pass
+ | on the code to third parties but direct them to me instead.
+ | (The package will be released under GPL once it is ready.)
+ +--------------------------------------------------------------
+ 
 
 
 Hop: analyzing solvent in molecular dynamics trajectories
@@ -16,10 +26,16 @@ hops between those sites. The complicated solvation dynamics is thus
 represented as a graph in which hydration sites are the nodes (or
 vertices) and movements between sites are the edges.
 
-The package is called 'hop' (no clever acronym, just quick to type).
+Of course, it is also possible to look at the movement of other
+particles such as ions or small molecules --- one simply selects a
+different species.
 
-Hop requires a bunch of other home-grown modules (notably my OpenDX
-module) which are also included.
+The package is called 'Hop' (no clever acronym, just quick to type,
+and reflecting the fact that a "hopping analysis" is performed).
+
+Hop requires MDAnalysis_.
+
+.. _MDAnalysis: http://mdanalysis.googlecode.com/
 
 
 Installation
@@ -27,8 +43,8 @@ Installation
 
 See INSTALL.txt for details.
 
-The package makes heavy use of MDAnalysis
-(http://mdanalysis.googlecode.com/).
+The package is built on top of MDAnalysis_, which typically needs to be
+installed beforehand.
 
 
 Documentation
@@ -36,6 +52,21 @@ Documentation
 
 Please see the contents of the doc/ directory, in particular
 doc/overview.txt, and the python doc strings.
+
+
+Bug reporting
+=============
+
+Almost invariably, things will not work right away or it will be
+unclear how to accomplish a certain task. In order to keep track of
+feedback I ask you to use the Issue tracker at
+
+  http://github.com/orbeckst/hop/issues
+
+It helps tremendously to have everything in one place. Of course, feel
+free to also additionally email me directly.
+
+Thanks!
 
 
 Contact

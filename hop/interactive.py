@@ -55,14 +55,19 @@ compute the density (which can be marginally faster):
 
 The density is also saved as a pickled python object so that one can
 easily reload it. The density is also exported as a dx file for
-visualization (e.g. use visualize_density()).
+visualization (e.g. use :func:`hop.interactive.visualize_density`,
+which calls :program:`VMD`).
 
-From the density one creates the 'site map' for a given threshold:
+From the density one creates the 'site map' for a given threshold (by
+default this is a multiple of the water bulk density):
 
->>> density.map_sites(threshold=1.65)
+>>> density.map_sites(threshold=2.72)
 
-Experiment with the threshold; hop.analysis.DensityAnalysis can help
-to systematically explore the parameter space.
+Experiment with the threshold; :class:`hop.analysis.DensityAnalysis` can help
+to systematically explore the parameter space, and it is also helpful
+to load the density into a visualization software such as VMD and
+interactively explore contour levels. Values between 1.65 and 3 have
+given decent results in the past but this is system-dependent.)
 
 
 Bulk site
@@ -91,12 +96,20 @@ fairly low threshold:
             
 >>> density_bulk.map_sites(0.6)
 
-Add the biggest bulk site at position 1 ('1' is the designated label
-for 'bulk'):
+Add the biggest bulk site:
 
 >>> density.site_insert_bulk(density_bulk)
 >>> density.save()
 >>> del density_bulk
+
+.. Note:: Behind the scenes, the bulk is simply prepended to the list
+   of all sites (``density.sites``,
+   :attr:`hop.sitemap.Density.sites`), found so far. By convention the
+   site at position 1 in the list of all sites is treated specially in
+   many parts of hop (it has the so-called sitelabel "1", which is
+   simply the position in the list of sites) and hence you might
+   encounter unexpected behaviour later if you do not insert a bulk
+   site.
 
 Statistics about the sites can be produced with
 
@@ -161,7 +174,7 @@ The final step is to map out the graph of transitions between sites
 
 >>> tn = build_hoppinggraph(hops,density)
 
-tgraph.hopgraph holds this graph (tn.graph just contains all jumps
+tn.hopgraph holds this graph (tn.graph just contains all jumps
 including the interstitial and off-sites). The edges of hopgraph are
 the rate constants k_ji (in 1/ps) for hops i --> j. They are computed
 from an exponential fit to the site survival function S_ji(t) for
@@ -176,7 +189,7 @@ Further analysis uses tn.hopgraph:
 >>> h = tn.hopgraph           # main result is the 'hopgraph'
 >>> h.save('hopgraph')        # save the hopping graph (necessary for cg part)
 >>> h.filter(exclude={'outliers':True, 'Nmin':2, 'unconnected':True})
->>> h.tabulate_k()            # show all calculated rate constants (filtered graph)
+>>> h.show_rates()            # show all calculated rate constants (filtered graph)
 >>> h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
 >>> h.plot_fits()
 >>> h.export('water')         # write dot file to visualize (filtered) graph

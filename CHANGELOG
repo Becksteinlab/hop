@@ -1,0 +1,15 @@
+================
+ Changes in Hop
+================
+
+0.3.1
+   
+   * removed gridDataFormats; separately available from 
+     http://github.com/orbeckst/GridDataFormats (and automatically
+     installed via EasyInstall)
+   * moved pygraphviz dependency into the optional section
+
+0.3.0
+
+   * updated to use networkx 1.x and newer pygraphviz
+

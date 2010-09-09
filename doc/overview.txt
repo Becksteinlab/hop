@@ -7,6 +7,12 @@ python ``help()`` function or ipython's ``?`` operator and use
 introspection in ipython ("classname.<TAB>") to learn more about the
 commands.
 
+The doc string for the :mod:`hop.interactive` module also has a
+tutorial-style introduction. You would probably read it from within
+the python interpreter with
+  >>> import hop.interactive
+  >>> help(hop.interactive)
+
 
 Documentation files
 -------------------
