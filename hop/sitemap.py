@@ -879,6 +879,18 @@ class Density(Grid):
         del self.P['bulk_site']
         del self.P['bulk_threshold']
 
+    def site_insert_nobulk(self):
+        """Insert an empty bulk site for cases when this is convenient."""
+        class Nobulk:
+            def __init__(self,dens):
+                # copy the attributes that are checked in Density.site_insert_bulk()
+                self.map = numpy.empty_like(dens.map)
+                self.unit = dens.unit
+                self.P = {'threshold': None}
+                # minimum empty sites 'list'                
+                self.sites = {SITELABEL['bulk']: ()}  # normally a list but use a dict :-)
+        self.site_insert_bulk(Nobulk(self))
+
     def masked_density(self,density,site_labels):
         """Returns only that portion of density that corresponds to
         sites; everything else is zeroed.
@@ -2235,18 +2247,6 @@ so one should (after computing a site map) also insert an empty bulk site:
             return str(format) % vars()
         else:
             return resid
-
-    def site_insert_nobulk(self):
-        """Insert an empty bulk site for cases when this is convenient."""
-        class Nobulk:
-            def __init__(self,dens):
-                # copy the attributes that are checked in Density.site_insert_bulk()
-                self.map = numpy.empty_like(dens.map)
-                self.unit = dens.unit
-                self.P = {'threshold': None}
-                # minimum empty sites 'list'                
-                self.sites = {SITELABEL['bulk']: ()}  # normally a list but use a dict :-)
-        self.site_insert_bulk(Nobulk(self))
 
     def equivalence_sites(self,format=True):
         """All equivalence sites (if defined) together with crystallographic water labels.
