@@ -19,11 +19,11 @@ Quick instructions
 
 If you are familiar with ``easy_install`` from ``setuptools`` then try
 
-  easy_install Hop-0.2.1.tar,gz
+  easy_install Hop-0.3.1.tar.gz
 
 or 
 
-  cd Hop-0.2.1
+  cd Hop-0.3.1
   python setup.py install
 
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
@@ -35,9 +35,15 @@ Requirements
 If Hop is installed with ``easy_install`` then some dependencies are
 handled automatically; if not you will have to install packages
 manually. This is always true for ``MDAnalysis`` at the
-moment. Installing ``matplotlib`` (if plotting is desired) tends to be
-less painful if it is done in advance, especially through your
-system's package manager.
+moment. 
+
+The ``GridDataFormats`` package can be obtained from my home page (see
+below) but in most cases the installation should be able to
+automatically download and install it.
+
+Installing ``matplotlib`` (if plotting is desired) tends to be less
+painful if it is done in advance, especially through your system's
+package manager.
 
 
 System requirements
@@ -50,10 +56,10 @@ Required python modules
 -----------------------
 
 ::
-   MDAnalysis    >= 0.6.3              http://mdanalysis.googlecode.com
-   numpy         >=1.0.3               http://numpy.scipy.org/
-   NetworkX      >=1.0                 https://networkx.lanl.gov/
-   pygraphviz                          https://networkx.lanl.gov/pygraphviz/
+   MDAnalysis      >= 0.6.3              http://mdanalysis.googlecode.com
+   numpy           >=1.0.3               http://numpy.scipy.org/
+   NetworkX        >=1.0                 https://networkx.lanl.gov/
+   GridDataFormats >= 0.1.1              http://sbcb.bioch.ox.ac.uk/oliver/download/Python/
 
 ``MDAnalysis`` requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
@@ -64,11 +70,11 @@ or get the development version via subversion::
 
   svn checkout http://mdanalysis.googlecode.com/svn/trunk MDAnalysis 
 
-Hop recently switched to using the new NetworkX 1.0 API; please report
-any bugs (see :doc:`README.txt`).
+Note that installation of ``MDAnalysis`` can take a while because it
+requires a python environment that is fully set up for scientific
+computing. The good news is that once this is done then Hop should be
+easy.
 
-``pygraphviz`` also requires ``graphviz``; see its own installation
-instructions.
 
 
 Optional modules
@@ -76,15 +82,20 @@ Optional modules
 
 (reduced functionality if not present)::
 
+   pygraphviz                          https://networkx.lanl.gov/pygraphviz/
    matplotlib       >=0.91.3           http://matplotlib.sourceforge.net/ 
    rpy (and R)                         http://rpy.sourceforge.net/
    biopython                           http://www.biopython.org
 
 When these modules are missing the code will raise an :exc:`ImportError` when
 attempting to use them; their absence is not always handled gracefuly
-and it is suggested to install at least ``matplotlib`` (pylab). ``R``
-and ``rpy`` are only used for an experimental heatmap analysis and can
-be safely ignored.
+and it is suggested to install at least ``matplotlib`` (pylab). 
+
+``R`` and ``rpy`` are only used for an experimental heatmap analysis
+and can be safely ignored.
+
+``pygraphviz`` also requires ``graphviz``; see its own installation
+instructions.
 
 
 
@@ -131,12 +142,12 @@ The Hop package can be installed with 'EasyInstall' which is part of
 If you have setuptools already installed you should be able to simply
 install with
 
-   easy_install Hop-0.3.0.tar.gz
+   easy_install Hop-0.3.1.tar.gz
 
 You can install ``setuptools`` by following the instructions at
 http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
 or on Linux distributions such as Debian or Ubuntu by a
-commandline similar to
+commandline similar to ::
 
    aptitude install python-setuptools
 
@@ -152,10 +163,13 @@ please have a look at
 http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations
 which describes custom installations.
 
-Quick and dirty in my ``$HOME/packages`` directory::
+From python 2.6 onwards, an installation in a specific user directory
+is supported. It is recommended to install in the following manner::
 
- export PYTHONPATH=~/packages/lib/python 
- easy_install -d ~/packages Hop-0.2.1.tar.gz
+  cd Hop-0.3.1
+  python setup.py install --user
+
+
 
 
 
