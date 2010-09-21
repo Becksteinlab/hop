@@ -69,6 +69,20 @@ free to also additionally email me directly.
 Thanks!
 
 
+Citing
+======
+
+If you use HOP in published work please cite (for the time being) the
+abstract:
+
+  Oliver Beckstein, Naveen Michaud-Agrawal and Thomas B. Woolf. Quantitative
+  Analysis of Water Dynamics in and near Proteins. Biophysical Journal 96
+  (2009), 601a.  doi:10.1016/j.bpj.2008.12.3147
+
+Thanks!
+
+
+
 Contact
 =======
 

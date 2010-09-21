@@ -7,6 +7,18 @@ from ez_setup import use_setuptools
 use_setuptools()
 from setuptools import setup, find_packages
 
+import sys
+if sys.version_info[:2] < (2, 4):
+    print "HOP requires Python 2.4 or better.  Python %d.%d detected" % \
+        sys.version_info[:2]
+    print "Please upgrade your version of python."
+    sys.exit(-1)
+if sys.version_info[:2] >= (2, 6):
+    networkx_requirements = 'networkx>1.0'
+else:
+    # networkx 1.3 only works with 2.6+ so we fiddle the requirements
+    networkx_requirements = 'networkx==1.2'
+
 setup(name="Hop",
       version="0.3.1",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
@@ -28,7 +40,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
-                        'networkx>1.0',
+                        networkx_requirements,
                         'MDAnalysis>=0.6.3',  # or get 0.6.4-dev from svn
                         'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
                         ],
