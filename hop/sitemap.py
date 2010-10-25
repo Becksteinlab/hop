@@ -1893,7 +1893,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     # so the box information is rather meaningless
     box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]    
     if tuple(angles) <> (90.,90.,90.):
-        raise NotImplementedError("Only rectangular simulation cells are supported.")
+        warnings.warn("Non-orthorhombic unit-cell --- make sure that it has been remapped properly!")
 
     # Make the box bigger to avoid as much as possible 'outlier'. This
     # is important if the sites are defined at a high density: in this
