@@ -498,6 +498,7 @@ class Density(Grid):
             pass
         try:
             self._site_remove_bulk()
+            warnings.warn("Removed bulk site in order to map sites. Add it again when this is done!")
         except (ValueError, TypeError):
             pass
 
@@ -507,6 +508,45 @@ class Density(Grid):
                                1, SITELABEL['interstitial']).astype(numpy.int16)
         self._make_graph()
         self._label_connected_graphs()
+
+    def map_hilo(self, lomin=0.0, lomax=0.5, himin=2.72):
+        """**Experimental** mapping of low density sites together with high density ones.
+        
+        :Keywords:
+          *lomin*
+              low-density sites must have a density > *lomin* [0.0]
+          *lomax*
+              low-density sites must have a density < *lomax* [0.5]
+          *himin*
+              high-density sites must have a density > *himin* [2.72]
+        """
+        self.unit['threshold'] = self.unit['density']
+        self.P['lomin'] = lomin
+        self.P['lomax'] = lomax
+        self.P['himin'] = himin
+        self.P['threshold'] = self.P['himin']  # is this a good idea?
+
+        # first clean up
+        try:
+            self._remove_equivalence_sites()
+        except ValueError:
+            pass
+        try:
+            self._site_remove_bulk()
+            warnings.warn("Removed bulk site in order to map sites. Add it again when this is done!")
+        except (ValueError, TypeError):
+            pass
+
+        # map charts the sites. It starts out with the interstitial labeled
+        # as 0 and everything else 1.
+        self.map = numpy.where(
+            numpy.logical_or(
+                numpy.logical_and(lomin < self.grid, self.grid < lomax), # low-density sites
+                self.grid > himin),                                      # high-density sites
+            1, SITELABEL['interstitial']).astype(numpy.int16)
+        self._make_graph()
+        self._label_connected_graphs()
+
 
     # 'site' functions (should make site a class)
     def site_occupancy(self,**labelargs):
