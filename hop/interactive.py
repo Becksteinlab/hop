@@ -218,8 +218,70 @@ Currently un(der)-documented:
 """
 
 import hop.sitemap, hop.trajectory, hop.graph, hop.constants
+import hop.density
 import MDAnalysis
 import os
+
+def generate_densities(*args, **kwargs):
+    """Analyze the trajectory and generate solvent and bulk density.
+
+    generate_densities(topol, traj, atomselection='name OW') --> densities
+
+    This function can take a long time because it has to read the whole
+    trajectory. Progress is printed to the screen. It saves results to pickle
+    files. These files are :class:`hop.sitemap.Density` objects and can be used
+    to instantiate such a density object.
+
+    :Arguments:
+      filename
+         name of the solvent density with bulk site
+      bulkname
+         bulk density
+      density_unit
+         unit of measurement for densities and thresholds 
+         (Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)
+      solvent_threshold : 2.7182818284590451
+         hydration sites when density > this threshold
+      bulk_threshold : 0.6
+         bulk site are regions with density > this threshold
+      cutoff
+         bulk-water is assumed to start at this distance from the
+         soluteselection
+      soluteselection : "protein and not name H*"
+         how to select the solute (for bulk density)
+
+    :Returns: a dict containing :class:`hop.sitemap.Density` instances for the
+              the "solvent" and the "bulk" density; the "solvent" has the bulk 
+              site (largest site in "bulk") inserted as site 1.
+         
+    .. Note:: The "solvent" density is going to be used throughout the rest of
+       the protocol. Should you ever remap the sites (i.e. run
+       :meth:`~hop.sitemap.Density.map_sites` with a different threshold) then
+       **you must insert the bulk site again** (because the bulk site is
+       removed for technical reasons whenever the sites change); use the saved
+       bulk site and the :meth:`hop.sitemap.Density.site_insert_bulk` method.
+
+    .. SeeAlso:: Keyword arguments are passed on to
+       :class:`hop.density.DensityCreator`; the site mapping is done with
+       :meth:`hop.sitemap.Density.map_sites`.
+    """
+    filename = kwargs.pop('filename', 'water')  # solvent pickle file
+    bulkname = kwargs.pop('bulkname', 'bulk')   # bulk solvent pickle file
+    solvent_threshold = kwargs.pop('solvent_threshold', 2.7182818284590451)
+    bulk_threshold = kwargs.pop('bulk_threshold', 0.6)
+    density_unit = kwargs.pop('density_unit', "water")
+    kwargs['mode'] = "all"
+    DC = hop.density.DensityCreator(*args, **kwargs)
+    densities = DC.create()
+    densities['bulk'].save(bulkname)
+    densities['bulk'].export()
+    densities['solvent'].save(filename)
+    densities['solvent'].export()
+    density = DC.DensityWithBulk(density_unit=density_unit, 
+                                 solvent_threshold=solvent_threshold,
+                                 bulk_threshold=bulk_threshold)
+    density.save(filename)  # This is solvent but with bulk site added.
+    return densities
 
 def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
                  backend='MDAnalysis',**kwargs):
