@@ -244,6 +244,8 @@ def generate_densities(*args, **kwargs):
          hydration sites when density > this threshold
       bulk_threshold : 0.6
          bulk site are regions with density > this threshold
+      delta : 1.0
+         cubic grid size in Angstrom
       cutoff
          bulk-water is assumed to start at this distance from the
          soluteselection
@@ -262,7 +264,8 @@ def generate_densities(*args, **kwargs):
        bulk site and the :meth:`hop.sitemap.Density.site_insert_bulk` method.
 
     .. SeeAlso:: Keyword arguments are passed on to
-       :class:`hop.density.DensityCreator`; the site mapping is done with
+       :class:`hop.density.DensityCreator` where all possible keywords are
+       documented; the site mapping is done with
        :meth:`hop.sitemap.Density.map_sites`.
     """
     filename = kwargs.pop('filename', 'water')  # solvent pickle file
@@ -273,14 +276,20 @@ def generate_densities(*args, **kwargs):
     kwargs['mode'] = "all"
     DC = hop.density.DensityCreator(*args, **kwargs)
     densities = DC.create()
+    # save the precious files right away
     densities['bulk'].save(bulkname)
-    densities['bulk'].export()
     densities['solvent'].save(filename)
-    densities['solvent'].export()
+    # modifies densities['solvent'] (and also returns it)
     density = DC.DensityWithBulk(density_unit=density_unit, 
                                  solvent_threshold=solvent_threshold,
                                  bulk_threshold=bulk_threshold)
+    # save again, but now with mapped sites and bulk site include in "solvent"
+    densities['bulk'].save(bulkname)
     density.save(filename)  # This is solvent but with bulk site added.
+    # finally write dx files for visualization
+    densities['bulk'].export()
+    density.export()
+    print "generate_densities(): saved densities and exported dx files"
     return densities
 
 def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',

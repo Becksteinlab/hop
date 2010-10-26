@@ -149,7 +149,7 @@ class DensityCollector(object):
         g = Density(grid=self.grid, edges=self.edges,
                     unit=dict(length=MDAnalysis.core.flags['length_unit']),
                     parameters=parameters, metadata=metadata)    
-        msg(3,"%-10s: Histogram completed (density in %s**-3)\n" % (self.name, MDAnalysis.core.flags['length_unit']))
+        msg(3,"%-10s: Histogram completed (initial density in %s**-3)\n" % (self.name, MDAnalysis.core.flags['length_unit']))
         return g
 
 
@@ -270,7 +270,8 @@ class DensityCreator(object):
                 natoms = c.collect()
                 status.append("%s=%d" % (c.name, natoms))
 
-            if u.trajectory.ts.frame % 10 == 0:
+            if u.trajectory.ts.frame % 10 == 0 or \
+                    u.trajectory.ts.frame == u.trajectory.numframes:
                 message = " ".join(status)
                 message += " atoms in frame %5d/%d  [%5.1f%%]\r" % (
                     u.trajectory.ts.frame, 
@@ -517,7 +518,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     # Density automatically converts histogram to density for isDensity=False
     g = Density(grid=grid,edges=edges,unit=dict(length='Angstrom'),
                 parameters=parameters,metadata=metadata)    
-    msg(3,"\nHistogram completed (density in Angstrom**-3)\n")
+    msg(3,"\nHistogram completed (initial density in Angstrom**-3)\n")
     
     return g
 
@@ -987,7 +988,7 @@ class BfactorDensityCreator(object):
         self.metadata = metadata
 
         # Density automatically converts histogram to density for isDensity=False
-        msg(3,"\nHistogram completed (density in Angstrom**-3)\n")
+        msg(3,"\nHistogram completed (initial density in Angstrom**-3)\n")
 
 
     def PDBDensity(self,threshold=None):
