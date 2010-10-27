@@ -1305,7 +1305,7 @@ class HoppingGraph(object):
                        }
         try:
             __exporters[format](filename=filename,use_filtered_graph=use_filtered_graph,
-                                use_mapped_labels=use_mapped_labels)
+                                format=format,use_mapped_labels=use_mapped_labels)
         except KeyError:
             raise ValueError("Format "+str(format)+" not supported, choose one of "+
                              str(__exporters.keys()))
@@ -1549,7 +1549,11 @@ class HoppingGraph(object):
             pdb_occupancy = self.connectedness(node)
             pdb_beta = identity    # volume, occupancy, degree, identity
             B.init_residue('NOD',' ',node,' ') # choose same identifiers as in write_psf
-            B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA', element='C')
+            try:
+                B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA', element='C')
+            except TypeError:
+                # newer version of Biopython ?
+                B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA')
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
