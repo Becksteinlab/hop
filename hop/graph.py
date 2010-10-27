@@ -1527,16 +1527,17 @@ class HoppingGraph(object):
                 raise AttributeError('Requires site_properties or a Density instance.')
             props = self.site_properties
         else:
-            if not isinstance(density,hop.sitemap.Density):
+            try:
+                props = density.site_properties
+            except AttributeError:
                 raise TypeError('density must be a hop.sitemap.Density instance')
-            props = density.site_properties
         graph = self.select_graph(use_filtered_graph)
 
-        self.write_psf(graph,filename)        # atoms are numbered consecutively...
+        self.write_psf(graph,props,filename)        # atoms are numbered consecutively...
         self.write_pdb(graph,props,filename)  # ..and residues correspond to sites
 
     def write_pdb(self,graph,props,filename=None):
-        import Bio.PDB          # alternatively could use MDAnalysis, too, I guess
+        import Bio.PDB
         B = Bio.PDB.StructureBuilder.StructureBuilder()
         B.init_structure('graph')
         B.init_model(0)
@@ -1551,28 +1552,33 @@ class HoppingGraph(object):
             vol = props[node].volume              
             occ = props[node].occupancy_avg       
             degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+            # write common atoms as N, different as CA (HACK...)
             commonlabel = props.equivalence_name[node].strip()
             if commonlabel:
                 identity = 1.0
+                aname = 'N'
+                atype = 'N'
             else:
                 identity = 0.0
-            # occupancy: 1: standard site, 0.5: internal (no bulk), 0.01: isolated            
-            #pdb_occupancy = occ    # this should be customizable and selected from
-            pdb_occupancy = self.connectedness(node)
-            pdb_beta = identity    # volume, occupancy, degree, identity
+                aname = 'CA'       # choose the same identifiers as in pdb
+                atype = 'CA'       # choose the same identifiers as in pdb
+            pdb_occupancy = occ     # should be able to choose from volume, occupancy, degree, identity
+            # connectedness: 1: standard site, 0.5: internal (no bulk), 0.01: isolated            
+            # (should do this as separate residues)
+            pdb_beta = self.connectedness(node)
             B.init_residue('NOD',' ',node,' ') # choose same identifiers as in write_psf
             try:
-                B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA', element='C')
+                B.init_atom(aname,pos,pdb_beta,pdb_occupancy,' ',atype, element='C')
             except TypeError:
                 # newer version of Biopython ?
-                B.init_atom('CA',pos,pdb_beta,pdb_occupancy,' ','CA')
+                B.init_atom(aname,pos,pdb_beta,pdb_occupancy,' ',atype)
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
         pdbfile = self.filename(filename,'pdb')                       
         io.save(pdbfile)
 
-    def write_psf(self,graph,filename=None):
+    def write_psf(self,graph,props,filename=None):
         """Pseudo psf with nodes as atoms and edges as bonds"""
         # Standard no CHEQ format for a Charmm PSF file:
         psf_ATOM_format = '%(iatom)8d %(segid)4s %(resid)-4d %(resname)4s '+\
@@ -1590,8 +1596,6 @@ class HoppingGraph(object):
         psf.write('%6d !NATOM\n' % graph.number_of_nodes())
         segid = 'GRPH'     # choose the same identifiers as in pdb
         resname = 'NOD'    # choose the same identifiers as in pdb
-        aname = 'CA'       # choose the same identifiers as in pdb
-        atype = 'CA'       # choose the same identifiers as in pdb
         charge = 0
         mass = 1.0
         imove = 0            # no fixed 'atoms'
@@ -1600,6 +1604,16 @@ class HoppingGraph(object):
             # atom numbering starts at 1, so iatom+1
             iatom += 1
             node2iatom[node] = iatom
+            # write common atoms as N, different as CA (HACK...)
+            commonlabel = props.equivalence_name[node].strip()
+            if commonlabel:
+                identity = 1.0
+                aname = 'N'
+                atype = 'N'
+            else:
+                identity = 0.0
+                aname = 'CA'       # choose the same identifiers as in pdb
+                atype = 'CA'       # choose the same identifiers as in pdb
             psf.write(psf_ATOM_format % 
                       {'iatom':iatom, 'segid':segid, 'resid':node,
                        'resname':resname, 'name':aname, 'type':atype,
