@@ -38,33 +38,14 @@ def generate_hopgraph(topology, trajectory, density, filename, localcopy=False, 
     else:
         tgraph = _generate_hopgraph(trajectory)
 
-    analysisdir = os.path.dirname(filename)
-    logger.warn("Setting analysisdir = %(analysisdir)r", vars())
-
     h = tgraph.hopgraph       # main result is the 'hopgraph'
     h.save(filename)          # save result
     logger.info("Saved hopgraph as %(filename)s.pickle", vars())
 
-    ratesfile = os.path.join(analysisdir, 'rates.txt')
-    h.show_rates(filename=ratesfile)
-    logger.info("Wrote all rates to %(ratesfile)r.", vars())
-
-    h.filter(exclude={'outliers':True, 'bulk':True})
-    h.export(filename, format='XGMML')
-    logger.info("Exported hopgraph as %(filename)s.xgmml", vars())
-    
-    logger.info("Generating 3D graph %(filename)s.psf/pdb", vars())
-    logger.info("Note: bulk site omitted for clarity.")
-    h.export3D(density)
-
-    survival_time_dir = os.path.join(analysisdir, 'survival_times')
-    logger.info("Generating survival times plots in %(survival_time_dir)r", vars())
-    logger.info("This takes a while. Note: transitions to/from bulk are excluded, Nmin=5.")
-
-    h.filter(exclude={'outliers':True, 'bulk':True, 'Nmin':5})
-    h.plot_fits(directory=survival_time_dir, ncol=2, nrow=3)
+    hop.interactive.hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app')
 
     return h
+
         
 if __name__ == "__main__":
     import sys

@@ -465,3 +465,43 @@ def build_hoppinggraph_fromfiles(hoppingtrajectory_filename,density_filename):
     hoppingtrajectory = hop.trajectory.HoppingTrajectory(filename=hoppingtrajectory_filename)
     density = hop.sitemap.Density(filename=density_filename)
     return build_hoppinggraph(hoppingtrajectory,density)
+
+def hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app'):
+    """Do some simple analysis tasks on the hopgraph.
+
+    hopgraph_basic_analysis(h, density, filename)
+
+    :Arguments:
+       h
+          hopgraph, a :class:`hop.graph.HoppingGraph`
+       density
+          density, a :class:`hop.sitemap.Density`
+       filename
+          default filename for generated files; all files and new 
+          directories are written in the directory pointed to by the 
+          path component
+    """
+    import logging
+    logger = logging.getLogger(logname)  # do this properly once we use logging
+
+    analysisdir = os.path.dirname(filename)
+    logger.warn("Setting analysisdir = %(analysisdir)r", vars())
+
+    ratesfile = os.path.join(analysisdir, 'rates.txt')
+    h.show_rates(filename=ratesfile)
+    logger.info("Wrote all rates to %(ratesfile)r.", vars())
+
+    h.filter(exclude={'outliers':True, 'bulk':True})
+    h.export(filename, format='XGMML')
+    logger.info("Exported hopgraph as %(filename)s.xgmml", vars())
+    
+    logger.info("Generating 3D graph %(filename)s.psf/pdb", vars())
+    logger.info("Note: bulk site omitted for clarity.")
+    h.export3D(density)
+
+    survival_time_dir = os.path.join(analysisdir, 'survival_times')
+    logger.info("Generating survival times plots in %(survival_time_dir)r", vars())
+    logger.info("This takes a while. Note: transitions to/from bulk are excluded, Nmin=5.")
+
+    h.filter(exclude={'outliers':True, 'bulk':True, 'Nmin':5})
+    h.plot_fits(directory=survival_time_dir, ncol=2, nrow=3)
