@@ -42,14 +42,10 @@ from hop.constants import SITELABEL
 import hop.utilities
 from hop.utilities import msg,set_verbosity
 from hop import SelectionError
-
-def totaltime(trajectory,targetunit='ps',sourceunit='AKMA'):
+def totaltime(trajectory):
     """Returns the total trajectory time from the DCDReader object."""
-    return trajectory.numframes * delta_t(trajectory,targetunit,sourceunit)
-
-def delta_t(trajectory,targetunit='ps',sourceunit='AKMA'):
-    """Returns the length of the time interval between two trajectory frames."""
-    return trajectory.delta * trajectory.skip_timestep * hop.constants.get_conversion_factor('time',sourceunit,targetunit)
+    #XXX use trajectory.totaltime with MDAnalysis 0.7.0 XXX
+    return trajectory.numframes * trajectory.dt
 
 class HoppingTrajectory(object):
     """Provides a time-sequence of sites visited by individual molecules,
@@ -104,15 +100,15 @@ class HoppingTrajectory(object):
 
           u = MDAnalysis.Universe(psf,dcd)
           water = u.selectAtoms('name OH2')
-          h = HoppingTrajectory(trajectory=u.dcd,group=water,density=water_density)
+          h = HoppingTrajectory(trajectory=u.trajectory,group=water,density=water_density)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
 
-          h = HoppingTrajectory(hopdcd='hops.dcd',hoppsf='hops.psf')
+          h = HoppingTrajectory(hopdcd='hops.trajectory',hoppsf='hops.psf')
 
         :Arguments:
 
-        trajectory       MDAnalysis.dcd trajectory instance
+        trajectory       MDAnalysis.trajectory trajectory instance
         group            MDAnalysis.group instance
         density          grid3Dc.Grid instance with sitemap set
 
@@ -133,7 +129,7 @@ class HoppingTrajectory(object):
         if not (trajectory is None or group is None or density is None):
             self.traj  = trajectory        # MDAnalysis.Universe.trajectory
             self.tgroup = group            # atom selection for trajectory
-            if not isinstance(self.tgroup,MDAnalysis.AtomGroup.AtomGroup):
+            if not isinstance(self.tgroup, MDAnalysis.core.AtomGroup.AtomGroup):
                 raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
@@ -141,7 +137,7 @@ class HoppingTrajectory(object):
                         raise AttributeError('fixtrajectory: dcd object does not have attribute "'\
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val            
-            self.totaltime = totaltime(trajectory,'ps')
+            self.totaltime = totaltime(trajectory)
             self.traj.rewind()             # make sure to start from frame 0
             self._GD = density             # sitemap.Density object
             self.map   = self._GD.map                  # map of sites
@@ -189,10 +185,10 @@ class HoppingTrajectory(object):
             u = MDAnalysis.Universe(hoppsf,hopdcd)
             group = u.selectAtoms('type *')   
             self.group = group      # group that refers to hopping trajectory
-            self.hoptraj = u.dcd    # DCD(!) trajectory object
+            self.hoptraj = u.trajectory    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
             self.numframes = self.hoptraj.numframes
-            self.totaltime = totaltime(self.hoptraj,'ps')
+            self.totaltime = totaltime(self.hoptraj)
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
 
@@ -240,7 +236,7 @@ class HoppingTrajectory(object):
 
         Results:
 
-        filename.dcd and filename.psf
+        filename.trajectory and filename.psf
 
         Note that it is your responsibility to load the hopping
         trajectory and the appropriate psf together as there is very
@@ -409,12 +405,12 @@ class HoppingTrajectory(object):
         """Translate a single trajectory coordinate frame into a hopping
         trajectory frame and updates the hopping trajectory frame.
 
-        ts          MDAnalysis.dcd.ts  time step object (input coordinate data)
+        :Arguments:
+          ts
+             :class:`~MDAnalysis.coordinates.base.Timestep` time step object (input coordinate data)
 
-        :Returns:
-
-        hopping ts  Timestep object for the _selected_ atoms with (x=sites y=orbit site z=0)
-                    (also updates self.ts so that the HoppingTrajectory instance is uptodate.)
+        :Returns:  hopping ts; Timestep object for the _selected_ atoms with (x=sites y=orbit site z=0)
+                   (also updates self.ts so that the HoppingTrajectory instance is uptodate.)
         """
         self.ts.frame = ts.frame   # update the hopping time step        
         coords = numpy.asarray(self.tgroup.coordinates())
@@ -485,12 +481,12 @@ class HoppingTrajectory(object):
                 yield self._coord2hop(traj_ts)    
 
 class TAPtrajectory(object):
-    """Provides a Time-Averaged Position (TAP) version of the input
-    trajectory. The method is described in Henchman and McCammon, J
-    Comp Chem 23 (2002), 861 doi:10.1002/jcc.10074
+    """Provides a Time-Averaged Position (TAP) version of the input trajectory. 
+
+    The method is described in Henchman and McCammon, J Comp Chem 23
+    (2002), 861 doi:10.1002/jcc.10074
 
     :Attributes:
-
     ts               MDAnalysis.Timestep object
     numframes        number of frames in TAP trajectory
     group            AtomGroup of atoms that are tracked
@@ -518,11 +514,11 @@ class TAPtrajectory(object):
           u = MDAnalysis.Universe(psf,dcd)
           water = u.selectAtoms('resname TIP*')  # see NOTE below!!
           water = u.selectAtoms('name OH2')      # better, see NOTE below!!
-          h = TAPtrajectory(trajectory=u.dcd,group=water)
+          h = TAPtrajectory(trajectory=u.trajectory,group=water)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
 
-          h = TAPtrajectory(dcd='TAP.dcd',psf='TAP.psf')
+          h = TAPtrajectory(dcd='TAP.trajectory',psf='TAP.psf')
 
         The given atom group is filtered according to the Time-Averaged Positon
         algorithm (Henchman and McCammon, J Comp Chem 23 (2002), 861). Original
@@ -536,7 +532,7 @@ class TAPtrajectory(object):
           u = Universe(psf,dcd)
           oxy = u.selectAtoms('name OH2')
           TAP = TAPtrajectory(u.trajectory,oxy)
-          u.trajectory = TAP.dcd    # <--- replace orig dcd with TAP !!
+          u.trajectory = TAP.trajectory    # <--- replace orig dcd with TAP !!
           dens = hop.sitemap.density_from_Universe(u,atomselection='name OH2')
 
         NOTE: In the current implementation residues are often ripped apart
@@ -551,7 +547,7 @@ class TAPtrajectory(object):
 
         :Arguments:
 
-        trajectory       MDAnalysis.dcd trajectory instance
+        trajectory       MDAnalysis.trajectory trajectory instance
         group            MDAnalysis.group instance (from the same Universe as trajectory)
         TAPradius        particles are considered to be on the TAP as long as they 
                          haven't moved farther than TAPradius over the last TAPsteps frames
@@ -575,7 +571,7 @@ class TAPtrajectory(object):
             self.traj  = trajectory                      # MDAnalysis.Universe.trajectory
             self.tgroup = group                          # atom selection for trajectory
             self.tgroup_indices = self.tgroup.indices()  # cache indices
-            if not isinstance(self.tgroup,MDAnalysis.AtomGroup.AtomGroup):
+            if not isinstance(self.tgroup,MDAnalysis.core.AtomGroup.AtomGroup):
                 raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
             self.universe = self.tgroup.atoms[0].universe  # Universe of dcd and group (hackish..)
             if isinstance(fixtrajectory,dict):
@@ -584,7 +580,7 @@ class TAPtrajectory(object):
                         raise AttributeError('fixtrajectory: dcd object does not have attribute "'\
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val 
-            self.totaltime = totaltime(trajectory,'ps')
+            self.totaltime = totaltime(trajectory)
             self.traj.rewind()             # make sure to start from frame 0
             self.ts = self.traj.ts         # output will look like input (no copy, see _coord2TAP!)
             self.TAPtraj = None            # no TAP trajectory available
@@ -600,7 +596,7 @@ class TAPtrajectory(object):
                       'numatoms','periodic','remarks',
                       'skip','skip_timestep','start_timestep']:
                 self.dcd_attributes[k] = self.traj.__dict__[k]
-            self.dcd = ThinDCDReader(self)
+            self.trajectory = ThinDCDReader(self)
             self.numframes = self.dcd_attributes['numframes']
         elif not (dcd is None or psf is None) or filename is not None:
             # read from dcd
@@ -617,9 +613,9 @@ class TAPtrajectory(object):
             self.TAPtraj = u.trajectory    # DCD trajectory object
             self.ts = self.TAPtraj.ts
             self.numframes = self.TAPtraj.numframes
-            self.totaltime = totaltime(self.TAPtraj,'ps')
+            self.totaltime = totaltime(self.TAPtraj)
             # DCD object that can be slotted into another universe
-            self.dcd = u.trajectory
+            self.trajectory = u.trajectory
         else:
             raise ValueError('Not sufficient data to create a TAP trajectory.')
 
@@ -706,7 +702,7 @@ class TAPtrajectory(object):
 
         if load is True:
             self.TAPtraj = MDAnalysis.DCD.DCDReader(dcdname)
-            self.dcd = self.TAPtraj
+            self.trajectory = self.TAPtraj
         
     def map_dcd(self,start=None,stop=None,skip=1):
         """Generator to read the trajectory from start to stop and map
@@ -739,7 +735,7 @@ class TAPtrajectory(object):
         """Translate a single trajectory coordinate frame into a TAP
         trajectory frame and update the TAP trajectory frame.
 
-        ts        MDAnalysis.dcd.ts  time step object
+        ts        MDAnalysis.trajectory.ts  time step object
 
         Only the selection's coordinates are TAP-filtered.
         :Returns:
@@ -769,8 +765,8 @@ class TAPtrajectory(object):
         coords[onTAP] = self.__currentTAP[onTAP]   # reset to TAP
         self.__currentTAP[:] = coords              # remember TAP for next frame
         # patch  selected coordinates back into full coordinate set
-        #    u.dcd.ts._pos[w.indices()] = new_coord_array    # WORKS (no copy)
-        #    x = u.dcd.ts._pos[w.indices()]                  # FAILS (copy involved)
+        #    u.trajectory.ts._pos[w.indices()] = new_coord_array    # WORKS (no copy)
+        #    x = u.trajectory.ts._pos[w.indices()]                  # FAILS (copy involved)
         #    x[:] = new_coord_array[:]                       # 
         self.ts._pos[self.tgroup_indices] = self.__currentTAP
         return self.ts
