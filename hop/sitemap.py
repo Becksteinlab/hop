@@ -465,7 +465,7 @@ class Density(Grid):
         if not self.P['isDensity']:
             self.make_density()
         self.unit['threshold'] = self.unit['density'] # inconsistent with load() ?
-        
+
     def map_sites(self,threshold=None):
         """Find regions of connected density and label them consecutively
 
@@ -930,6 +930,13 @@ class Density(Grid):
                 # minimum empty sites 'list'                
                 self.sites = {SITELABEL['bulk']: ()}  # normally a list but use a dict :-)
         self.site_insert_bulk(Nobulk(self))
+
+    def has_bulk(self):
+        """Returns ``True`` if a bulk site has been inserted and ``False`` otherwise."""
+        try:
+            return self.P['bulk_site'] == SITELABEL['bulk']
+        except KeyError:
+            return False
 
     def masked_density(self,density,site_labels):
         """Returns only that portion of density that corresponds to
