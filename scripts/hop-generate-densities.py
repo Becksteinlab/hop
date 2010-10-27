@@ -26,10 +26,30 @@ Some common selection strings:
 import os.path, errno
 import MDAnalysis
 import hop.interactive
+from hop.utilities import unlink_f, mkdir_p
 
 import logging
 logger = logging.getLogger('MDAnalysis.app')
 
+
+
+def generate_densities_locally(topology, trajectory, atomselection, localcopy=False):
+    def _generate_densities(traj):
+        return hop.interactive.generate_densities(topology, traj, atomselection=atomselection)        
+    if localcopy:
+        from tempfile import mkstemp
+        from shutil import copy
+        root,ext = os.path.splitext(trajectory)
+        fd, tmptrajectory = mkstemp(suffix=ext)
+        logger.info("Making local copy to improve read performance: %(trajectory)r --> %(tmptrajectory)r" % vars())
+        try:
+            copy(trajectory, tmptrajectory)
+            densities = _generate_densities(tmptrajectory)
+        finally:
+            unlink_f(tmptrajectory)
+    else:
+        densities = _generate_densities(trajectory)
+    return densities
 
 if __name__ == "__main__":
     import sys
@@ -51,6 +71,10 @@ if __name__ == "__main__":
     parser.add_option("-D", "--analysisdir", dest="analysisdir",
                       metavar="DIRNAME",
                       help="results will be stored under DIRNAME/(basename DIR)  [%default]")
+    parser.add_option("-l", "--local-copy", dest="localcopy",
+                      action='store_true',
+                      help="copy trajectory to a temporary local disk for better read performance. "
+                      "Requires sufficient space in TEMP.")
 
     parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc", 
                         atomselection="name OW",
@@ -69,18 +93,19 @@ if __name__ == "__main__":
         logger.fatal(errmsg)
         raise IOError(errno.ENOENT, errmsg)
 
+    startdirectory = os.path.abspath(os.curdir)
     for d in args:
+        os.chdir(startdirectory)            
         logger.info("Generating densities for dir %(d)r", vars())
         if not os.path.exists(d):
             logger.fatal("Directory %r does not exist.", d)
             raise IOError(errno.ENOENT, d)
         analysisdir = os.path.join(opts.analysisdir, os.path.basename(d))
         try:
-            os.makedirs(analysisdir)
-        except OSError, err:
-            if err.errno != errno.EEXIST:
-                logger.exception()
-                raise
+            mkdir_p(analysisdir)
+        except:
+            logger.exception()
+            raise
         trajectory = os.path.abspath(os.path.join(d, opts.trajectory))
         if not os.path.exists(topology):
             errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
@@ -90,7 +115,13 @@ if __name__ == "__main__":
         logger.debug("trajectory = %(trajectory)r", vars())
         logger.debug("selection  = %(atomselection)r", vars(opts)) 
 
-        densities = hop.interactive.generate_densities(topology, trajectory, atomselection=opts.atomselection)
+        try:
+            os.chdir(analysisdir)
+            logger.debug("Working in %(analysisdir)r..." % vars())
+            densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
+                                                   localcopy=opts.localcopy)
+        finally:
+            os.chdir(startdirectory)
 
     MDAnalysis.stop_logging()        
 

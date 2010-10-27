@@ -20,10 +20,30 @@ else. For messages I should probably use python's logger module but
 this is working so far (even though it's pretty crappy)."""
 
 import sys
-import os.path
+import os, errno
 import cPickle
 import warnings
 import hop
+
+def unlink_f(path):
+    """Unlink path but do not complain if file does not exist."""
+    try:
+        os.unlink(path)
+    except OSError, err:
+        if err.errno != errno.ENOENT:
+            raise
+
+def mkdir_p(path):
+    """Create a directory *path* with subdirs but do not complain if it exists.
+
+    This is like GNU ``mkdir -p path``.
+    """
+    try:
+        os.makedirs(path)
+    except OSError, err:
+        if err.errno != errno.EEXIST:
+            raise
+
 
 # unbound methods filename_function(), to be used in other
 # classes; the plan is to make all classes that require them
