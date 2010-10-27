@@ -107,7 +107,7 @@ if __name__ == "__main__":
             logger.exception()
             raise
         trajectory = os.path.abspath(os.path.join(d, opts.trajectory))
-        if not os.path.exists(topology):
+        if not os.path.exists(trajectory):
             errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
             logger.fatal(errmsg)
             raise IOError(errno.ENOENT, errmsg)
