@@ -15,10 +15,8 @@ from hop.utilities import unlink_f, mkdir_p
 import logging
 logger = logging.getLogger('MDAnalysis.app')
 
-
-
-def generate_hopgraph(topology, trajectory, density, filename, localcopy=False, **hopargs):
-    density = hop.sitemap.Density(filename=density)
+def generate_hopgraph(topology, trajectory, densityfile, filename, localcopy=False, **hopargs):
+    density = hop.sitemap.Density(filename=densityfile)
     def _generate_hopgraph(trajectory):
         hoptraj = hop.trajectory.HoppingTrajectory(hoppsf=topology, hopdcd=trajectory)
         tgraph = hop.interactive.build_hoppinggraph(hoptraj,density)
@@ -46,6 +44,12 @@ def generate_hopgraph(topology, trajectory, density, filename, localcopy=False, 
 
     return h
 
+def analyze_hopgraph(densityfile, filename):
+    density = hop.sitemap.Density(filename=densityfile)
+    h = hop.graph.HoppingGraph(filename=filename)
+    hop.interactive.hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app')
+    return h
+    
         
 if __name__ == "__main__":
     import sys
@@ -66,6 +70,9 @@ if __name__ == "__main__":
                       action='store_true',
                       help="copy trajectory to a temporary local disk for better read performance. "
                       "Requires sufficient space in TEMP.")
+    parser.add_option("--force", dest="force", action="store_true",
+                      help="force rerunning graph generation; by default only the basic analysis is run "
+                      "if the hopgraph file aleady exists")
 
     parser.set_defaults(topology='hoptraj.psf', trajectory='hoptraj.dcd', output="hopgraph")
 
@@ -83,25 +90,31 @@ if __name__ == "__main__":
         logger.fatal(errmsg)
         raise IOError(errno.ENOENT, errmsg)
 
-    topology = os.path.abspath(opts.topology)
-    if not os.path.exists(topology):
-        errmsg = "Hopping topology %(topology)r not found; (use --topology)" % vars()
-        logger.fatal(errmsg)
-        raise IOError(errno.ENOENT, errmsg)
+    # I think this is how we construct filenames in hop... see utilities.filename_function
+    hopgraph_filename = os.path.splitext(opts.output)[0] + ".pickle"
+    if not os.path.exists(hopgraph_filename) or opts.force:
+        topology = os.path.abspath(opts.topology)
+        if not os.path.exists(topology):
+            errmsg = "Hopping topology %(topology)r not found; (use --topology)" % vars()
+            logger.fatal(errmsg)
+            raise IOError(errno.ENOENT, errmsg)
+        trajectory = os.path.abspath(opts.trajectory)
+        if not os.path.exists(trajectory):
+            errmsg = "Hopping trajectory %(trajectory)r not found; (use --trajectory)" % vars()
+            logger.fatal(errmsg)
+            raise IOError(errno.ENOENT, errmsg)
 
-    trajectory = os.path.abspath(opts.trajectory)
-    if not os.path.exists(trajectory):
-        errmsg = "Hopping trajectory %(trajectory)r not found; (use --trajectory)" % vars()
-        logger.fatal(errmsg)
-        raise IOError(errno.ENOENT, errmsg)
+        logger.info("Generating hopping graph from trajectory %(topology)r/%(trajectory)r ...", vars())
+        logger.debug("density    = %(density)r", vars())
+        logger.debug("topology   = %(topology)r", vars())
+        logger.debug("trajectory = %(trajectory)r", vars())
 
-    logger.info("Generating hopping graph from trajectory %(topology)r/%(trajectory)r ...", vars())
-    logger.debug("density    = %(density)r", vars())
-    logger.debug("topology   = %(topology)r", vars())
-    logger.debug("trajectory = %(trajectory)r", vars())
+        hopgraph = generate_hopgraph(topology, trajectory, density, opts.output,
+                                     localcopy=opts.localcopy)
+        logger.info("Created hopping graph %(output)s.pickle and other files", vars(opts))
+    else:
+        logger.info("hopgraph file %(hopgraph_filename)r already exists; only doing analysis", vars())
+        analyze_hopgraph(density, opts.output)
 
-    hopgraph = generate_hopgraph(topology, trajectory, density, opts.output,
-                                 localcopy=opts.localcopy)
-    logger.info("Created hopping graph %(output)s.pickle and other files", vars(opts))
     MDAnalysis.stop_logging()        
 
