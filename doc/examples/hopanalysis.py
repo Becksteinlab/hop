@@ -214,7 +214,7 @@ h.export(format='XGMML',use_filtered_graph=False) # as XGMML file, too
 
 print "=== hop graph data ==="
 h.filter(exclude={'outliers':True, 'Nmin':3, 'unconnected':True})
-h.tabulate_k()            # show all calculated rate constants (filtered graph)
+h.show_rates()            # show all calculated rate constants (filtered graph in log file)
 h.plot_fits(directory=V['survival_times_dir'])  # plot rate constant fits
 
 print "== DONE =="

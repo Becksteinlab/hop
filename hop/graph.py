@@ -42,9 +42,10 @@ documentation for further analysis methods.
 import hop.constants, hop.trajectory
 from hop.constants import SITELABEL
 import hop.utilities
-from hop.utilities import msg,set_verbosity, iterable
+from hop.utilities import msg,set_verbosity, iterable, asiterable
 import networkx as NX
 import numpy
+import sys
 import cPickle
 import os.path
 import warnings
@@ -823,7 +824,7 @@ class HoppingGraph(object):
             raise TypeError('"exclude" should have been a dict.')
 
 
-    def plot_fits(self,ncol=3,nrow=6,dt=None,plottype='log',use_filtered_graph=True,
+    def plot_fits(self,ncol=2,nrow=3,dt=None,plottype='log',use_filtered_graph=True,
                   directory='survival_times',format='png',interactive=False,
                   verbosity=3):
         """Plot survival time fit against data.
@@ -854,10 +855,12 @@ class HoppingGraph(object):
         """
         import math
         import os,errno
-        import pylab        
+
+        import matplotlib
         from hop.utilities import matplotlib_interactive
-        
         matplotlib_interactive(interactive)
+        import pylab
+
         set_verbosity(verbosity)
          
         try:
@@ -953,19 +956,18 @@ class HoppingGraph(object):
                 msg(3,'Exported S(t) plot page %(ifig)d to file %(filename)s.\n' % locals())
         msg(3,'\n')
 
-    def tabulate_k(self,show=True):
+    def tabulate_k(self):
         """List of tuples (from, to, rate (in 1/ns), number of transitions)."""
-        if show:
-            import warnings
-            self.show_rates()
-            warnings.warn("tabulate_k(show=True) is deprecated and will be removed. Use show_rates().",
-                          category=DeprecationWarning)
-        else:
-            return [(self.from_site(edge), self.to_site(edge), 
-                     self.rate(edge), self.number_of_hops(edge) ) for edge in self.graph.edges(data=True)]
+        return [(self.from_site(edge), self.to_site(edge), 
+                 self.rate(edge), self.number_of_hops(edge) ) for edge in self.graph.edges(data=True)]
 
-    def show_rates(self):
+    def show_rates(self, filename=None):
         """Print the rates (in 1/ns) between sites, and the total number of observations.
+
+        show_rates(file=filename)
+
+        By default, prints to stdout but if *file* = filename then
+        filename is opened and data are written to the file.
 
         A description of the fit function used to obtain the rate is
         also printed in the last column.
@@ -975,10 +977,20 @@ class HoppingGraph(object):
         
         .. SeeAlso:: :func:`HoppingGraph.tabulate_k`.
         """
-        for edge in self.graph.edges(data=True):
-            print "%3d --> %3d   %6.1f  1/ns  %3d  %s" % \
-                (self.from_site(edge), self.to_site(edge), self.rate(edge), 
-                 self.number_of_hops(edge), str(self.waitingtime_fit(edge)))
+        if not filename is None:
+            stream = open(filename, 'w')
+        else:
+            stream = sys.stdout
+
+        try:
+            for edge in self.graph.edges(data=True):
+                line = "%3d --> %3d   %6.1f  1/ns  %3d  %s\n" % \
+                    (self.from_site(edge), self.to_site(edge), self.rate(edge), 
+                     self.number_of_hops(edge), str(self.waitingtime_fit(edge)))
+                stream.write(line)
+        finally:
+            if not filename is None:
+                stream.close()
 
     def equivalent_sites_stats(self,elabels,equivalence=True):
         """Statistics about one or a list of equivalence sites.
@@ -1161,13 +1173,13 @@ class HoppingGraph(object):
         nodes.remove(SITELABEL['bulk'])  # exclude bulk from stats, not strictly necessary
         nodes = numpy.asarray(nodes)
         is_internal = numpy.array([self.is_internal(n) for n in nodes])
-        return nodes[is_internal]
+        return asiterable(nodes[is_internal])
 
     def isolated_sites(self):
         """Returns list of sites that have no other connections."""
         nodes = numpy.asarray(self.graph.nodes())
         is_isolated = (numpy.array(self.graph.degree(nodes)) == 0)
-        return nodes[is_isolated]
+        return asiterable(nodes[is_isolated])
 
     def is_connected(self,n1,n2):
         """True if node n1 has any connection to the site n2."""

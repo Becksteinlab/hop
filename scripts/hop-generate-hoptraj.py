@@ -39,6 +39,7 @@ def generate_hoptraj_locally(topology, trajectory, density, filename, atomselect
         return hops
 
     if localcopy:
+        # should probably also write locally and then copy back
         from tempfile import mkstemp
         from shutil import copy
         root,ext = os.path.splitext(trajectory)
