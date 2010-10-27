@@ -406,45 +406,6 @@ def visualize_density(density):
     dx = density.filename() + '.dx'
     os.system('vmd '+density.metadata['psf']+' '+density.metadata['dcd']+' -m '+dx)
 
-def map_sites(density,filename,threshold,export_map=False):
-    """Find all density sites and create the hopping trajectory.
-
-    hops = map_sites(density,filename='hops_water_3_rmsfit',threshold=3.0)
-
-    The function finds all regions in the density above the given
-    threshold. Regions are labeled with integers. 0 is the
-    'interstitial', -1 are points that lie outside the site map
-    (e.g. because the initial histogramming box was smaller than the
-    simulation box or the simulation box rotated due to RMS fitting of
-    the trajectory.) This can take a while.
-
-    Individual dx files for all sites can be exported with
-    density.export_map().
-
-    The coordinate trajectory is translated into a hopping trajectory,
-    named <filename>.dcd with a psf for visualization, named
-    <filename>.psf.
-
-    Input:
-
-    density        hop.sitemap.Density object
-    threshold      define sites with density >= threshold (unit: bulk TIP3P)
-    filename       prefix for the hopping trajectory and related file
-    export_map     True: write out one dx file for each site (using
-                   density.export_map()). False: skip this (because this can
-                   take a very long time for big grids and many sites, and it
-                   may waste a lot of space.)
-
-    Output:
-
-    hops           hop.trajectory.HoppingTrajectory object
-    """
-    density.map_sites(threshold=threshold)
-    density.save()
-    if export_map:
-        density.export_map()
-    return make_hoppingtraj(density,filename)
-
 def make_hoppingtraj(density,filename,**hopargs):
     """Create the hopping trajectory from a density with a site map.
 
