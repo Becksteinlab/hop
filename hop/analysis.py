@@ -633,7 +633,12 @@ class HeatmapAnalysis:
             format = hop.utilities.fileextension(filename,default=format)
         labels = self.labels()
         try:
-            import rpy
+            try:
+                import rpy
+            except ImportError:
+                from rpy2 import rpy_classic as rpy
+                # http://www.mail-archive.com/rpy-list@lists.sourceforge.net/msg01893.html
+                rpy.set_default_mode(rpy.BASIC_CONVERSION)
             self._heatmap_R(labels,filename=filename,format=format,**kwargs)
         except ImportError:
             msg(0,"rpy package missing: cannot plot clustered heat map, defaulting to "
@@ -650,7 +655,14 @@ class HeatmapAnalysis:
         #  over the data for heatmap.2 coloring but it looks identical
         #  and in any case, the clustering is done on the original
         #  data --- which is NOT clear from the heatmap docs)
-        from rpy import r, RException
+        try:
+            from rpy import r, RException
+        except ImportError:
+            from rpy2.rpy_classic import r, RException
+            # http://www.mail-archive.com/rpy-list@lists.sourceforge.net/msg01893.html
+            import rpy2.rpy_classic
+            rpy2.rpy_classic.set_default_mode(rpy.BASIC_CONVERSION)
+
         hm_args = dict(scale='none',
                        margins=(10,10), # space for long labels
                        N_colors=32,
