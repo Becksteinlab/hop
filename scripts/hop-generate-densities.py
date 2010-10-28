@@ -9,7 +9,7 @@ same topology and the trajectory name is the same in each DIR.
 At the moment, default values are used for most settings (because this is a
 primitive script). In particular:
 
- * The output files are always named "water.pickle" and "bulk.pickle" and the
+ * The output files are always named "water.pickle" and "bulk.pickle" and they
    are stored under the analysis dir.
  * All options for setting up the bulk are fixed.
  * The grid spacing is fixed at 1 A.

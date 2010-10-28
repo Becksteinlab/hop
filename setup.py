@@ -36,12 +36,15 @@ hops with rate constants and fluxes derived from the MD simulations.\
       license="GPLv3",
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop",
       keywords="science 'molecular dynamics' analysis hydration water",
+      scripts = ['scripts/hop-generate-densities.py', 
+                 'scripts/hop-generate-hopgraph.py',
+                 'scripts/hop-generate-hoptraj.py'],
       packages=find_packages(exclude=['tests','extras','doc/examples']),
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
                         networkx_requirements,
-                        'MDAnalysis>=0.6.3',  # or get 0.6.4-dev from svn
+                        'MDAnalysis>0.6.4.1',     # svn trunk or 0.7.0-rc2
                         'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
                         ],
       dependency_links = [
@@ -53,7 +56,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
           'plotting': ['matplotlib>=0.91.3', # probably already installed
                        'pygraphviz',         # only needed when plotting, not needed for graph building
                        ],
-          'heatmap': ['rpy'],                # optional,used for heatmaps
+          'heatmap': ['rpy'],                # optional,used for heatmaps; or use rpy2
           },
       zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script
 )
