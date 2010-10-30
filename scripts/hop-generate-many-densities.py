@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""%prog [options] -s TOPOL -f TRAJECTORY 
+"""%prog [options] DIR [DIR ...]
 
-Generate densities (solvent and bulk) for the system specified by
-the structure file TOPOL and the MD TRAJECTORY. Any combination of
-TOPOL and TRAJECTORY that canm be read by MDAnalysis is accepatble
-(e.g. a PSF/DCD or GRO/XTC combination).
+Generate densities (solvent and bulk) for identically laid out simulations in
+DIR. The assumption is that each simulation lives in a separate directory and
+that the directory name distinguishes simulations. All simulations have the
+same topology and the trajectory name is the same in each DIR.
 
 At the moment, default values are used for most settings (because this is a
 primitive script). In particular:
@@ -15,8 +15,7 @@ primitive script). In particular:
  * The grid spacing is fixed at 1 A.
 
 For more fine grained control, use hop.interactive.generate_densities()
-directly or file a enhancement request at 
-http://code.google.com/p/mdanalysis/issues/list
+directly.
 
 Some common selection strings:
 
@@ -83,8 +82,8 @@ if __name__ == "__main__":
 
     opts,args = parser.parse_args()
 
-    if len(args) != 0:
-        logger.fatal("This command only accepts option arguments. See --help.")
+    if len(args) == 0:
+        logger.fatal("At least one directory is required. See --help.")
         sys.exit(1)
 
     MDAnalysis.start_logging()
@@ -93,30 +92,36 @@ if __name__ == "__main__":
         errmsg = "Topology %(topology)r not found; (use --topology)" % vars()
         logger.fatal(errmsg)
         raise IOError(errno.ENOENT, errmsg)
-    trajectory = os.path.abspath(opts.trajectory)
-    if not os.path.exists(trajectory):
-        errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
-        logger.fatal(errmsg)
-        raise IOError(errno.ENOENT, errmsg)
- 
-    analysisdir = os.path.join(opts.analysisdir)
-    try:
-        mkdir_p(analysisdir)
-    except:
-        logger.exception()
-        raise
-    logger.debug("topology   = %(topology)r", vars())
-    logger.debug("trajectory = %(trajectory)r", vars())
-    logger.debug("selection  = %(atomselection)r", vars(opts)) 
 
-    startdirectory = os.path.abspath(os.path.curdir)
-    try:
-        os.chdir(analysisdir)
-        logger.debug("Working in %(analysisdir)r..." % vars())
-        densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
+    startdirectory = os.path.abspath(os.curdir)
+    for d in args:
+        os.chdir(startdirectory)            
+        logger.info("Generating densities for dir %(d)r", vars())
+        if not os.path.exists(d):
+            logger.fatal("Directory %r does not exist.", d)
+            raise IOError(errno.ENOENT, d)
+        analysisdir = os.path.join(opts.analysisdir, os.path.basename(d))
+        try:
+            mkdir_p(analysisdir)
+        except:
+            logger.exception()
+            raise
+        trajectory = os.path.abspath(os.path.join(d, opts.trajectory))
+        if not os.path.exists(trajectory):
+            errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
+            logger.fatal(errmsg)
+            raise IOError(errno.ENOENT, errmsg)
+        logger.debug("topology   = %(topology)r", vars())
+        logger.debug("trajectory = %(trajectory)r", vars())
+        logger.debug("selection  = %(atomselection)r", vars(opts)) 
+
+        try:
+            os.chdir(analysisdir)
+            logger.debug("Working in %(analysisdir)r..." % vars())
+            densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
                                                    localcopy=opts.localcopy)
-    finally:
-        os.chdir(startdirectory)
+        finally:
+            os.chdir(startdirectory)
 
     MDAnalysis.stop_logging()        
 
