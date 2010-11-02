@@ -220,6 +220,7 @@ Currently un(der)-documented:
 import hop.sitemap, hop.trajectory, hop.graph, hop.constants
 import hop.density
 import MDAnalysis
+import numpy
 import os
 
 def generate_densities(*args, **kwargs):
@@ -240,10 +241,11 @@ def generate_densities(*args, **kwargs):
       density_unit
          unit of measurement for densities and thresholds 
          (Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)
-      solvent_threshold : 2.7182818284590451
+      solvent_threshold : exp(1) = 2.7182818284590451
          hydration sites when density > this threshold
-      bulk_threshold : 0.6
+      bulk_threshold : exp(-0.5) = 0.60653065971263342
          bulk site are regions with density > this threshold
+         (and water farther away from the protein heavy atoms than *cutoff*)
       delta : 1.0
          cubic grid size in Angstrom
       cutoff
@@ -270,8 +272,8 @@ def generate_densities(*args, **kwargs):
     """
     filename = kwargs.pop('filename', 'water')  # solvent pickle file
     bulkname = kwargs.pop('bulkname', 'bulk')   # bulk solvent pickle file
-    solvent_threshold = kwargs.pop('solvent_threshold', 2.7182818284590451)
-    bulk_threshold = kwargs.pop('bulk_threshold', 0.6)
+    solvent_threshold = kwargs.pop('solvent_threshold', numpy.e)
+    bulk_threshold = kwargs.pop('bulk_threshold', numpy.exp(-0.5))
     density_unit = kwargs.pop('density_unit', "water")
     kwargs['mode'] = "all"
     DC = hop.density.DensityCreator(*args, **kwargs)

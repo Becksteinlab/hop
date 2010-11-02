@@ -3,7 +3,7 @@
 
 Generate densities (solvent and bulk) for the system specified by
 the structure file TOPOL and the MD TRAJECTORY. Any combination of
-TOPOL and TRAJECTORY that canm be read by MDAnalysis is accepatble
+TOPOL and TRAJECTORY that canm be read by MDAnalysis is acceptable
 (e.g. a PSF/DCD or GRO/XTC combination).
 
 At the moment, default values are used for most settings (because this is a
@@ -11,12 +11,11 @@ primitive script). In particular:
 
  * The output files are always named "water.pickle" and "bulk.pickle" and they
    are stored under the analysis dir.
- * All options for setting up the bulk are fixed.
- * The grid spacing is fixed at 1 A.
+ * The density threshold for defining bulk is fixed at exp(-0.5) = 0.60...
 
 For more fine grained control, use hop.interactive.generate_densities()
-directly or file a enhancement request at 
-http://code.google.com/p/mdanalysis/issues/list
+directly or file a enhancement request at http://github.com/orbeckst/hop/issues
+
 
 Some common selection strings:
 
@@ -25,6 +24,7 @@ Some common selection strings:
 """
 
 import os.path, errno
+import numpy
 import MDAnalysis
 import hop.interactive
 from hop.utilities import unlink_f, mkdir_p
@@ -34,9 +34,10 @@ logger = logging.getLogger('MDAnalysis.app')
 
 
 
-def generate_densities_locally(topology, trajectory, atomselection, localcopy=False):
+def generate_densities_locally(topology, trajectory, atomselection, localcopy=False, **kwargs):
+    # default values in hop.density.DensityGenerator
     def _generate_densities(traj):
-        return hop.interactive.generate_densities(topology, traj, atomselection=atomselection)        
+        return hop.interactive.generate_densities(topology, traj, **kwargs)
     if localcopy:
         from tempfile import mkstemp
         from shutil import copy
@@ -72,13 +73,30 @@ if __name__ == "__main__":
     parser.add_option("-D", "--analysisdir", dest="analysisdir",
                       metavar="DIRNAME",
                       help="results will be stored under DIRNAME/(basename DIR)  [%default]")
-    parser.add_option("-l", "--local-copy", dest="localcopy",
+    parser.add_option("--threshold", dest="solvent_threshold",
+                      metavar="CUTOFF",
+                      help="hydration sites are considered regions of density greater than CUTOFF; "
+                      "CUTOFF is measured in units of the water density at standard confitions; "
+                      "e.g. 2.0 means twice the bulk water density. [%default]")
+    parser.add_option("--delta", dest="delta",
+                      metavar="DELTA",
+                      help="The density is histogrammed on a grid of spacing DELTA Angstroem [%default]")
+    parser.add_option("--bulk-solvent-distance", dest="cutoff",
+                      metavar="CUTOFF",
+                      help="bulk-water is assumed to start at a distance CUTOFF Angstroem from the "
+                      "solute selection SELECTION [%default]")
+    parser.add_option("--bulk-solute-selection", dest="soluteselection",
+                      metavar="SELECTION",
+                      help="MDAnalysis selection string to select the solute (for bulk "
+                      "density)  [%default]")
+    parser.add_option("--local-copy", dest="localcopy",
                       action='store_true',
                       help="copy trajectory to a temporary local disk for better read performance. "
                       "Requires sufficient space in TEMP.")
 
     parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc", 
-                        atomselection="name OW",
+                        atomselection="name OW", solvent_threshold=numpy.e, delta=1.0,
+                        cutoff=3.5, soluteselection="protein and not name H*",
                         analysisdir="analysis")
 
     opts,args = parser.parse_args()
@@ -107,14 +125,19 @@ if __name__ == "__main__":
         raise
     logger.debug("topology   = %(topology)r", vars())
     logger.debug("trajectory = %(trajectory)r", vars())
-    logger.debug("selection  = %(atomselection)r", vars(opts)) 
+
+    for v in ('atomselection', 'solvent_threshold', 'delta', 'cutoff', 'soluteselection'):
+        fmt = "%(v)-15s = %%%(v)s" % vars()
+        logger.debug(fmt, vars(opts))
 
     startdirectory = os.path.abspath(os.path.curdir)
     try:
         os.chdir(analysisdir)
         logger.debug("Working in %(analysisdir)r..." % vars())
         densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
-                                                   localcopy=opts.localcopy)
+                                               solvent_threshold=opts.solvent_threshold, delta=opts.delta,
+                                               soluteselection=soluteselection, cutoff=cutoff,
+                                               localcopy=opts.localcopy)
     finally:
         os.chdir(startdirectory)
 
