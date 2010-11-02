@@ -35,7 +35,7 @@ Example
 In this example the convex hull of the C-alpha atoms is
 computed. Initially, points must be extracted from the structure to a file::
 
-  hop.qhull.make_ca_points(psf='protein.psf', pdb='protein.pdb', filename='ca_100%.dat')
+  hop.qhull.points_from_selection(psf='protein.psf', pdb='protein.pdb', filename='ca_100%.dat')
 
 and saved to file ``ca_100%.dat``.
 
@@ -45,7 +45,7 @@ roughly globular proteins is to shrink the convex hull, using the
 ``scale`` argument of :func:`hop.qhull.make_ca_points`. Shrinking to
 70% appears to be a good starting point::
 
-  hop.qhull.make_ca_points(psf='protein.psf', pdb='protein.pdb', filename='ca_70%.dat', scale=0.7)
+  hop.qhull.points_from_selection(psf='protein.psf', pdb='protein.pdb', filename='ca_70%.dat', scale=0.7)
 
 The convex hull itself is generated from the datafile of the points::
 
@@ -78,8 +78,10 @@ import numpy
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
-def points_from_selection(psf, pdb, selection="name CA", filename="points.dat", scale=None):
+def points_from_selection(*args, **kwargs):
     """Create a list of points from selected atoms in a format suitable for ``qhull``.
+
+    points_from_selection(topology, structure, selection="name CA", filename="points.dat", scale=None)
 
     :Arguments:
     - psf: Charmm topology file
@@ -90,10 +92,10 @@ def points_from_selection(psf, pdb, selection="name CA", filename="points.dat", 
       the convex hull is inside the protein; default is to not to scale, i.e. scale = 1.
     """
 
-    from MDAnalysis import Universe
-    u = Universe(psf, pdbfilename=pdb)
-    coordinates = u.selectAtoms(selection).coordinates()
-    write_coordinates(filename, coordinates, scale=scale)
+    from MDAnalysis import asUniverse
+    u = asUniverse(*args, permissive=kwargs.pop('permissive', None))
+    coordinates = u.selectAtoms(kwargs.pop('selection', "name CA")).coordinates()
+    write_coordinates(kwargs.pop('filename', "points.dat"), coordinates, scale=kwargs.pop('scale',None))
     
 def write_coordinates(filename, points, scale=None):
     """Write an array of points to a file suitable for qhull."""
@@ -127,7 +129,7 @@ class ConvexHull(object):
         :Arguments:
         - coordinates: input suitable for qconvex
         - workdir: store intermediate files in workdir (tmp dir by default)
-        - prefix: prefix for output files        
+        - prefix: filename prefix for intermediate output files        
         """
         if workdir is None:
             self.workdir = tempfile.mkdtemp(prefix="tmp", suffix="_ConvexHull")
@@ -150,14 +152,14 @@ class ConvexHull(object):
         args = ['n', 'TO', "'"+self.files['planes']+"'"]
         rc = self.qconvex(args)
         if rc != 0:
-            raise OSError("qconvex failed computing planes, rc=%(rc)d", vars())
+            raise OSError(rc, "qconvex failed computing planes, rc=%(rc)d" % vars(), self.files['planes'])
         self.planes = self.read_planes()
         print "Wrote %d planes to %r" % (len(self.planes), self.files['planes'])
 
         args = ['p', 'TO', "'"+self.files['vertices']+"'"]
         rc = self.qconvex(args)
         if rc != 0:
-            raise OSError("qconvex failed computing vertices, rc=%(rc)d", vars())
+            raise OSError(rc, "qconvex failed computing vertices, rc=%(rc)d" % vars(), self.files['vertices'])
         self.vertices = self.read_vertices()
         print "Wrote %d vertices to %r" % (len(self.vertices), self.files['vertices'])
 
@@ -244,7 +246,7 @@ class ConvexHull(object):
         return numpy.fromiter((self.point_inside(point) for point in points), numpy.bool)
 
     def write_vertices_pdb(self, pdb="vertices.pdb"):
-        ppw = PrimitivePDBWriter(pdb)
+        ppw = VertexPDBWriter(pdb)
         ppw.write(self.vertices)
         print "Wrote vertices to pdb file %(pdb)r." % vars()
 
@@ -280,93 +282,89 @@ class ConvexHull(object):
             shutil.rmtree(self.workdir, ignore_errors=True)
 
 
-# should simply import from MDAnalysis
-try:
-    from MDAnalysis.coordinates.PDB import PrimitivePDBWriter
-except ImportError:
-    class PrimitivePDBWriter(object):
-        """PDB writer that implements a subset of the PDB 3.2 standard.
-        http://www.wwpdb.org/documentation/format32/v3.2.html
+class VertexPDBWriter(object):
+    """PDB writer that implements a subset of the PDB 3.2 standard.
+    http://www.wwpdb.org/documentation/format32/v3.2.html
+    """
+    #          1         2         3         4         5         6         7         8
+    # 123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.
+    # ATOM__seria nameAres CressI   xxxxxxxxyyyyyyyyzzzzzzzzOCCUPAtempft          elCH
+    # ATOM  %5d   %-4s %-3s %4d %1s %8.3f   %8.3f   %8.3f   %6.2f %6.2f           %2s
+    #                 %1s  %1s                                                      %2d
+    #            =        =      ===                                    ==========
+    # ATOM  %5d %-4s%1s%-3s %1s%4d%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2d
+    # ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d
+
+    fmt = {'ATOM':   "ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d\n",
+           'REMARK': "REMARK     %s\n",
+           'TITLE':  "TITLE    %s\n",
+           }
+
+    def __init__(self,filename):
+        self.filename = filename
+        self.pdb = open(self.filename,'w')
+
+    def close(self):
+        self.pdb.close()
+
+    def write(self,coordinates,name="CA",resname="VRT",resid=1):
+        """Write coordinates as CA."""
+
+        self.TITLE("points as CA")
+        for i, atom in enumerate(coordinates):
+            self.ATOM(serial=i+1, name=name.strip(), resName=resname.strip(), resSeq=resid,
+                      x=coordinates[i,0], y=coordinates[i,1], z=coordinates[i,2])
+        self.close()
+
+    def TITLE(self,*title):
+        """Write TITLE record.
+        http://www.wwpdb.org/documentation/format32/sect2.html
+        """        
+        line = " ".join(title)    # should do continuation automatically
+        self.pdb.write(self.fmt['TITLE'] % line)
+
+    def REMARK(self,*remark):
+        """Write generic REMARK record (without number).
+        http://www.wwpdb.org/documentation/format32/remarks1.html
+        http://www.wwpdb.org/documentation/format32/remarks2.html
         """
-        #          1         2         3         4         5         6         7         8
-        # 123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.
-        # ATOM__seria nameAres CressI   xxxxxxxxyyyyyyyyzzzzzzzzOCCUPAtempft          elCH
-        # ATOM  %5d   %-4s %-3s %4d %1s %8.3f   %8.3f   %8.3f   %6.2f %6.2f           %2s
-        #                 %1s  %1s                                                      %2d
-        #            =        =      ===                                    ==========
-        # ATOM  %5d %-4s%1s%-3s %1s%4d%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2d
-        # ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d
+        line = " ".join(remark)
+        self.pdb.write(self.fmt['REMARK'] % line)
 
-        fmt = {'ATOM':   "ATOM  %(serial)5d %(name)-4s%(altLoc)1s%(resName)-3s %(chainID)1s%(resSeq)4d%(iCode)1s   %(x)8.3f%(y)8.3f%(z)8.3f%(occupancy)6.2f%(tempFactor)6.2f          %(element)2s%(charge)2d\n",
-               'REMARK': "REMARK     %s\n",
-               'TITLE':  "TITLE    %s\n",
-               }
+    def ATOM(self,serial=None,name=None,altLoc=None,resName=None,chainID=None,
+             resSeq=None,iCode=None,x=None,y=None,z=None,occupancy=1.0,tempFactor=0.0,
+             element=None,charge=0):
+        """Write ATOM record. 
+        http://www.wwpdb.org/documentation/format32/sect9.html
+        Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.
 
-        def __init__(self,filename):
-            self.filename = filename
-            self.pdb = open(self.filename,'w')
+        All inputs are cut to the maximum allowed length. For integer
+        numbers the highest-value digits are chopped (so that the
+        serial and reSeq wrap); for strings the trailing characters
+        are chopped.
 
-        def close(self):
-            self.pdb.close()
+        Note: Floats are not checked and can potentially screw up the format.
+        """
+        for arg in ('serial','name','resName','resSeq','x','y','z',
+                    'occupancy','tempFactor','charge'):
+            if locals()[arg] is None:
+                raise ValueError('parameter '+arg+' must be defined.')
+        serial = int(str(serial)[-5:])  # check for overflow here?
+        name = name[:4]
+        if len(name) < 4:
+            name = " "+name   # customary to start in column 14
+        altLoc = altLoc or " "
+        altLoc= altLoc[:1]
+        resName = resName[:3]
+        chainID = chainID or ""   # or should we provide a chainID such as 'A'?
+        chainId = chainID[:1]
+        resSeq = int(str(resSeq)[-4:]) # check for overflow here?
+        iCode = iCode or ""
+        iCode = iCode[:1]
+        element = element or name.strip()[0]  # could have a proper dict here...
+        element = element[:2]
+        self.pdb.write(self.fmt['ATOM'] % vars())        
 
-        def write(self,coordinates,name="CA",resname="VRT",resid=1):
-            """Write coordinates as CA."""
-
-            self.TITLE("points as CA")
-            for i, atom in enumerate(coordinates):
-                self.ATOM(serial=i+1, name=name.strip(), resName=resname.strip(), resSeq=resid,
-                          x=coordinates[i,0], y=coordinates[i,1], z=coordinates[i,2])
-            self.close()
-
-        def TITLE(self,*title):
-            """Write TITLE record.
-            http://www.wwpdb.org/documentation/format32/sect2.html
-            """        
-            line = " ".join(title)    # should do continuation automatically
-            self.pdb.write(self.fmt['TITLE'] % line)
-
-        def REMARK(self,*remark):
-            """Write generic REMARK record (without number).
-            http://www.wwpdb.org/documentation/format32/remarks1.html
-            http://www.wwpdb.org/documentation/format32/remarks2.html
-            """
-            line = " ".join(remark)
-            self.pdb.write(self.fmt['REMARK'] % line)
-
-        def ATOM(self,serial=None,name=None,altLoc=None,resName=None,chainID=None,
-                 resSeq=None,iCode=None,x=None,y=None,z=None,occupancy=1.0,tempFactor=0.0,
-                 element=None,charge=0):
-            """Write ATOM record. 
-            http://www.wwpdb.org/documentation/format32/sect9.html
-            Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.
-
-            All inputs are cut to the maximum allowed length. For integer
-            numbers the highest-value digits are chopped (so that the
-            serial and reSeq wrap); for strings the trailing characters
-            are chopped.
-
-            Note: Floats are not checked and can potentially screw up the format.
-            """
-            for arg in ('serial','name','resName','resSeq','x','y','z',
-                        'occupancy','tempFactor','charge'):
-                if locals()[arg] is None:
-                    raise ValueError('parameter '+arg+' must be defined.')
-            serial = int(str(serial)[-5:])  # check for overflow here?
-            name = name[:4]
-            if len(name) < 4:
-                name = " "+name   # customary to start in column 14
-            altLoc = altLoc or " "
-            altLoc= altLoc[:1]
-            resName = resName[:3]
-            chainID = chainID or ""   # or should we provide a chainID such as 'A'?
-            chainId = chainID[:1]
-            resSeq = int(str(resSeq)[-4:]) # check for overflow here?
-            iCode = iCode or ""
-            iCode = iCode[:1]
-            element = element or name.strip()[0]  # could have a proper dict here...
-            element = element[:2]
-            self.pdb.write(self.fmt['ATOM'] % vars())        
-
-        def __del__(self):
-            self.close()
+    def __del__(self):
+        self.close()
 
