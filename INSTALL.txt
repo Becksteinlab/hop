@@ -59,7 +59,7 @@ Required python modules
    MDAnalysis      >= 0.6.3              http://mdanalysis.googlecode.com
    numpy           >=1.0.3               http://numpy.scipy.org/
    NetworkX        >=1.0                 https://networkx.lanl.gov/
-   GridDataFormats >= 0.1.1              http://sbcb.bioch.ox.ac.uk/oliver/download/Python/
+   GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
 
 ``MDAnalysis`` requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
