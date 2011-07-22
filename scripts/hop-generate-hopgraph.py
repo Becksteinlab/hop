@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """%prog [options] -s HOPTRAJ.psf -f HOPTRAJ.dcd DENSITY
 
-Generate the hopping graph from HOPTRAJ-PREFIX.psf and
-HOPTRAJ-PREFIX.dcd and DENSITY. DENSITY
-must be the pickle file used to make the hopping trajectory.
+Generate the hopping graph from HOPTRAJ.psf and HOPTRAJ.dcd and
+DENSITY. DENSITY must be the pickle file used to make the hopping
+trajectory.
 
 """
 
@@ -49,8 +49,8 @@ def analyze_hopgraph(densityfile, filename):
     h = hop.graph.HoppingGraph(filename=filename)
     hop.interactive.hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app')
     return h
-    
-        
+
+
 if __name__ == "__main__":
     import sys
     from optparse import OptionParser
@@ -58,14 +58,14 @@ if __name__ == "__main__":
     parser = OptionParser(usage=__doc__)
     parser.add_option("-s", "--topology", dest="topology",
                       metavar="FILE",
-                      help="PSG topology to go with the hopping trajectories")
+                      help="PSF topology to go with the hopping trajectories")
     parser.add_option("-f", "--trajectory", dest="trajectory",
                       metavar="FILE",
                       help="hopping trajectory DCD")
     parser.add_option("-o", "--output-name", dest="output",
                       metavar="FILENAME",
                       help="the hopping graph FILENAME.pickle etc...; its path component is assumed "
-                      "to be a analysis directory where we can write other files [%default]") 
+                      "to be an analysis directory where we can write other files [%default]")
     parser.add_option("-l", "--local-copy", dest="localcopy",
                       action='store_true',
                       help="copy trajectory to a temporary local disk for better read performance. "
@@ -116,5 +116,5 @@ if __name__ == "__main__":
         logger.info("hopgraph file %(hopgraph_filename)r already exists; only doing analysis", vars())
         analyze_hopgraph(density, opts.output)
 
-    MDAnalysis.stop_logging()        
+    MDAnalysis.stop_logging()
 

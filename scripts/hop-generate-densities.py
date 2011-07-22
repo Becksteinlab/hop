@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""%prog [options] -s TOPOL -f TRAJECTORY 
+"""%prog [options] -s TOPOL -f TRAJECTORY
 
 Generate densities (solvent and bulk) for the system specified by
 the structure file TOPOL and the MD TRAJECTORY. Any combination of
-TOPOL and TRAJECTORY that canm be read by MDAnalysis is acceptable
+TOPOL and TRAJECTORY that can be read by MDAnalysis is acceptable
 (e.g. a PSF/DCD or GRO/XTC combination).
 
 At the moment, default values are used for most settings (because this is a
@@ -20,7 +20,7 @@ directly or file a enhancement request at http://github.com/orbeckst/hop/issues
 Some common selection strings:
 
   * "name OW" for water in Gromacs
-  * "name OH2" for water in CHARMM 
+  * "name OH2" for water in CHARMM
 """
 
 import os.path, errno
@@ -94,7 +94,7 @@ if __name__ == "__main__":
                       help="copy trajectory to a temporary local disk for better read performance. "
                       "Requires sufficient space in TEMP.")
 
-    parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc", 
+    parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc",
                         atomselection="name OW", solvent_threshold=numpy.e, delta=1.0,
                         cutoff=3.5, soluteselection="protein and not name H*",
                         analysisdir="analysis")
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
         logger.fatal(errmsg)
         raise IOError(errno.ENOENT, errmsg)
- 
+
     analysisdir = os.path.join(opts.analysisdir)
     try:
         mkdir_p(analysisdir)
@@ -134,12 +134,12 @@ if __name__ == "__main__":
     try:
         os.chdir(analysisdir)
         logger.debug("Working in %(analysisdir)r..." % vars())
-        densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
+        densities = generate_densities_locally(topology, trajectory, opts.atomselection,
                                                solvent_threshold=opts.solvent_threshold, delta=opts.delta,
                                                soluteselection=soluteselection, cutoff=cutoff,
                                                localcopy=opts.localcopy)
     finally:
         os.chdir(startdirectory)
 
-    MDAnalysis.stop_logging()        
+    MDAnalysis.stop_logging()
 

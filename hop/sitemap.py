@@ -144,8 +144,6 @@ class Grid(hop.utilities.Saveable):
     def _update(self):
         """compute/update all derived data
 
-        Grid.update()
-
         Can be called without harm (idem-potent); needed separately
         when the units are changed.
 
