@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__doc__ = """\
+"""
 Interactive or high-level use of the hop trajectory package
 ===========================================================
 
@@ -25,7 +25,7 @@ suitable for MDAnalysis_ can be used such as PSF+DCD, PDB+XTC or a
 single PDB. In the following Charmm/NAMD psf and dcd files are used as
 examples.
 
-We will use the high-level wrapper functions in hop.interactive:
+We will use the high-level wrapper functions in :mod:`hop.interactive`:
 
 >>> from hop.interactive import *
 
@@ -79,21 +79,21 @@ density (all water not within 3.5 A of the protein) and manually
 inserting the bulk site into the site map for the first density.
 
 >>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
-            atomselection='name OH2',
-            soluteselection='protein and not name H*',
-            cutoff=3.5
-            )
+...         atomselection='name OH2',
+...         soluteselection='protein and not name H*',
+...         cutoff=3.5
+...         )
 
 Using VMD's VolMap can be potentially be faster --- try it if the
 default seems too slow to you:
 
 >>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
-            atomselection='name OH2 and not within 3.5 of (protein and name not hydrogen)',
-            backend='VMD',load_new=False)
+...         atomselection='name OH2 and not within 3.5 of (protein and name not hydrogen)',
+...         backend='VMD',load_new=False)
 
 The bulk density should be a big, well defined volume so we choose a
 fairly low threshold:
-            
+
 >>> density_bulk.map_sites(0.6)
 
 Add the biggest bulk site:
@@ -115,14 +115,14 @@ Statistics about the sites can be produced with
 
 >>> analyze_density(density,figname)
 
-The results figures will be named <figname>.pdf.
+The results figures will be named `<figname>.pdf`.
 
 
 Remapping for comparing site maps
 .................................
 
 This section is only relevant if you plan on comparing site maps. Then
-you **must** compare the density to your reference density now before
+you *must* compare the density to your reference density *now* before
 proceeding. You will
 
    1) remap this density to be defined on the same grid as the reference
@@ -199,7 +199,7 @@ Further analysis uses tn.hopgraph:
 To compare the water network based on density with another hop graph
 (based on ref_density), construct the CombinedGraph:
 
->>> h_ref = hop.graph.HoppingGraph(filename=<filename>) --- basically repeat steps from 
+>>> h_ref = hop.graph.HoppingGraph(filename=<filename>) --- basically repeat steps from
 ###                                                     --- ref_density only with differ labels
 >>> cg = hop.graph.CombinedGraph(g0=h,g1=h_ref)
 >>> cg.plot(0,'cg_h',linewidths=(0.01,))
@@ -211,9 +211,9 @@ TODO
 
 Currently un(der)-documented:
 * Remapping densities to a reference density (see hop.sitemap.remap_density).
-* Comparing densities and finding equivalence sites (see 
+* Comparing densities and finding equivalence sites (see
   hop.sitemap.find_common_sites() and Density.find_equivalence_sites_with()).
-* Comparing hopgraphs across different simulations: requires equivalence sites in 
+* Comparing hopgraphs across different simulations: requires equivalence sites in
   both densities; then build the hop.graph.CombinedGraph().
 """
 
@@ -239,7 +239,7 @@ def generate_densities(*args, **kwargs):
       bulkname
          bulk density
       density_unit
-         unit of measurement for densities and thresholds 
+         unit of measurement for densities and thresholds
          (Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)
       solvent_threshold : exp(1) = 2.7182818284590451
          hydration sites when density > this threshold
@@ -255,9 +255,9 @@ def generate_densities(*args, **kwargs):
          how to select the solute (for bulk density)
 
     :Returns: a dict containing :class:`hop.sitemap.Density` instances for the
-              the "solvent" and the "bulk" density; the "solvent" has the bulk 
+              the "solvent" and the "bulk" density; the "solvent" has the bulk
               site (largest site in "bulk") inserted as site 1.
-         
+
     .. Note:: The "solvent" density is going to be used throughout the rest of
        the protocol. Should you ever remap the sites (i.e. run
        :meth:`~hop.sitemap.Density.map_sites` with a different threshold) then
@@ -282,7 +282,7 @@ def generate_densities(*args, **kwargs):
     densities['bulk'].save(bulkname)
     densities['solvent'].save(filename)
     # modifies densities['solvent'] (and also returns it)
-    density = DC.DensityWithBulk(density_unit=density_unit, 
+    density = DC.DensityWithBulk(density_unit=density_unit,
                                  solvent_threshold=solvent_threshold,
                                  bulk_threshold=bulk_threshold)
     # save again, but now with mapped sites and bulk site include in "solvent"
@@ -304,29 +304,37 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
     also exports it as a dx file for visualization (use
     vizualize_density(density)).
 
-    Input:
+    :Arguments:
 
-    psf          Charmm psf topology
-    dcd          Charmm dcd trajectory (should be RMS fitted to a reference frame)
-    filename     default filename for the density
-    delta        grid spacing Angstrom
-    backend      MDAnalysis or VMD to be used for histogramming the density
+      *psf
+         topology
+      *dcd*
+         trajectory (should be RMS fitted to a reference frame)
+      *filename*
+         default filename for the density
+      *delta*
+         grid spacing Angstrom
+      *backend*
+         "MDAnalysis" or "VMD" to be used for histogramming the density
+         ["MDAnalysis"]
 
-    **kwargs (depend on backend):
-    only for MDAnalysis:
-    padding      increase box dimensions for 3D histogramming by padding
-    soluteselection
-    cutoff       for bulk density: setting both soluteselection='protein and not name H*'
-                 and cutoff=3.5 A selects '<atomsel> NOT WITHIN <cutoff> OF <solutesel>'
+      *kwargs* (depend on backend):
+         only for MDAnalysis:
+            *padding*
+               increase box dimensions for 3D histogramming by padding
+            *soluteselection*
+            *cutoff*
+                for bulk density: setting both `soluteselection='protein and not name H*'`
+                and `cutoff=3.5` A selects *'<atomsel> NOT WITHIN <cutoff> OF <solutesel>'*
 
-    only for VMD:    
-    load_new     True: load psf and dcd from file. False: use already loaded psf and dcd
-    
+         only for VMD:
+            *load_new*
+                `True`: load psf and dcd from file. `False`: use already loaded
+                psf and dcd
 
-    Output:
+    :Returns: *density*, :class:`hop.sitemap.Density` object; the density is
+              converted to a fraction of the density of bulk TIP3P water
 
-    density      hop.sitemap.Density object; the density is converted to a
-                 fraction of the density of bulk TIP3P water
     """
     if backend == 'MDAnalysis':
         density = hop.sitemap.density_from_trajectory(
@@ -373,7 +381,7 @@ def analyze_density(density,figure='sitestats'):
     # convert density to the chosen density unit (typically, relative to bulk water)
     factor = hop.constants.get_conversion_factor('density',
                                             density.unit['length'],density.unit['density'])
-    
+
     x,N,DN = density.site_occupancy(include='sites')
     x,V = density.site_volume(include='sites')
 
@@ -399,11 +407,12 @@ def analyze_density(density,figure='sitestats'):
 def visualize_density(density):
     """Visualize the trajectory with the density in VMD.
 
-    visualize_density(density)
+       visualize_density(density)
 
-    Input:
+    :Arguments:
+       *density*
+          hop.sitemap.Density object
 
-    density     hop.sitemap.Density object
     """
     dx = density.filename() + '.dx'
     os.system('vmd '+density.metadata['psf']+' '+density.metadata['dcd']+' -m '+dx)
@@ -411,25 +420,27 @@ def visualize_density(density):
 def make_hoppingtraj(density,filename,**hopargs):
     """Create the hopping trajectory from a density with a site map.
 
-    hops = make_hoptraj(density,filename)
+       hops = make_hoptraj(density,filename)
 
-    density      density object with a site map
-    filename     prefix for the hop trajectory files (psf and dcd)
-
-    **hopargs    keyword args to add to HoppingTrajectory() such as
-                 fixtrajectory = {'delta':10.22741474887299}; see
-                 documentation of hop.trajectory.HoppingTrajectory.
+    :Arguments:
+      *density*
+         density object with a site map
+      *filename*
+         prefix for the hop trajectory files (psf and dcd)
+      *hopargs*
+         keyword args to add to :class:`~hop.trajectory.HoppingTrajectory` such
+         as `fixtrajectory = {'delta':10.22741474887299}`
 
     This function relies on the density's metadata. In particular it
-    uses density.metadata['psf'] and metadata['dcd'] to find its input
-    data and metadata['atomselection'] to define the atoms to track.
+    uses `density.metadata['psf']` and `metadata['dcd']` to find its input
+    data and `metadata['atomselection']` to define the atoms to track.
     """
     try:
         if len(density.sites) < 2:
             raise ValueError
     except AttributeError,ValueError:
         raise ValueError('The density misses a site map or has only one site.')
-    
+
     u = MDAnalysis.Universe(density.metadata['psf'],density.metadata['dcd'])
     group = u.selectAtoms(density.metadata['atomselection'])
     hops = hop.trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
@@ -447,7 +458,7 @@ def build_hoppinggraph(hoppingtrajectory,density):
 
     Output:
     tgraph         hop.graph.TransportNetwork object
-    """ 
+    """
     tgraph = hop.graph.TransportNetwork(hoppingtrajectory,density)
     tgraph.compute_residency_times()
     return tgraph
@@ -463,7 +474,7 @@ def build_hoppinggraph_fromfiles(hoppingtrajectory_filename,density_filename):
 
     Output:
     tn                           hop.graph.TransportNetwork object (qv)
-    """ 
+    """
     hoppingtrajectory = hop.trajectory.HoppingTrajectory(filename=hoppingtrajectory_filename)
     density = hop.sitemap.Density(filename=density_filename)
     return build_hoppinggraph(hoppingtrajectory,density)
@@ -479,8 +490,8 @@ def hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app'):
        density
           density, a :class:`hop.sitemap.Density`
        filename
-          default filename for generated files; all files and new 
-          directories are written in the directory pointed to by the 
+          default filename for generated files; all files and new
+          directories are written in the directory pointed to by the
           path component
     """
     import logging
@@ -496,7 +507,7 @@ def hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app'):
     h.filter(exclude={'outliers':True, 'bulk':True})
     h.export(filename, format='XGMML')
     logger.info("Exported hopgraph as %(filename)s.xgmml", vars())
-    
+
     logger.info("Generating 3D graph %(filename)s.psf/pdb", vars())
     logger.info("Note: bulk site omitted for clarity.")
     h.export3D(density)
