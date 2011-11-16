@@ -223,6 +223,9 @@ import MDAnalysis
 import numpy
 import os
 
+import logging
+logger = logging.getLogger("MDAnalysis.analysis.hop.interactive")
+
 def generate_densities(*args, **kwargs):
     """Analyze the trajectory and generate solvent and bulk density.
 
@@ -258,17 +261,20 @@ def generate_densities(*args, **kwargs):
               the "solvent" and the "bulk" density; the "solvent" has the bulk
               site (largest site in "bulk") inserted as site 1.
 
-    .. Note:: The "solvent" density is going to be used throughout the rest of
-       the protocol. Should you ever remap the sites (i.e. run
+    .. Note::
+
+       The "solvent" density is going to be used throughout the rest of the
+       protocol. Should you ever remap the sites (i.e. run
        :meth:`~hop.sitemap.Density.map_sites` with a different threshold) then
        **you must insert the bulk site again** (because the bulk site is
        removed for technical reasons whenever the sites change); use the saved
        bulk site and the :meth:`hop.sitemap.Density.site_insert_bulk` method.
 
-    .. SeeAlso:: Keyword arguments are passed on to
-       :class:`hop.density.DensityCreator` where all possible keywords are
-       documented; the site mapping is done with
-       :meth:`hop.sitemap.Density.map_sites`.
+    .. SeeAlso::
+
+       Keyword arguments are passed on to :class:`hop.density.DensityCreator`
+       where all possible keywords are documented; the site mapping is done
+       with :meth:`hop.sitemap.Density.map_sites`.
     """
     filename = kwargs.pop('filename', 'water')  # solvent pickle file
     bulkname = kwargs.pop('bulkname', 'bulk')   # bulk solvent pickle file
@@ -291,7 +297,7 @@ def generate_densities(*args, **kwargs):
     # finally write dx files for visualization
     densities['bulk'].export()
     density.export()
-    print "generate_densities(): saved densities and exported dx files"
+    logger.info("generate_densities(): saved densities and exported dx files")
     return densities
 
 def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
@@ -345,12 +351,14 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
             psf,dcd,delta=delta,atomselection=atomselection,
             verbosity=3,**kwargs)
     else:
-        raise ValueError("Unknown backend '%s'." % backend)
+        errmsg = "Unknown backend '%s'." % backend
+        logger.fatal(errmsg)
+        raise ValueError(errmsg)
     density.convert_density('TIP3P')
     density.save(filename)
     density.export()
 
-    print "Run map_sites(density,...) next"
+    logger.info("make_density() completed. Run map_sites(density,...) next")
     return density
 
 def make_xstal_density(pdb,filename,**kwargs):
@@ -439,7 +447,9 @@ def make_hoppingtraj(density,filename,**hopargs):
         if len(density.sites) < 2:
             raise ValueError
     except AttributeError,ValueError:
-        raise ValueError('The density misses a site map or has only one site.')
+        errmsg = 'The density misses a site map or has only one site.'
+        logger.fatal(errmsg)
+        raise ValueError(errmsg)
 
     u = MDAnalysis.Universe(density.metadata['psf'],density.metadata['dcd'])
     group = u.selectAtoms(density.metadata['atomselection'])
@@ -452,12 +462,13 @@ def build_hoppinggraph(hoppingtrajectory,density):
 
     tgraph = build_hoppinggraph(hops,density)
 
-    Input:
-    hops           hop.trajectory.HoppingTrajectory object
-    density        hop.sitemap.Density object
+    :Arguments:
+    hops
+           hop.trajectory.HoppingTrajectory object
+    density
+           hop.sitemap.Density object
 
-    Output:
-    tgraph         hop.graph.TransportNetwork object
+    :Returns:  tgraph, a :class:`hop.graph.TransportNetwork` object
     """
     tgraph = hop.graph.TransportNetwork(hoppingtrajectory,density)
     tgraph.compute_residency_times()
@@ -479,7 +490,7 @@ def build_hoppinggraph_fromfiles(hoppingtrajectory_filename,density_filename):
     density = hop.sitemap.Density(filename=density_filename)
     return build_hoppinggraph(hoppingtrajectory,density)
 
-def hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app'):
+def hopgraph_basic_analysis(h, density, filename):
     """Do some simple analysis tasks on the hopgraph.
 
     hopgraph_basic_analysis(h, density, filename)
@@ -494,9 +505,6 @@ def hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app'):
           directories are written in the directory pointed to by the
           path component
     """
-    import logging
-    logger = logging.getLogger(logname)  # do this properly once we use logging
-
     analysisdir = os.path.dirname(filename)
     logger.warn("Setting analysisdir = %(analysisdir)r", vars())
 

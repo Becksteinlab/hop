@@ -20,7 +20,7 @@ directly.
 Some common selection strings:
 
   * "name OW" for water in Gromacs
-  * "name OH2" for water in CHARMM 
+  * "name OH2" for water in CHARMM
 """
 
 import os.path, errno
@@ -35,7 +35,7 @@ logger = logging.getLogger('MDAnalysis.app')
 
 def generate_densities_locally(topology, trajectory, atomselection, localcopy=False):
     def _generate_densities(traj):
-        return hop.interactive.generate_densities(topology, traj, atomselection=atomselection)        
+        return hop.interactive.generate_densities(topology, traj, atomselection=atomselection)
     if localcopy:
         from tempfile import mkstemp
         from shutil import copy
@@ -76,17 +76,18 @@ if __name__ == "__main__":
                       help="copy trajectory to a temporary local disk for better read performance. "
                       "Requires sufficient space in TEMP.")
 
-    parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc", 
+    parser.set_defaults(topology="md.pdb", trajectory="rmsfit_md.xtc",
                         atomselection="name OW",
                         analysisdir="analysis")
 
     opts,args = parser.parse_args()
 
+    MDAnalysis.start_logging()
+
     if len(args) == 0:
         logger.fatal("At least one directory is required. See --help.")
         sys.exit(1)
 
-    MDAnalysis.start_logging()
     topology = os.path.abspath(opts.topology)
     if not os.path.exists(topology):
         errmsg = "Topology %(topology)r not found; (use --topology)" % vars()
@@ -95,7 +96,7 @@ if __name__ == "__main__":
 
     startdirectory = os.path.abspath(os.curdir)
     for d in args:
-        os.chdir(startdirectory)            
+        os.chdir(startdirectory)
         logger.info("Generating densities for dir %(d)r", vars())
         if not os.path.exists(d):
             logger.fatal("Directory %r does not exist.", d)
@@ -113,15 +114,15 @@ if __name__ == "__main__":
             raise IOError(errno.ENOENT, errmsg)
         logger.debug("topology   = %(topology)r", vars())
         logger.debug("trajectory = %(trajectory)r", vars())
-        logger.debug("selection  = %(atomselection)r", vars(opts)) 
+        logger.debug("selection  = %(atomselection)r", vars(opts))
 
         try:
             os.chdir(analysisdir)
             logger.debug("Working in %(analysisdir)r..." % vars())
-            densities = generate_densities_locally(topology, trajectory, opts.atomselection, 
+            densities = generate_densities_locally(topology, trajectory, opts.atomselection,
                                                    localcopy=opts.localcopy)
         finally:
             os.chdir(startdirectory)
 
-    MDAnalysis.stop_logging()        
+    MDAnalysis.stop_logging()
 

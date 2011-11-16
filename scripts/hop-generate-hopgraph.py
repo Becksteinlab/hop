@@ -40,14 +40,14 @@ def generate_hopgraph(topology, trajectory, densityfile, filename, localcopy=Fal
     h.save(filename)          # save result
     logger.info("Saved hopgraph as %(filename)s.pickle", vars())
 
-    hop.interactive.hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app')
+    hop.interactive.hopgraph_basic_analysis(h, density, filename)
 
     return h
 
 def analyze_hopgraph(densityfile, filename):
     density = hop.sitemap.Density(filename=densityfile)
     h = hop.graph.HoppingGraph(filename=filename)
-    hop.interactive.hopgraph_basic_analysis(h, density, filename, logname='MDAnalysis.app')
+    hop.interactive.hopgraph_basic_analysis(h, density, filename)
     return h
 
 
@@ -78,11 +78,11 @@ if __name__ == "__main__":
 
     opts,args = parser.parse_args()
 
+    MDAnalysis.start_logging()
+
     if len(args) == 0:
         logger.fatal("A pickled density with bulk site is required. See --help.")
         sys.exit(1)
-
-    MDAnalysis.start_logging()
 
     density = os.path.abspath(args[0])
     if not os.path.exists(density):

@@ -8,8 +8,8 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 import sys
-if sys.version_info[:2] < (2, 4):
-    print "HOP requires Python 2.4 or better.  Python %d.%d detected" % \
+if sys.version_info[:2] < (2, 5):
+    print "HOP requires Python 2.5 or better.  Python %d.%d detected" % \
         sys.version_info[:2]
     print "Please upgrade your version of python."
     sys.exit(-1)
@@ -20,7 +20,7 @@ else:
     networkx_requirements = 'networkx==1.2'
 
 setup(name="Hop",
-      version="0.3.2-devel",
+      version="0.3.3-devel",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
@@ -36,7 +36,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       license="GPLv3",
       url="http://sbcb.bioch.ox.ac.uk/oliver/software/#Hop",
       keywords="science 'molecular dynamics' analysis hydration water",
-      scripts = ['scripts/hop-generate-densities.py', 
+      scripts = ['scripts/hop-generate-densities.py',
                  'scripts/hop-generate-hopgraph.py',
                  'scripts/hop-generate-hoptraj.py'],
       packages=find_packages(exclude=['tests','extras','doc/examples']),
@@ -44,7 +44,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       install_requires=['numpy>=1.0.3',
                         'scipy',
                         networkx_requirements,
-                        'MDAnalysis>0.6.4.1',     # svn trunk or 0.7.0-rc2
+                        'MDAnalysis>0.7.4',
                         'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
                         ],
       dependency_links = [

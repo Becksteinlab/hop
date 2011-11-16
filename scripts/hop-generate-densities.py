@@ -101,11 +101,12 @@ if __name__ == "__main__":
 
     opts,args = parser.parse_args()
 
+    MDAnalysis.start_logging()
+
     if len(args) != 0:
         logger.fatal("This command only accepts option arguments. See --help.")
         sys.exit(1)
 
-    MDAnalysis.start_logging()
     topology = os.path.abspath(opts.topology)
     if not os.path.exists(topology):
         errmsg = "Topology %(topology)r not found; (use --topology)" % vars()
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     logger.debug("trajectory = %(trajectory)r", vars())
 
     for v in ('atomselection', 'solvent_threshold', 'delta', 'cutoff', 'soluteselection'):
-        fmt = "%(v)-15s = %%%(v)s" % vars()
+        fmt = "%(v)-17s = %%(%(v)s)s" % vars()
         logger.debug(fmt, vars(opts))
 
     startdirectory = os.path.abspath(os.path.curdir)
@@ -136,7 +137,7 @@ if __name__ == "__main__":
         logger.debug("Working in %(analysisdir)r..." % vars())
         densities = generate_densities_locally(topology, trajectory, opts.atomselection,
                                                solvent_threshold=opts.solvent_threshold, delta=opts.delta,
-                                               soluteselection=soluteselection, cutoff=cutoff,
+                                               soluteselection=opts.soluteselection, cutoff=opts.cutoff,
                                                localcopy=opts.localcopy)
     finally:
         os.chdir(startdirectory)

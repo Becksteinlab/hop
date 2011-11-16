@@ -20,8 +20,8 @@
 
 As an input a trajectory is required that
 
-1. Has been centered on the protein of interest.  
-2. Has all molecules made whole that have been broken across periodic 
+1. Has been centered on the protein of interest.
+2. Has all molecules made whole that have been broken across periodic
    boundaries.
 3. Has the solvent molecules remap so that they are closest to the
    solute (this is important when using funky unit cells such as
@@ -33,7 +33,7 @@ import hop
 import hop.constants
 import hop.utilities
 from hop.utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
-     DefaultDict, fixedwidth_bins, iterable, asiterable
+     DefaultDict, fixedwidth_bins, iterable, asiterable, CustomProgressMeter
 from hop.sitemap import Density
 import numpy  # need v >= 1.0
 import sys
@@ -41,7 +41,11 @@ import os,os.path,errno
 import cPickle
 import warnings
 
-from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats 
+from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats
+
+import logging
+logger = logging.getLogger("MDAnalysis.analysis.hop.density")
+
 
 class DensityCollector(object):
     """Collect subsequent coordinate frames to build up a :class:`Density`."""
@@ -52,7 +56,9 @@ class DensityCollector(object):
             universe.selectAtoms('all')
             universe.trajectory.ts
         except AttributeError:
-            raise TypeError("The universe must be a proper MDAnalysis.Universe instance.")        
+            errmsg = "DensityCollector: The universe must be a proper MDAnalysis.Universe instance."
+            logger.fatal(errmsg)
+            raise TypeError(errmsg)
         self.universe = u = universe
         self.delta = kwargs.pop('delta', 1.0)
         self.atomselection = kwargs.pop('atomselection', 'name OH2')
@@ -73,9 +79,9 @@ class DensityCollector(object):
             self.current_coordinates = group.coordinates
             self.mode = "SOLVENT"
         coord = self.current_coordinates()
-        msg(3,"%-10s: Selected %d atoms out of %d atoms (%s) from %d total.\n" %
-            (self.name, coord.shape[0],len(u.selectAtoms(self.atomselection)),
-             self.atomselection,len(u.atoms)))
+        logger.info("%-10s: Selected %d atoms out of %d atoms (%s) from %d total.",
+                    self.name, coord.shape[0],len(u.selectAtoms(self.atomselection)),
+                    self.atomselection,len(u.atoms))
 
         self.__complete = False
 
@@ -85,7 +91,7 @@ class DensityCollector(object):
         smin = kwargs.pop("smin", self.min_coordinates(padding=self.padding))
         smax = kwargs.pop("smax", self.max_coordinates(padding=self.padding))
 
-        BINS = fixedwidth_bins(self.delta, smin, smax)    
+        BINS = fixedwidth_bins(self.delta, smin, smax)
         self.arange = zip(BINS['min'],BINS['max'])
         self.bins = BINS['Nbins']
 
@@ -123,13 +129,15 @@ class DensityCollector(object):
 
     def Density(self):
         if not hasattr(self, 'grid'):
-            raise hop.MissingDataError("No data for density available. Run collect() first.")
+            errmsg = "DensityCollector.Density(): No data for density available. Run collect() first."
+            logger.error(errmsg)
+            raise hop.MissingDataError(errmsg)
         u = self.universe
         metadata = self.metadata
         metadata['collector'] = self.name
         metadata['collector_mode'] = self.mode
-        metadata['psf'] = u.filename
-        metadata['dcd'] = u.trajectory.filename
+        metadata['psf'] = u.filename             # named psf for historical reasons: any topol
+        metadata['dcd'] = u.trajectory.filename  # named dcd for historical reasons: any traj
         metadata['atomselection'] = self.atomselection
         metadata['numframes'] = u.trajectory.numframes
         metadata['dt'] = u.trajectory.dt    # in ps for default MDAnalysis
@@ -148,10 +156,10 @@ class DensityCollector(object):
         # Density automatically converts histogram to density for isDensity=False
         g = Density(grid=self.grid, edges=self.edges,
                     unit=dict(length=MDAnalysis.core.flags['length_unit']),
-                    parameters=parameters, metadata=metadata)    
-        msg(3,"%-10s: Histogram completed (initial density in %s**-3)\n" % (self.name, MDAnalysis.core.flags['length_unit']))
+                    parameters=parameters, metadata=metadata)
+        logger.info("%-10s: Histogram completed (initial density in %s**-3)",
+                    self.name, MDAnalysis.core.flags['length_unit'])
         return g
-
 
     def isComplete(self):
         return self.__complete
@@ -182,16 +190,16 @@ class DensityCreator(object):
            density_from_trajectory(PDB, XTC, delta=1.0, atomselection='name OH2', ...) --> density
 
         :Arguments:
-          psf/pdb/gro     
-                topology file 
+          psf/pdb/gro
+                topology file
           dcd/xtc/trr/pdb
                 trajectory; if reading a single PDB file it is sufficient to just provide it
                 once as a single argument
 
         :Keywords:
           mode
-                'solvent', 'bulk' or 'all' ('all' does both 'solvent' and \bulk' at the 
-                same time and thus :meth:`DensityCreator.Density`` returns a list of 
+                'solvent', 'bulk' or 'all' ('all' does both 'solvent' and \bulk' at the
+                same time and thus :meth:`DensityCreator.Density`` returns a list of
                 densities; this saves time!)  ['all']
           atomselection
                 selection string (MDAnalysis syntax) for the species to be analyzed
@@ -202,15 +210,15 @@ class DensityCreator(object):
                 of delta.) [1.0]
           metadata
                 dictionary of additional data to be saved with the object
-          padding 
+          padding
                 increase histogram dimensions by padding (on top of initial box size)
                 in Angstroem [2.0]
           soluteselection
                 MDAnalysis selection for the solute, e.g. "protein" [``None``]
-          cutoff  
+          cutoff
                 With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
                 (Special routines that are faster than the standard AROUND selection) [0]
-          verbosity: int  
+          verbosity: int
                 level of chattiness; 0 is silent, 3 is verbose [3]
 
         :Returns: :class:`hop.sitemap.Density`
@@ -238,7 +246,9 @@ class DensityCreator(object):
         self.universe = MDAnalysis.asUniverse(*args, **universe_kwargs)
         self.mode = kwargs.pop("mode", "all")   # 'all' runs modes[1:]
         if not self.mode in self.modes:
-            raise ValueError("mode must be one of %r, not %r" % (self.modes, self.mode))
+            errmsg = "DensityCreator: mode must be one of %r, not %r" % (self.modes, self.mode)
+            logger.fatal(errmsg)
+            raise ValueError(errmsg)
         if self.mode == "all":
             modes = self.modes[1:]
         else:
@@ -262,24 +272,25 @@ class DensityCreator(object):
         for c in self.collectors:
             c.init_histogram(smin=smin, smax=smax)  # also guarantees compatible grid
         self.densities = {}   # densities will be stored with mode as key
-        
+
     def create(self):
+        """Loop through trajectory and build all densities.
+
+        .. SeeAlso::
+
+           :class:`DensityCollector`
+        """
         u = self.universe
+        pm = CustomProgressMeter(u.trajectory.numframes, interval=10,
+                                 format="Histogramming %(other)s atoms in frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
+
         for ts in u.trajectory:
-            status = ["Histograming"]
+            status = ""
             for c in self.collectors:
                 natoms = c.collect()
-                status.append("%s=%d" % (c.name, natoms))
+                status += ("%s=%d " % (c.name, natoms))
+            pm.echo(ts.frame, status)
 
-            if u.trajectory.ts.frame % 10 == 0 or \
-                    u.trajectory.ts.frame == u.trajectory.numframes:
-                message = " ".join(status)
-                message += " atoms in frame %5d/%d  [%5.1f%%]\r" % (
-                    u.trajectory.ts.frame, 
-                    u.trajectory.numframes,
-                    100.0*u.trajectory.ts.frame/u.trajectory.numframes)
-                msg(3, message)
-        msg(3,"\n")
         self.densities = {}
         for c in self.collectors:
             c.finish()
@@ -314,13 +325,16 @@ class DensityCreator(object):
                      meth:`hop.sitemap.Density.site_insert_bulk`.
         """
         if len(self.densities) != 2:
-            raise hop.MissingDataError("Need exactly two densities.")
+            errmsg = "DensityCreator.DensityWithBulk(): Need exactly two densities ('solvent' and 'bulk')."
+            logger.fatal(errmsg)
+            raise hop.MissingDataError(errmsg)
         try:
             solvent = self.densities['solvent']
             bulk = self.densities['bulk']
         except KeyError:
-            raise hop.MissingDataError("Need a 'solvent' and a 'bulk' density in %s.densities" %
-                                       self.__class__.__name__)
+            errmsg = "Need a 'solvent' and a 'bulk' density in %s.densities" % self.__class__.__name__
+            logger.fatal(errmsg)
+            raise hop.MissingDataError(errmsg)
         solvent.convert_density(density_unit)
         solvent.map_sites(solvent_threshold)
         bulk.convert_density(density_unit)
@@ -333,8 +347,8 @@ class DensityCreator(object):
         # solvent.save()
 
         return solvent
-        
-        
+
+
 
 def density_from_dcd(*args,**kwargs):
     import warnings
@@ -352,8 +366,8 @@ def density_from_trajectory(*args,**kwargs):
        density_from_trajectory(PDB, XTC, delta=1.0, atomselection='name OH2', ...) --> density
 
     :Arguments:
-      psf/pdb/gro     
-            topology file 
+      psf/pdb/gro
+            topology file
       dcd/xtc/trr/pdb
             trajectory; if reading a single PDB file it is sufficient to just provide it
             once as a single argument
@@ -368,17 +382,17 @@ def density_from_trajectory(*args,**kwargs):
             of delta.) [1.0]
       metadata
             dictionary of additional data to be saved with the object
-      padding 
+      padding
             increase histogram dimensions by padding (on top of initial box size)
             in Angstroem [2.0]
       soluteselection
             MDAnalysis selection for the solute, e.g. "protein" [``None``]
-      cutoff  
+      cutoff
             With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
             (Special routines that are faster than the standard AROUND selection) [0]
-      verbosity: int  
+      verbosity: int
             level of chattiness; 0 is silent, 3 is verbose [3]
-    
+
     :Returns: :class:`hop.sitemap.Density`
 
     :TODO:
@@ -388,7 +402,7 @@ def density_from_trajectory(*args,**kwargs):
         * In order to calculate the bulk density, use
 
               atomselection='name OH2',soluteselection='protein and not name H*',cutoff=3.5
-  
+
           This will select water oxygens not within 3.5 A of the protein heavy atoms.
           Alternatively, use the VMD-based  :func:`density_from_volmap` function.
         * The histogramming grid is determined by the initial frames min and max.
@@ -406,10 +420,10 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     """Create a density grid from a MDAnalysis.Universe object.
 
       density_from_dcd(universe, delta=1.0, atomselection='name OH2', ...) --> density
-   
+
     :Arguments:
       universe
-            :class:`MDAnalysis.Universe` object with a trajectory   
+            :class:`MDAnalysis.Universe` object with a trajectory
 
     :Keywords:
       atomselection
@@ -421,21 +435,21 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
             of delta.) [1.0]
       metadata
             dictionary of additional data to be saved with the object
-      padding 
+      padding
             increase histogram dimensions by padding (on top of initial box size)
             in Angstroem [2.0]
       soluteselection
             MDAnalysis selection for the solute, e.g. "protein" [``None``]
-      cutoff  
+      cutoff
             With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
             (Special routines that are faster than the standard AROUND selection) [0]
-      verbosity: int  
+      verbosity: int
             level of chattiness; 0 is silent, 3 is verbose [3]
-      parameters  
-            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)          
-      kwargs  
+      parameters
+            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)
+      kwargs
             metadata, parameters are modified and passed on to :class:`~hop.sitemap.Density`
-    
+
     :Returns: :class:`hop.sitemap.Density`
 
     """
@@ -443,7 +457,9 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
         universe.selectAtoms('all')
         universe.trajectory.ts
     except AttributeError:
-        raise TypeError("The universe must be a proper MDAnalysis.Universe instance.")
+        errmsg = "density_from_Universe(): The universe must be a proper MDAnalysis.Universe instance."
+        logger.fatal(errmsg)
+        raise TypeError(errmsg)
     u = universe
     if cutoff > 0 and soluteselection is not None:
         # special fast selection for '<atomsel> not within <cutoff> of <solutesel>'
@@ -454,16 +470,16 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
         group = u.selectAtoms(atomselection)
         def current_coordinates():
             return group.coordinates()
-    
+
     coord = current_coordinates()
-    msg(3,"Selected %d atoms out of %d atoms (%s) from %d total.\n" %
-        (coord.shape[0],len(u.selectAtoms(atomselection)),atomselection,len(u.atoms)))
+    logger.info("Selected %d atoms out of %d atoms (%s) from %d total.",
+                coord.shape[0],len(u.selectAtoms(atomselection)),atomselection,len(u.atoms))
 
     # mild warning; typically this is run on RMS-fitted trajectories and
     # so the box information is rather meaningless
-    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]    
+    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]
     if tuple(angles) <> (90.,90.,90.):
-        warnings.warn("Non-orthorhombic unit-cell --- make sure that it has been remapped properly!")
+        logger.warn("Non-orthorhombic unit-cell --- make sure that it has been remapped properly!")
 
     # Make the box bigger to avoid as much as possible 'outlier'. This
     # is important if the sites are defined at a high density: in this
@@ -475,7 +491,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     smin = numpy.min(coord,axis=0) - padding
     smax = numpy.max(coord,axis=0) + padding
 
-    BINS = fixedwidth_bins(delta, smin, smax)    
+    BINS = fixedwidth_bins(delta, smin, smax)
     arange = zip(BINS['min'],BINS['max'])
     bins = BINS['Nbins']
 
@@ -484,20 +500,21 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     grid *= 0.0
     h = grid.copy()
 
+    pm = CustomProgressMeter(u.trajectory.numframes, interval=10,
+                             format="Histograming %(other)d atoms in frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
     for ts in u.trajectory:
-        msg(3,"Histograming %6d atoms in frame %5d/%d  [%5.1f%%]\r" % \
-            (len(coord), ts.frame,u.trajectory.numframes,100.0*ts.frame/u.trajectory.numframes))
         coord = current_coordinates()
         if len(coord) == 0: continue
         h[:],edges[:] = numpy.histogramdd(coord, bins=bins, range=arange, normed=False)
         grid += h  # accumulate average histogram
+        pm.echo(ts.frame, len(coord))
     numframes = u.trajectory.numframes / u.trajectory.skip
     grid /= float(numframes)
 
     # pick from kwargs
     metadata = kwargs.pop('metadata',{})
-    metadata['psf'] = u.filename
-    metadata['dcd'] = u.trajectory.filename
+    metadata['psf'] = u.filename              # named psf for historical reasons
+    metadata['dcd'] = u.trajectory.filename   # named dcd for historical reasons
     metadata['atomselection'] = atomselection
     metadata['numframes'] = numframes
     metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
@@ -518,9 +535,9 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     # Density automatically converts histogram to density for isDensity=False
     g = Density(grid=grid,edges=edges,unit=dict(length='Angstrom'),
-                parameters=parameters,metadata=metadata)    
-    msg(3,"\nHistogram completed (initial density in Angstrom**-3)\n")
-    
+                parameters=parameters,metadata=metadata)
+    logger.info("Histogram completed (initial density in Angstrom**-3)")
+
     return g
 
 
@@ -573,7 +590,7 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
                 # must update every time step
                 ns_w = NS.AtomNeighborSearch(solvent)  # build kd-tree on solvent (N_w > N_protein)
                 group = ns_w.search_list(protein,cutoff)  # solvent within CUTOFF of protein
-                return group.coordinates()            
+                return group.coordinates()
     else:
         # slower distance matrix based (calculate all with all distances first)
         import MDAnalysis.core.distances
@@ -619,10 +636,10 @@ def density_from_volmap(psf,dcd,dx=None,delta=1.0,atomselection='name OH2',
      metadata       dictionary of additional data to be saved with the object
      parameters     dict of special Density parameters (see Density() doc)
 
-     VolMap args: 
+     VolMap args:
      load_new       True: load psf and dcd into VMD. False: use psf and dcd already
                    loaded into VMD (default is True)
-    
+
     Returns a Density object.
 
     """
@@ -640,11 +657,11 @@ def density_from_volmap(psf,dcd,dx=None,delta=1.0,atomselection='name OH2',
     if not dx:
         remove_dx = True
         dxhandle,dx = tempfile.mkstemp('.dx')
-        msg(5,'Using tempororary dx file "%s".\n' % dx)
-        
-    msg(3,"Connecting to VMD (ignore 'error: uncaptured python exception')\n")
+        logger.debug("Using tempororary dx file %r.", dx)
+
+    logger.info("Connecting to VMD (ignore 'error: uncaptured python exception')")
     vmd = hop.external.VMD()
-    msg(3,"VolMap calculates the density. This takes a while...\n")
+    logger.info("VolMap calculates the density. This takes a while...")
     vmd.volmap(psf,dcd,dx,delta=delta,atomselection=atomselection,**kwargs)
 
     metadata['psf'] = psf
@@ -654,7 +671,7 @@ def density_from_volmap(psf,dcd,dx=None,delta=1.0,atomselection='name OH2',
 
     parameters['isDensity'] = True             # must override
 
-    msg(3,"Building density object from dx file '%(dx)s'...\n" % locals())
+    logger.info("Building density object from dx file '%(dx)s'...\n", vars())
     g = Density(dxfile=dx,unit=dict(length='Angstrom',density='Angstrom'),
                 parameters=parameters,metadata=metadata)
 
@@ -694,7 +711,7 @@ so one should (after computing a site map) also insert an empty bulk site:
   Y.find_equivalence_sites(xray)     # also updates equiv-sites in xray!
   # (2) look at the matches in xray
   xray.Wequiv()        TODO: not working yet
-  
+
 
 """ + 60*"-" + "\nDensity Class\n\n" + Density.__doc__
 
@@ -721,7 +738,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         m = parser.get_structure('0UNK',pdbfile)
         s = m[0]
         # number waters sequentially and store the pdb resid
-        self._xray2psf = dict([(resid_xray,resid_psf+1) for resid_psf,resid_xray in 
+        self._xray2psf = dict([(resid_xray,resid_psf+1) for resid_psf,resid_xray in
                                enumerate([r.id[1] for r in s.get_residues() if water.match(r.resname)])
                                ])
         self._psf2xray = dict([(resid_psf,resid_xray) for resid_xray,resid_psf in self._xray2psf.items()])
@@ -729,7 +746,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         return len(self._xray2psf) == len(self.site_labels('sites',exclude='equivalencesites'))
 
     def W(self,N,returntype="auto",format=False):
-        """Returns the resid of water N. 
+        """Returns the resid of water N.
 
         If returntype == 'psf' then N is interpreted as the resid in the
         x-ray crystal structure (or original pdb file) and a resid N' in the
@@ -744,7 +761,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         'W128') then it is assumed to be a crystal water and the
         returntype is automatically set to psf, otherwise it acts like
         'xray'.
- 
+
         :Arguments:
         N              resid of molecule (can be an iterable)
         returntype     'auto' | 'psf' | 'xray'
@@ -826,7 +843,7 @@ so one should (after computing a site map) also insert an empty bulk site:
                 self.map = numpy.empty_like(dens.map)
                 self.unit = dens.unit
                 self.P = {'threshold': None}
-                # minimum empty sites 'list'                
+                # minimum empty sites 'list'
                 self.sites = {SITELABEL['bulk']: ()}  # normally a list but use a dict :-)
         self.site_insert_bulk(Nobulk(self))
 
@@ -851,7 +868,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         BUG: THIS IS NOT WORKING AS THOUGHT BECAUSE THERE IS NO 1-1
         MAPPING BETWEEN WATER MOLECULES AND SITES AND BECAUSE SITES
         ARE NOT NUMBERED IN THE SAME ORDER AS THE WATER MOLECULES
-        
+
         TODO: The proper way to do this is to find all water molecules
         within a cutoff of each grid cell that belongs to a site and
         then store all the waters as the string name of the site.
@@ -876,6 +893,8 @@ def print_combined_equivalence_sites(target,reference):
     BUG: THIS IS NOT WORKING (because the assignment sites <--> waters
     is broken)
     """
+    raise NotImplementedError('THIS IS NOT WORKING (because the assignment sites <--> waters is broken')
+
     eqs_r = reference.equivalence_sites()
     eqs_t = target.equivalence_sites()
     eqs_r.equivalence_name.sort()
@@ -887,7 +906,7 @@ def print_combined_equivalence_sites(target,reference):
     ___()
     for (l,n,x1),(l,n,x2) in zip(eqs_r,sorted_t):
         print "%3d %4s   %-5s  %-5s" % (l,n,x1,x2)
-    ___()        
+    ___()
 
 
 class BfactorDensityCreator(object):
@@ -901,12 +920,12 @@ class BfactorDensityCreator(object):
     trajectories. Because a pdb is a single snapshot, the density is
     estimated by placing Gaussians of width sigma at the position of
     all selected atoms.
-    
+
     Sigma can be fixed or taken from the B-factor field, in which case
     sigma is taken as sqrt(3.*B/8.)/pi.
 
-    TODO: 
-  
+    TODO:
+
     * Make Gaussian convolution more efficient (at least for same
       sigma) because right now it is VERY slow (which may be
       acceptable if one only runs this once)
@@ -920,7 +939,7 @@ class BfactorDensityCreator(object):
 
         DC = BfactorDensityCreator(psf, pdb, delta=<delta>, atomselection=<MDAnalysis selection>,
                                   metadata=<dict>, padding=2, sigma=None)
-        density = DC.PDBDensity()                        
+        density = DC.PDBDensity()
 
         psf     Charmm psf topology file
         pdb     PDB file
@@ -946,17 +965,17 @@ class BfactorDensityCreator(object):
         u = Universe(psf,pdbfilename=pdb)
         group = u.selectAtoms(atomselection)
         coord = group.coordinates()
-        msg(3,"Selected %d atoms (%s) out of %d total.\n" %
-            (coord.shape[0],atomselection,len(u.atoms)))
+        logger.info("BfactorDensityCreator: Selected %d atoms (%s) out of %d total.",
+                    coord.shape[0],atomselection,len(u.atoms))
         smin = numpy.min(coord,axis=0) - padding
         smax = numpy.max(coord,axis=0) + padding
 
-        BINS = fixedwidth_bins(delta, smin, smax)    
+        BINS = fixedwidth_bins(delta, smin, smax)
         arange = zip(BINS['min'],BINS['max'])
         bins = BINS['Nbins']
-        
+
         # get edges by doing a fake run
-        grid,self.edges = numpy.histogramdd(numpy.zeros((1,3)), 
+        grid,self.edges = numpy.histogramdd(numpy.zeros((1,3)),
                                             bins=bins,range=arange,normed=False)
         self.delta = numpy.diag(map(lambda e: (e[-1] - e[0])/(len(e)-1), self.edges))
         self.midpoints = map(lambda e: 0.5 * (e[:-1] + e[1:]), self.edges)
@@ -967,14 +986,16 @@ class BfactorDensityCreator(object):
             # histogram individually, and smear out at the same time
             # with the appropriate B-factor
             if numpy.any(group.bfactors == 0.0):
-                warnings.warn("Some B-factors are Zero.",category=hop.MissingDataWarning)
+                wmsg = "BfactorDensityCreator: Some B-factors are Zero."
+                warnings.warn(wmsg, category=hop.MissingDataWarning)
+                logger.warn(wmsg)
             rmsf = Bfactor2RMSF(group.bfactors)
             grid *= 0.0  # reset grid
             self.g = self._smear_rmsf(coord,grid,self.edges,rmsf)
         else:
             # histogram 'delta functions'
             grid,self.edges = numpy.histogramdd(coord,bins=bins,range=arange,normed=False)
-            msg(3,"Histogrammed %6d atoms from pdb.\n" % len(group.atoms))
+            logger.info("Histogrammed %6d atoms from pdb.", len(group.atoms))
             # just a convolution of the density with a Gaussian
             self.g = self._smear_sigma(grid,sigma)
 
@@ -989,7 +1010,7 @@ class BfactorDensityCreator(object):
         self.metadata = metadata
 
         # Density automatically converts histogram to density for isDensity=False
-        msg(3,"\nHistogram completed (initial density in Angstrom**-3)\n")
+        logger.info("BfactorDensityCreator: Histogram completed (initial density in Angstrom**-3)\n")
 
 
     def PDBDensity(self,threshold=None):
@@ -1017,11 +1038,12 @@ class BfactorDensityCreator(object):
         d.map_sites(threshold)
         d.site_insert_nobulk()   # fake bulk site
         if not d._check_site_resid_match():
-            warnings.warn("There are different numbers of water molecules (%d) and sites (%d). "
-                          "Site <-> water matching will not work."
-                          % (len(d._xray2psf),
-                             len(d.site_labels('sites',exclude='equivalencesites'))),
-                          category=hop.InconsistentDataWarning)
+            wmsg = "BfactorDensityCreator.PDBDensity(): "\
+                "There are different numbers of water molecules (%d) and sites (%d). " \
+                "Site <-> water matching will not work."  % \
+                (len(d._xray2psf), len(d.site_labels('sites', exclude='equivalencesites')))
+            logger.warn(wmsg)
+            warnings.warn(wmsg, category=hop.InconsistentDataWarning)
         return d
 
     def _smear_sigma(self,grid,sigma):
@@ -1031,34 +1053,35 @@ class BfactorDensityCreator(object):
         # rho_smeared = F^-1[ F[g]*F[rho] ]
         g = numpy.zeros(grid.shape)   # holds the smeared out density
         pos = numpy.where(grid <> 0)  # position in histogram (as bin numbers)
+        pm = CustomProgressMeter(len(pos[0]), interval=1, offset=1,
+                                 format="Smearing out water position %(step)4d/%(numsteps)5d with RMSF %(other)4.2f A [%(percentage)5.2f%%\r")
         for iwat in xrange(len(pos[0])): # super-ugly loop
             p = tuple([wp[iwat] for wp in pos])
             g += grid[p] * \
                 numpy.fromfunction(self._gaussian,grid.shape,dtype=numpy.int,
                                    p=p,sigma=sigma)
-            msg(3,"Smearing out water position %4d/%5d with RMSF %4.2f A\r" %  \
-                    (iwat+1,len(pos[0]),sigma))
+            pm.echo(iwat, sigma)
         return g
-        
+
     def _smear_rmsf(self,coordinates,grid,edges,rmsf):
         # smear out each water with its individual Gaussian
         # (slower than smear_sigma)
         g = numpy.zeros(grid.shape)   # holds the smeared out density
         N,D = coordinates.shape
+        pm = CustomProgressMeter(N, interval=1, offset=1,
+                                 format="Smearing out water position %(step)4d/%(numsteps)5d with RMSF %(other)4.2f A [%(percentage)5.2f%%\r")
         for iwat,coord in enumerate(coordinates):
             g += numpy.fromfunction(self._gaussian_cartesian,grid.shape,dtype=numpy.int,
                                     c=coord,sigma=rmsf[iwat])
-            msg(3,"Smearing out water position %4d/%5d with RMSF %4.2f A\r" %  \
-                    (iwat+1,N,rmsf[iwat]))
+            pm.echo(iwat, rmsf[iwat])
         return g
-
 
     def _gaussian(self,i,j,k,p,sigma):
         # i,j,k can be numpy arrays
         # p is center of gaussian as grid index, sigma its width (in A)
         x = self.delta[0,0]*(i - p[0])  # in Angstrom
         y = self.delta[1,1]*(j - p[1])
-        z = self.delta[2,2]*(k - p[2])            
+        z = self.delta[2,2]*(k - p[2])
         return (2*numpy.pi*sigma)**(-1.5) * numpy.exp(-(x*x+y*y+z*z)/(2*sigma*sigma))
 
     def _gaussian_cartesian(self,i,j,k,c,sigma):

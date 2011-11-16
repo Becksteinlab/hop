@@ -42,13 +42,18 @@ documentation for further analysis methods.
 import hop.constants, hop.trajectory
 from hop.constants import SITELABEL
 import hop.utilities
-from hop.utilities import msg,set_verbosity, iterable, asiterable
+from hop.utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
 import networkx as NX
 import numpy
 import sys
 import cPickle
 import os.path
 import warnings
+
+from MDAnalysis.core.log import ProgressMeter
+
+import logging
+logger = logging.getLogger("MDAnalysis.analysis.hop.graph")
 
 class TransportNetwork(object):
     """A framework for computing graphs from hopping trajectories.
@@ -59,17 +64,19 @@ class TransportNetwork(object):
     that is mainly used in order to build a :class:`HoppingGraph` with
     the :meth:`TransportNetwork.HoppingGraph` method.
     """
-    
+
     def __init__(self,trajectory,density=None,sitelabels=None):
         """Setup a transport graph from a hopping trajectory instance.
-  
+
         ::
             hops = hop.trajectory.HoppingTrajectory(hopdcd='whop.dcd',hoppsf='whop.psf')
             tn = TransportNetwork(hops)
         """
         self._cache = dict()
         if not isinstance(trajectory,hop.trajectory.HoppingTrajectory):
-            raise TypeError("'trajectory' must be a <hop.trajectory.HoppingTrajectory> instance.")
+            errmsg = "'trajectory' must be a <hop.trajectory.HoppingTrajectory> instance."
+            logger.fatal(errmsg)
+            raise TypeError(errmsg)
         self.traj = trajectory
         self.numatoms = self.traj.hoptraj.numatoms
         # TODO: use MDAnalysis unit conversion here
@@ -97,12 +104,12 @@ class TransportNetwork(object):
         """
         from itertools import izip
         self.graph = NX.DiGraph(name="Transitions between all sites, including interstitial and outliers")
-        
+
         s = self.traj.ts._x      # s changes with the timestep ('pointer')
         slast = s.astype(int).copy()   # copy of the last frame
 
         hops = self.traj.iterator()
-        hops.next()    # first frame is only needed for slast        
+        hops.next()    # first frame is only needed for slast
         for ts in hops:
             self.graph.add_edges_from(izip(slast,s.astype(int)))
             slast = s.astype(int).copy()   # copy of the last frame
@@ -115,8 +122,8 @@ class TransportNetwork(object):
 
     def compute_residency_times(self,verbosity=3):
         self._analyze_hops(verbosity=verbosity)
-        msg(3,"\nBuilding hopping graph with rate constants k1, k2 or k.\n")
-        msg(3,"(Ignore 'Warning: ... maxfev = 800': then the code just chooses a single k).\n")
+        logger.info("Building hopping graph with rate constants k1, k2 or k.")
+        logger.info("(Ignore 'Warning: ... maxfev = 800': then a single k is chosen automatically.)")
         try:
             site_properties = self.density.site_properties
         except AttributeError:
@@ -132,9 +139,9 @@ class TransportNetwork(object):
 
         :Results:
 
-        self.graph             
+        self.graph
             directed graph of all transitions
-        self.graph_properties  
+        self.graph_properties
             Each edge (i,j) has a dictionary associated, containing
             the waiting times tau for hops from i --> j, the barrier
             crossing times tbarrier (the time the particle was in the
@@ -146,11 +153,14 @@ class TransportNetwork(object):
 
         (Note: runs a few percent faster with verbosity=0)
         """
-        
-        set_verbosity(verbosity)
+
+        #set_verbosity(verbosity) # not use with ProgressMeter
         try:
             if len(self._cache['sitelabels']) < 3:   # 3 = outlier + 2
-                raise ValueError('Need at least 2 sites to analyze transitions.')
+                errmsg = 'TransportNetwork: Need at least 2 sites to analyze transitions: N=%d' % \
+                    len(self._cache['sitelabels'])
+                logger.error(errmsg)
+                raise ValueError(errmsg)
         except KeyError:
             pass
 
@@ -166,7 +176,7 @@ class TransportNetwork(object):
         slast = s.copy()        # unavoidable copy of the last frame
 
         # state[i] = dict( s0, t0, t1) + slast, s
-        #  s0      assigned site        t0      time/frame for entering s0         
+        #  s0      assigned site        t0      time/frame for entering s0
         #  last    site at t-1          t1      exit from s0
         #  now     site at t           (t2      entering new site != s0)
         # last == slast
@@ -176,13 +186,12 @@ class TransportNetwork(object):
         # (could use a numpy.rec --- would do exactly what I want)
         state = numpy.empty(self.numatoms,dtype=dict)
         state[:] = [{'s0':s[iatom], 't0': self.traj.ts.frame, 't1': None} for iatom in xrange(self.numatoms)]
-                
-        for ts in hops:
-            # start from frame 2 (as we already used hops.next() above)
-            if ts.frame % 10 == 0:
-                msg(3,"Analyzing frame %5d/%d  [%5.1f%%]\r" % \
-                        (ts.frame,self.traj.numframes,100.0*ts.frame/self.traj.numframes))
+        pm = ProgressMeter(self.traj.numframes, interval=100,
+                           format="Analyzing hops: frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
 
+        for ts in hops:
+            pm.echo(ts.frame)
+            # start from frame 2 (as we already used hops.next() above)
             s = snow.astype(int)
 
             # Bugs of the main loop:
@@ -194,7 +203,7 @@ class TransportNetwork(object):
                 if s[iatom] == SITELABEL['outlier']:
                     # outliers: count them as whence they came (typically, interstitial or bulk)
                     s[iatom] = slast[iatom]
-                
+
                 if s[iatom] != state[iatom]['s0']:
                     if slast[iatom] == state[iatom]['s0']:
                         # particle exited site s0, so remember the exit time for the future:
@@ -244,10 +253,6 @@ class TransportNetwork(object):
                 self.graph_properties[node] = {'tau':[tau],'tbarrier':[None],
                                                'frame':[frame],'iatom':[iatom]}
 
-        # status message for last frame
-        msg(3,"Analyzing frame %5d/%d  [%5.1f%%] ... DONE\r" % \
-                (ts.frame,self.traj.numframes,100.0*ts.frame/self.traj.numframes))
-
         # convert times from frames to ps and use numpy arrays to organize data
         # (less clear but easier to slice and dice)
         for n,d in self.graph_properties.items():
@@ -273,7 +278,7 @@ class TransportNetwork(object):
         tau[j,i] is the waiting time for hops from i to j. tau[i] is
         the waiting time for molecules that are not observed to leave
         site i.
-         
+
 
         The function updates self.theta[site] for each site with an
         array of residency times (in ps).
@@ -315,9 +320,9 @@ class TransportNetwork(object):
 
         :Attributes:
 
-        self.occupancy        
+        self.occupancy
                          numpy array with occupancies, site label == index
-        self.occupancy_error  
+        self.occupancy_error
                          numpy array with error estimates for
                          occupancies (Delta = Delta(theta)/T; this is
                          a biased estimate because Delta(theta) is
@@ -329,7 +334,7 @@ class TransportNetwork(object):
         except (AttributeError,ValueError):
             # need to compute thetas first
             self.compute_site_times(verbosity=0)
-            
+
         # array for accumulated site times
         # assumptions: labels are integers from 0 to smax
         smax = numpy.max(self._cache['sitelabels']) # exists after compute_site_times()
@@ -338,7 +343,7 @@ class TransportNetwork(object):
         for label,thetas in self.theta.items():
             self.occupancy[label] = numpy.sum(thetas) / self.traj.totaltime
             self.occupancy_error[label] = numpy.std(thetas) / self.traj.totaltime # biased
-            
+
     def plot_residency_times(self,filename,bins=None,exclude_outliers=True):
         """Plot histograms of all sites
 
@@ -369,7 +374,7 @@ class TransportNetwork(object):
                 minresolution = self.dt
                 trange = abs(numpy.max(data)-numpy.min(data))
                 resolution = trange/nbins
-                
+
                 if nbins < 5: nbins = 5
                 if resolution < minresolution:
                     nbins = floor(trange/minresolution)
@@ -424,17 +429,17 @@ class TransportNetwork(object):
         pylab.plot(midpoints,h,'k-',linewidth=2.0)
         pylab.xlabel('site occupancy')
         pylab.legend(('normalized\ndistribution',),'best')
-        
+
         pylab.savefig(filename)
-        
-        
+
+
     def export(self,filename=None,format='png',exclude_outliers=False):
         """Export the graph as dot file and as an image.
 
         export(filename)
 
         See https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw for possible output formats.
-    
+
         See http://graphviz.org/doc/info/attrs.html for attributes.
 
         Note: On Mac OS X 10.3.9+fink the pygraphviz rendering is
@@ -446,7 +451,7 @@ class TransportNetwork(object):
         import pygraphviz
 
         gfxname = self.filename(filename,format)
-        dotname = self.filename(filename,'dot')       # load into graphviz 
+        dotname = self.filename(filename,'dot')       # load into graphviz
 
         G = pygraphviz.AGraph(directed=True)
         G.add_nodes_from(self.graph.nodes())
@@ -459,7 +464,7 @@ class TransportNetwork(object):
         G.node_attr['color'] = 'black'
         G.edge_attr['color'] = 'black'
         G.edge_attr['dir'] = 'forward'
-        
+
         G.layout(prog='circo')
         G.write(dotname)
         G.draw(path=gfxname,format=format)  # buggy on Mac OS X
@@ -471,7 +476,7 @@ class HoppingGraph(object):
     sites as nodes and transitions as edges.
 
     :Attributes:
-    graph                 
+    graph
         graph with edges; edges contain rates, fit functions, etc
     properties
         raw data for edges
@@ -485,16 +490,16 @@ class HoppingGraph(object):
         average occupancy with standard deviation (see compute_site_occupancy())
     occupancy_std
         (numpy array)
-    
+
     :Methods:
     compute_site_occupancy()
         Computes occupancies from the residency times theta and
         updates self.occupancy_avg and self.occupancy_std.
-    compute_site_times()      
+    compute_site_times()
         Computes residency time theta.
-    save()                    
+    save()
         save graph as a pickled file
-    load()                    
+    load()
         reinstantiate graph from saved file; typically just use the
         constructor with the filename argument
     filter()
@@ -504,11 +509,11 @@ class HoppingGraph(object):
         plot fits of the survival time against the data
     tabulate_k()
         table of rate constants
-    export()                  
+    export()
         export graph as a dot file that can be used with graphviz
     export3D()
         export graph as a psf/pdb file combination for visualization in VMD
-    
+
     Properties for nodes are always stored as numpy arrays so that one
     can directly index with the node label (==site label), which is an
     integer from 0 to the number of nodes. Note that 0 is the
@@ -528,15 +533,15 @@ class HoppingGraph(object):
         :Arguments:
         graph
            networkx graph with nodes (i) and edges (i,j)
-        properties     
+        properties
            dictionary of edges: For each edge e, properties contains a
            dictionary, which contains under the key 'tau' a list of
            observed waiting times tau_ji.  nodes are also listed if
            they do not participate in a transition
-        trjdata   
+        trjdata
            dictionary describing properties of the trajectory
            such as time step 'dt' or name of 'dcd' and 'psf'.
-        
+
            Attributes that are in use:
               dt
                  time between saved snapshots in ps
@@ -591,7 +596,7 @@ class HoppingGraph(object):
             self.load(filename)
         else:
             raise ValueError('provide edges and properties or a filename')
-        
+
     # convenience functions to access data in an edge (=hop)
     # NX 1.x: edge = (from_site, to_site, {'k': k, 'N':N, 'fit': fit_func})
     # edge from graph.edges(data=True)
@@ -606,7 +611,7 @@ class HoppingGraph(object):
             a,k1,k2 = f.parameters
             ## select rate that contributes more:
             ##if a*k1 > (1-a)*k2:
-            if a > 0.5: 
+            if a > 0.5:
                 k = k1
             else:
                 k = k2
@@ -635,7 +640,7 @@ class HoppingGraph(object):
         return self.from_site(edge) == SITELABEL['bulk']
 
     def site_properties():
-        doc = """Site_properties, indexed by node label. 
+        doc = """Site_properties, indexed by node label.
               Setting this attribut also updates self.equivalent_sites_index."""
         def fget(self):
             return self.__site_properties
@@ -645,7 +650,7 @@ class HoppingGraph(object):
                 # recreate equivalent_sites_index (no need to store it)
                 Q = x[x.equivalence_label > SITELABEL['bulk']]
                 self.equivalent_sites_index = dict(zip(Q.equivalence_label,Q.label))
-            except AttributeError:  
+            except AttributeError:
                 # should still work for densities without equivalence sites
                 self.equivalent_sites_index = {}
         return locals()
@@ -667,7 +672,7 @@ class HoppingGraph(object):
         * The function updates self.theta[site] for each site with an
         array of residency times (in ps).
 
-        * The life times are stored in self.lifetime_avg[site] and 
+        * The life times are stored in self.lifetime_avg[site] and
           self.lifetime_std[site]
 
         TODO:
@@ -710,7 +715,7 @@ class HoppingGraph(object):
 
         attributes:
 
-           self.occupancy_avg 
+           self.occupancy_avg
                 numpy array with occupancies, site label == index
            self.occupancy_std
                 numpy array with error estimates for occupancies
@@ -723,7 +728,7 @@ class HoppingGraph(object):
         except (AttributeError,ValueError):
             # need to compute thetas first
             self.compute_site_times(verbosity=0)
-            
+
         # array for accumulated site times
         # assumptions: labels are integers from 0 to smax
         smax = numpy.max(self.graph.nodes())
@@ -781,7 +786,7 @@ class HoppingGraph(object):
         exclude      dict of components to exclude. May contain
                      {'outliers':True, 'Nmin':integer,
                       'bulk': True, 'unconnected':True}
-                     
+
                      If outliers == True then all edges from the 'outlier' node
                      are deleted previous to displaying the
                      graph. Those edges correspond to particles
@@ -798,8 +803,8 @@ class HoppingGraph(object):
         """
         G = self.filtered_graph = self.graph.copy()
         if exclude is None:
-            return        
-        
+            return
+
         try:
             # order matters for filters
             if 'Nmin' in exclude:
@@ -834,7 +839,7 @@ class HoppingGraph(object):
         The time values are taken to cover all measured tau.
 
         ncol         number of columns
-        nrow         number of rows per page        
+        nrow         number of rows per page
         plottype     'linear' or 'log'
         dt           time step in ps; use value in self.trjdata['dt'] or 1ps
         use_filtered_graph
@@ -846,7 +851,7 @@ class HoppingGraph(object):
                      True: show graphs on screen, can be slow and probably
                      requires ipython as your python shell
         verbosity    chattiness level
-        
+
         All N graphs are laid out in nrow x ncol grids on as many
         pages/figures as necessary.
 
@@ -859,18 +864,18 @@ class HoppingGraph(object):
         import matplotlib
         from hop.utilities import matplotlib_interactive
         matplotlib_interactive(interactive)
-        import pylab
+        import matplotlib.pyplot as plt
 
         set_verbosity(verbosity)
-         
+
         try:
             os.makedirs(directory)
         except os.error,e:
             if e.errno != errno.EEXIST:
                 raise
-        
+
         # Is there a filtered graph we should use?
-        G = self.select_graph(use_filtered_graph)            
+        G = self.select_graph(use_filtered_graph)
 
         if not dt:
             try:
@@ -882,14 +887,14 @@ class HoppingGraph(object):
             tmin,tmax = 0, numpy.max(tau) + 2*dt
             return numpy.arange(tmin,tmax,dt)
         if plottype is "linear":
-            plot = pylab.plot
+            plotfunc = 'plot'
             loc = 'best'
             fntempl = 'S_%02d'
             def tSrange(t_all,S):
                 """use all values of t for linear plots"""
                 return t_all
         elif plottype is "log":
-            plot = pylab.semilogy
+            plotfunc = 'semilogy'
             loc = 'lower left'
             fntempl = 'S_%02d_log'
             def tSrange(t,S):
@@ -901,7 +906,7 @@ class HoppingGraph(object):
         # extension determines plot output format
         filename_templ = os.path.join(directory,fntempl) + '.' + format
 
-        # Layout all N plots on npage pages in a nrow x ncol grid.        
+        # Layout all N plots on npage pages in a nrow x ncol grid.
         nplots = G.number_of_edges()
         npage = nrow * ncol
         nfig = int(math.ceil(1.0*nplots/npage))
@@ -909,22 +914,20 @@ class HoppingGraph(object):
         # erase all figures first
         # (important in interactive sessions with figure pollution)
         for ifig in xrange(1,nfig+1):
-            pylab.close(ifig)
-            
-        font = dict(legend=pylab.matplotlib.font_manager.FontProperties(size='xx-small'),
-                    )
+            plt.close(ifig)
+
+        font = {'legend': matplotlib.font_manager.FontProperties(size='xx-small'), }
+        pm = CustomProgressMeter(nplots, interval=1, offset=1,
+                                 format="Preparing page %(other)2d, S(t) plot %(step)3d/%(numsteps)d  [%(percentage)5.1f%%].\r")
         for iplot,e in enumerate(G.edges(data=True)):
             # NX 1.x: e = (n1, n2, data) with data={'k':k, 'N':N, 'fit':fit}
             ifig = iplot/npage + 1
             isub = iplot % npage + 1
-            percent = 100.0*(iplot+1)/nplots
-            _iplot = iplot + 1
-            msg(3,'Preparing page %(ifig)2d, S(t) plot %(_iplot)3d/%(nplots)3d  '
-                '[%(percent)5.1f%%].\r' % locals())
+            pm.echo(iplot, ifig)
 
-            pylab.figure(ifig)  # , figsize=(8,11) letter 8.5" x 11"; use default
-            ax = pylab.subplot(nrow,ncol,isub, frameon=False)
-            
+            fig = plt.figure(ifig)  # , figsize=(8,11) letter 8.5" x 11"; use default
+            ax = fig.add_subplot(nrow,ncol,isub, frameon=False)
+
             tau = self.properties[e[0:2]]['tau']
             S = survivalfunction(tau)
             t = trange(tau)
@@ -933,32 +936,31 @@ class HoppingGraph(object):
             if len(Sfit.parameters) == 3:         # get two rates if double exp
                 a,k1,k2 = Sfit.parameters
                 kns = 1000 * numpy.array([k1,k2]) # rate in 1/ns
-                k_legend = "k1=%.1f/ns [%.0f%%]\nk2=%.1f/ns [%.0f%%]" % \
+                k_legend = "$k_{1}=%.1f/$ns [%.0f%%]\n$k_{2}=%.1f/$ns [%.0f%%]" % \
                            (kns[0],100*a, kns[1],100*(1-a))
             else:
                 kns = 1000*k   # rate in 1/ns
-                k_legend = "k=%.1f/ns " % kns
-            plot(tS,S(tS),'k-', tau,S(tau),'k.')
-            plot(t,Sfit.fit(t), 'r--',linewidth=2)
-            pylab.legend(("S(t) %d->%d" % (e[0],e[1]), "N=%d" % N,
-                         k_legend), loc=loc,numpoints=2,prop=font['legend'])
-            if ax.is_last_row()  : pylab.xlabel('time/ps')
-            if ax.is_first_col() : pylab.ylabel('S(t)')
+                k_legend = r"$k=%.1f/$ns " % kns
+            getattr(ax, plotfunc)(tS,S(tS),'k-', tau,S(tau),'k.')
+            getattr(ax, plotfunc)(t,Sfit.fit(t), 'r--',linewidth=2)
+            ax.legend((r"$S(t)\/ %d\rightarrow%d$" % (e[0],e[1]), r"$N=%d$" % N, k_legend),
+                      loc=loc, numpoints=2, prop=font['legend'])
+            if ax.is_last_row()  : ax.set_xlabel(r'time $t$/ps')
+            if ax.is_first_col() : ax.set_ylabel(r'$S(t)$')
 
             if ax.is_last_row() and ax.is_last_col():
                 filename = filename_templ % ifig
-                pylab.figure(ifig).savefig(filename)
-                pylab.close(ifig)
+                fig.savefig(filename)
+                plt.close(fig)
                 # export as eps & convert to pdf externally for older matplotlib
                 # (just use the default png!)
                 #os.system('epstopdf --outfile=%(pdf)s %(eps)s' % locals())
                 #os.remove(eps)
-                msg(3,'Exported S(t) plot page %(ifig)d to file %(filename)s.\n' % locals())
-        msg(3,'\n')
+                logger.info("Exported S(t) plot page %(ifig)d to file %(filename)s.", locals())
 
     def tabulate_k(self):
         """List of tuples (from, to, rate (in 1/ns), number of transitions)."""
-        return [(self.from_site(edge), self.to_site(edge), 
+        return [(self.from_site(edge), self.to_site(edge),
                  self.rate(edge), self.number_of_hops(edge) ) for edge in self.graph.edges(data=True)]
 
     def show_rates(self, filename=None):
@@ -974,7 +976,7 @@ class HoppingGraph(object):
 
         Only the "dominant" rate is shown; see the fit_func
         description for cases when two rates were computed.
-        
+
         .. SeeAlso:: :func:`HoppingGraph.tabulate_k`.
         """
         if not filename is None:
@@ -985,7 +987,7 @@ class HoppingGraph(object):
         try:
             for edge in self.graph.edges(data=True):
                 line = "%3d --> %3d   %6.1f  1/ns  %3d  %s\n" % \
-                    (self.from_site(edge), self.to_site(edge), self.rate(edge), 
+                    (self.from_site(edge), self.to_site(edge), self.rate(edge),
                      self.number_of_hops(edge), str(self.waitingtime_fit(edge)))
                 stream.write(line)
         finally:
@@ -994,7 +996,7 @@ class HoppingGraph(object):
 
     def equivalent_sites_stats(self,elabels,equivalence=True):
         """Statistics about one or a list of equivalence sites.
-        
+
         g.equivalent_sites_stats(elabels,equivalence=True)
 
         :Arguments:
@@ -1044,15 +1046,15 @@ class HoppingGraph(object):
                optional dictionary to hold raw data for processing;
                modified by method
 
-        :Returns:  dictionary with expressive keys, holding the results        
+        :Returns:  dictionary with expressive keys, holding the results
         """
         if (not hasattr(self,'site_properties') or self.site_properties is None):
-            raise AttributeError('Stats require site_properties annotation.')        
+            raise AttributeError('Stats require site_properties annotation.')
         graph = self.graph   # makes little sense to use filtered graph
         stats = {}
 
         # get stats for all nodes; note that compound equivalence
-        # sites in graph have replaced original sites        
+        # sites in graph have replaced original sites
         nodes = graph.nodes()
         nodes.remove(SITELABEL['bulk'])  # exclude bulk from stats
         nodes = numpy.asarray(nodes)
@@ -1066,18 +1068,18 @@ class HoppingGraph(object):
         stats['G_degree'] = 2.0*graph.number_of_edges()/graph.order()
         stats['G_degree_in'] = stats['G_degree_out'] = stats['G_degree']/2.0
         stats['G_degree_max'] = numpy.max(graph.degree().values())
-        stats['G_degree_min'] = numpy.min(graph.degree().values())        
+        stats['G_degree_min'] = numpy.min(graph.degree().values())
         stats['G_degree_in_max'] = numpy.max(graph.in_degree().values())
-        stats['G_degree_in_min'] = numpy.min(graph.in_degree().values())        
+        stats['G_degree_in_min'] = numpy.min(graph.in_degree().values())
         stats['G_degree_out_max'] = numpy.max(graph.out_degree().values())
-        stats['G_degree_out_min'] = numpy.min(graph.out_degree().values())        
+        stats['G_degree_out_min'] = numpy.min(graph.out_degree().values())
 
         # general stats excluding bulk and bulk --> site edges
         stats['G_order_nobulk'] =  graph.order() - 1
         stats['G_edges_nobulk'] = stats['G_edges'] - 0.5*graph.degree(SITELABEL['bulk'])
         stats['G_degree_nobulk'] = 2.0*stats['G_edges_nobulk']/stats['G_order_nobulk']
         stats['G_degree_nobulk_max'] = numpy.max(graph.degree(nodes).values())
-        stats['G_degree_nobulk_min'] = numpy.min(graph.degree(nodes).values())        
+        stats['G_degree_nobulk_min'] = numpy.min(graph.degree(nodes).values())
         stats['G_degree_in_nobulk'] = numpy.average(graph.in_degree(nodes).values())
         stats['G_degree_out_nobulk'] = numpy.average(graph.out_degree(nodes).values())
         stats['G_degree_in_nobulk_max'] = numpy.max(graph.in_degree(nodes).values())
@@ -1138,7 +1140,7 @@ class HoppingGraph(object):
         stats['site_occupancy_rho_avg'] = numpy.average(sp.occupancy_avg)
         stats['site_occupancy_rho_med'] = numpy.median(sp.occupancy_avg)
         stats['site_occupancy_rho_std'] = numpy.std(sp.occupancy_avg)
-        
+
         # re-derive N_equivalence_sites and N_subsites from site_properties
         # see hop.sitemap.stats
         try:
@@ -1148,7 +1150,7 @@ class HoppingGraph(object):
             # site_properties not fully defined; should perhaps raise...
             warnings.warn('site_properties not complete: %s misses equivalence site data' %
                           self.filename(),       # let's hope filename is set...
-                          category=hop.MissingDataWarning)  
+                          category=hop.MissingDataWarning)
             stats['site_N_equivalence_sites'] = 0
             stats['site_N_subsites'] = 0
 
@@ -1184,11 +1186,11 @@ class HoppingGraph(object):
     def is_connected(self,n1,n2):
         """True if node n1 has any connection to the site n2."""
         return self.graph.has_successor(n1,n2) or self.graph.has_predecessor(n2,n1)
-           
+
     def is_internal(self,n):
         """True if site n has no connection to the bulk."""
         return not self.is_connected(n,SITELABEL['bulk'])
- 
+
     def is_isolated(self,n):
         """True if site n has no connections to other sites (ie its degree equals 0)."""
         return self.graph.degree(n) == 0
@@ -1209,13 +1211,13 @@ class HoppingGraph(object):
 
         k_in  = sum_j k_nj  (> 0)     j<>bulk
         k_out = sum_j k_jn  (< 0)     j<>bulk
-        k_tot = k_in + k_out        
- 
+        k_tot = k_in + k_out
+
         Note that k_tot should be ~0 if a bulk rate is included
         because the graph should obey detailed balance.
         """
         G = self.select_graph(use_filtered_graph=use_filtered_graph)
-        k_in  = numpy.sum( [ self.rate(e) for e in G.in_edges(n, data=True) 
+        k_in  = numpy.sum( [ self.rate(e) for e in G.in_edges(n, data=True)
                              if not self.is_from_bulk(e)] )
         k_out = numpy.sum( [-self.rate(e) for e in G.out_edges(n, data=True)] )
         k_tot = k_in + k_out
@@ -1241,7 +1243,7 @@ class HoppingGraph(object):
         equivalence_name = self.site_properties.equivalence_name[site].strip()
         if equivalence_name:
             msg(0," (common site '%s')" % equivalence_name)
-        msg(0,"\n")        
+        msg(0,"\n")
         if use_filtered_graph:
             msg(0,"(Filtered graph '%s')\n" % G.name)
         sp = self.site_properties[site]
@@ -1249,7 +1251,7 @@ class HoppingGraph(object):
         msg(0,"  site volume  = %g A^3\n" % sp.volume)
         msg(0,"  internal site = %s    isolated site = %s\n" % (self.is_internal(site),
                                                                 self.is_isolated(site)))
-        
+
         msg(0,rule)
         msg(0,"%11s %12s  1/ns  %3s\n" % ("hop","rate in","N"))
         msg(0,rule)
@@ -1270,10 +1272,10 @@ class HoppingGraph(object):
         msg(0,rule)
 
     def show_edge(self,edge):
-        msg(0,"%3d --> %3d %12.1f  1/ns  %3d\n" % 
-            (self.from_site(edge), self.to_site(edge), self.rate(edge), 
+        msg(0,"%3d --> %3d %12.1f  1/ns  %3d\n" %
+            (self.from_site(edge), self.to_site(edge), self.rate(edge),
              self.number_of_hops(edge) ))
-    
+
     def show_total_rates(self,use_filtered_graph=True):
         """Display total rates for all nodes (excluding bulk --> site contributions)."""
         msg(0,"Total flux in ns^-1 for each site (excluding bulk --> site)\n")
@@ -1287,7 +1289,7 @@ class HoppingGraph(object):
             rates.update({'site':site,'marker':marker})
             msg(0,"%(site)2d  %(marker)s k_tot=%(k_tot)+9.1f    k_in=%(k_in)9.1f   k_out=%(k_out)9.1f\n" % rates)
 
-        
+
     def export(self,filename=None,format='XGMML',use_filtered_graph=True,
                     use_mapped_labels=True):
         """Export the graph to a graph format or an image.
@@ -1321,7 +1323,7 @@ class HoppingGraph(object):
         except KeyError:
             raise ValueError("Format "+str(format)+" not supported, choose one of "+
                              str(__exporters.keys()))
-        
+
 
     def _export_dot(self,filename=None,use_filtered_graph=True,use_mapped_labels=True,
                     **otherargs):
@@ -1341,12 +1343,12 @@ class HoppingGraph(object):
                      If site_properties is provided then each node that has been
                      identified to exist in a reference network is coloured black
                      and the mapped label is printed instead of the graph label.
- 
+
         The graph is only written to an image file if an image format
         is supplied. See
         https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw
         for possible output formats but png, jpg, ps are safe bets.
-    
+
         See http://graphviz.org/doc/info/attrs.html for attributes.
 
         Note: On Mac OS X 10.3.9+fink the pygraphviz rendering is
@@ -1354,10 +1356,10 @@ class HoppingGraph(object):
         exported .dot file and use Mac OS X graphviz from
         http://www.pixelglow.com/graphviz/
         """
-        dotname = self.filename(filename,'dot')       # load into graphviz 
+        dotname = self.filename(filename,'dot')       # load into graphviz
         G = self._make_AGraph(use_filtered_graph=use_filtered_graph,use_mapped_labels=use_mapped_labels)
         G.write(dotname)
-        
+
     def _export_image(self,filename=None,format='png',use_filtered_graph=True,use_mapped_labels=True,
                       **otherargs):
         G = self._make_AGraph(use_filtered_graph=use_filtered_graph,use_mapped_labels=use_mapped_labels)
@@ -1373,7 +1375,7 @@ class HoppingGraph(object):
         if use_mapped_labels and \
            (not hasattr(self,'site_properties') or self.site_properties is None):
             raise AttributeError('Mapped site labels require site_properties annotation.')
-        
+
         graph = self.select_graph(use_filtered_graph)
 
         G = pygraphviz.AGraph(directed=True)
@@ -1443,7 +1445,7 @@ class HoppingGraph(object):
 
         # distance of site center from geometrical center
         # (a bit hackish so that we only include real sites)
-        sitecenters = numpy.array([v for v in 
+        sitecenters = numpy.array([v for v in
                                    self.site_properties.center[SITELABEL['bulk']+1:]])
         center = numpy.mean(sitecenters,axis=0)
         cdist = numpy.sqrt(numpy.sum((sitecenters - center)**2,axis=1))
@@ -1455,7 +1457,7 @@ class HoppingGraph(object):
             site = k
             xattr = {'id':site,'label':label,
                      'equivalence_label':self.site_properties.equivalence_name[site],
-                     'volume':self.site_properties.volume[site],                  
+                     'volume':self.site_properties.volume[site],
                      'occupancy_avg':self.site_properties.occupancy_avg[site],
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
@@ -1549,8 +1551,8 @@ class HoppingGraph(object):
         # there is only a single atom per residue.
         for node in graph:   # node is the label==resid and it must be an integer
             pos = props[node].center
-            vol = props[node].volume              
-            occ = props[node].occupancy_avg       
+            vol = props[node].volume
+            occ = props[node].occupancy_avg
             degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
             # write common atoms as N, different as CA (HACK...)
             commonlabel = props.equivalence_name[node].strip()
@@ -1563,7 +1565,7 @@ class HoppingGraph(object):
                 aname = 'CA'       # choose the same identifiers as in pdb
                 atype = 'CA'       # choose the same identifiers as in pdb
             pdb_occupancy = occ     # should be able to choose from volume, occupancy, degree, identity
-            # connectedness: 1: standard site, 0.5: internal (no bulk), 0.01: isolated            
+            # connectedness: 1: standard site, 0.5: internal (no bulk), 0.01: isolated
             # (should do this as separate residues)
             pdb_beta = self.connectedness(node)
             B.init_residue('NOD',' ',node,' ') # choose same identifiers as in write_psf
@@ -1575,7 +1577,7 @@ class HoppingGraph(object):
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
-        pdbfile = self.filename(filename,'pdb')                       
+        pdbfile = self.filename(filename,'pdb')
         io.save(pdbfile)
 
     def write_psf(self,graph,props,filename=None):
@@ -1614,21 +1616,21 @@ class HoppingGraph(object):
                 identity = 0.0
                 aname = 'CA'       # choose the same identifiers as in pdb
                 atype = 'CA'       # choose the same identifiers as in pdb
-            psf.write(psf_ATOM_format % 
+            psf.write(psf_ATOM_format %
                       {'iatom':iatom, 'segid':segid, 'resid':node,
                        'resname':resname, 'name':aname, 'type':atype,
                        'charge':charge, 'mass':mass,'imove':imove} )
         # BONDS: fortran fmt03='(8I8)'
         # (note: write directed bonds and one atom per residue/node)
-        psf.write('%6d !NBOND: bonds\n' % graph.number_of_edges())        
+        psf.write('%6d !NBOND: bonds\n' % graph.number_of_edges())
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
         if (n+1) % 4 != 0: psf.write('\n')
-        
+
         # ignore all the other sections (don't make sense anyway)
         psf.close()
-        
+
     def select_graph(self,use_filtered_graph):
         """Returns filtered graph for True argument, or the raw graph otherwise)"""
         if use_filtered_graph:
@@ -1637,7 +1639,7 @@ class HoppingGraph(object):
                 graph = self.filtered_graph
                 graph.number_of_nodes()
             except AttributeError:
-                raise ValueError('No filtered graph defined; create one with %s.filter().' % 
+                raise ValueError('No filtered graph defined; create one with %s.filter().' %
                                  self.__class__.__name__)
         else:
             graph = self.graph
@@ -1692,7 +1694,7 @@ class HoppingGraph(object):
             # TODO: coarser dt for long runs, eg dt = 10 ... 100!!
             #       This can blow up in memory in survivalfunction() because of too many t (len(x) big!)
             #       or use an interpolated survival function
-            dt = 1.0                                 # 1.0 == dt in sim  # TODO: adapt dt            
+            dt = 1.0                                 # 1.0 == dt in sim  # TODO: adapt dt
             tmax = numpy.max(taus) + 1.0*dt
             N = len(taus)                            # perhaps sample N times from S ???
             x = numpy.arange(0,tmax+1,dt)            # ... just do lin mesh
@@ -1714,7 +1716,7 @@ class HoppingGraph(object):
                 k, = fit.parameters
         else:
             raise NotImplemented('Method "%s" is not implemented.' % method)
-        return dict(k=k, N=N, fit=fit) 
+        return dict(k=k, N=N, fit=fit)
 
 class CombinedGraph(HoppingGraph):
     """Hybrid graph between hop graphs that share common nodes."""
@@ -1731,7 +1733,7 @@ class CombinedGraph(HoppingGraph):
             #    (can I do multiple parallel edges with pygraphviz ??)
             self._filename = filename
             self.graph = NX.MultiDiGraph(name='Hybrid graph')
-            self.graphs = [g0,g1]  # all graphs    
+            self.graphs = [g0,g1]  # all graphs
             self.g_labels = None   # shape = (2,size of combined graph), one col per graph
                           # g_labels[igraph,combined_label] --> original label in igraph
             self.node_properties = None # will become a numpy.recarray
@@ -1739,7 +1741,7 @@ class CombinedGraph(HoppingGraph):
 
             # fix: bulk sites should be common, too:
             self.graphs[0].site_properties.equivalence_name[SITELABEL['bulk']] = 'bulk'
-            self.graphs[1].site_properties.equivalence_name[SITELABEL['bulk']] = 'bulk'        
+            self.graphs[1].site_properties.equivalence_name[SITELABEL['bulk']] = 'bulk'
 
             # fix: in rare circumstances, an outlier (-1) hop (1,-1) or (-1,1) is recorded
             # so we prune the outlier node --- TODO: check trajectory _coord2hop !!
@@ -1753,7 +1755,7 @@ class CombinedGraph(HoppingGraph):
             # tmp list for graph labels with (g0_label, g1_label) for each new label:
             g_labels = [numpy.array([None]*len(self.graphs))]
             # temp list to build recarray: new label, descr, common?, graphmask
-            properties = [(SITELABEL['interstitial'],'interstitial',False,0)]            
+            properties = [(SITELABEL['interstitial'],'interstitial',False,0)]
             ICOMLABL = 1               # index for common label in properties at pos 1
             ICOMMON = 2                # True if common to all graphs, False otherwise
             IGRAPHS = 3                # bit field (mask) containing graph numbers as sum 2**igraph
@@ -1786,7 +1788,7 @@ class CombinedGraph(HoppingGraph):
             self.g_labels = numpy.array(g_labels).transpose()
             del properties
             del g_labels
-            
+
             site_properties = []  # temporary list to build rec array
             for np in self.node_properties:
                 # all but interstitial == [None,None] should have at least one entry in gNnodes
@@ -1829,7 +1831,7 @@ class CombinedGraph(HoppingGraph):
             # build graph-indexed list of hopgraph-derived occupancies:
             # g_occupancy_avg, g_occupancy_std. shape = (order(2,combined_graph)) (cf g_label)
             self.g_occupancy_avg = numpy.zeros(self.g_labels.shape)
-            self.g_occupancy_std = numpy.zeros(self.g_labels.shape)            
+            self.g_occupancy_std = numpy.zeros(self.g_labels.shape)
             for ig,g in enumerate(self.graphs):
                 nodes = numpy.array(g.graph.nodes())
                 if not hasattr(g,'occupancy_avg'):
@@ -1851,20 +1853,20 @@ class CombinedGraph(HoppingGraph):
             for ig,g in enumerate(self.graphs):
                 # add graph number to properties to make edge unique
                 # store the graph number in the NX 1.x edge dict as 'graph'
-                ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v), 
+                ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v),
                            _joined_dict(p, graph=ig))
                           for u,v,p in g.graph.edges_iter(data=True)]
                 # original pre NX 1.x implementation: p' <-- p + (ig,)
                 # "(p'[3] == ig)"
-                #ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v), 
-                #          p+(ig,) )  for u,v,p in g.graph.edges_iter()] 
-                # Probably means that p[3] would always contain the graph number, p[:3] 
+                #ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v),
+                #          p+(ig,) )  for u,v,p in g.graph.edges_iter()]
+                # Probably means that p[3] would always contain the graph number, p[:3]
                 # would be other stuff ... k,N,fit ? -- OB 2010-06-28
                 self.graph.add_edges_from(ebunch)
             # record common edges in edge_properties
             def edge_is_common(u,v):
                 u0,v0 = self.g_labels[0,[u,v]]
-                u1,v1 = self.g_labels[1,[u,v]]                    
+                u1,v1 = self.g_labels[1,[u,v]]
                 if not numpy.all([u0,v0,u1,v1]):  # get one or more None if node not common
                     return False
                 return self.graphs[0].graph.has_edge(u0,v0) and self.graphs[1].graph.has_edge(u1,v1)
@@ -1931,7 +1933,7 @@ class CombinedGraph(HoppingGraph):
             h = cPickle.load(fh)
         finally:
             fh.close()
-        # restore attributes from the temporary instance (works but not elegant...)        
+        # restore attributes from the temporary instance (works but not elegant...)
         self.graph = h.graph
         for attr in 'filtered_graph', 'graphs', 'g_labels', \
                 'node_properties', 'edge_properties', \
@@ -1958,7 +1960,7 @@ class CombinedGraph(HoppingGraph):
                       processing; modified by method
 
         :Returns:
-        d             dictionary with expressive keys, holding the results        
+        d             dictionary with expressive keys, holding the results
         """
         try:
             return self.graphs[igraph].stats(data=data)
@@ -1998,7 +2000,7 @@ class CombinedGraph(HoppingGraph):
             label_sites=dict(common=True,all=False,none=False)
         if cmap is None:
             cmap = dict(node=pylab.cm.jet,edge=None)
-        
+
         graphviz_progs = ['dot','neato','twopi','circo','fdp','nop']
         graphnumbers = [0,1]
         if igraph not in graphnumbers:
@@ -2006,7 +2008,7 @@ class CombinedGraph(HoppingGraph):
         if prog not in graphviz_progs:
             raise ValueError('Layout program <prog> must be one of '+str(graphviz_progs))
         graph = self.select_graph(use_filtered_graph)
-        
+
         H = NX.MultiDiGraph(name=graph.name)  # need to clean up graph first --> H is tmp graph
         H.add_nodes_from([n for n in graph.nodes_iter()])
         # XXX: NX 1.x: original (u,v,{'graph':str(p[3])}) -- is the following correct, what was p[3] ??
@@ -2028,7 +2030,7 @@ class CombinedGraph(HoppingGraph):
             labels = self.site_properties.equivalence_name.strip()         # sets dtype to |S12
             disjoint_sites = numpy.logical_not(self.node_properties.common)
             if 'all' in label_sites and label_sites['all']:
-                labels[disjoint_sites] = self.node_properties.label[disjoint_sites]        
+                labels[disjoint_sites] = self.node_properties.label[disjoint_sites]
             labels = dict(zip(graph.nodes(),labels[graph.nodes()]))   # only keep the ones in graph
         # colors
         vmin,vmax = self.site_properties.distance.min(),self.site_properties.distance.max()
@@ -2059,7 +2061,7 @@ class CombinedGraph(HoppingGraph):
 
         # add something based on is_connected() to highlight sites NOT
         # connected to bulk, eg use different shape or heavier outline for
-        # symbol        
+        # symbol
         #for ig,g in enumerate(self.graphs):
         #    g.has_bulkconnection = {}
         #    for n in g.nodes():
@@ -2088,7 +2090,7 @@ class CombinedGraph(HoppingGraph):
                         edge_color=edge_color,
                         labels=labels,alpha=alpha,
                         )
-            
+
         cax = pylab.axes(frameon=False)
         pylab.clf()
         for ig in ordered_graphnumbers:
@@ -2096,7 +2098,7 @@ class CombinedGraph(HoppingGraph):
             gp.update(drawargs)
             NX.draw(G[ig],
                     # ax=cax,   ## needs to be commented out, otherwise empty frame
-                    **gp)            
+                    **gp)
         imgfile = self.filename(filename,format)
         pylab.savefig(imgfile)
 
@@ -2120,17 +2122,17 @@ class CombinedGraph(HoppingGraph):
         common label. Nodes and edges belonging to the selected graph
         are shown in black; the other graph is only shown in light
         gray.
-       
+
         The graph is only written to an image file if an image format
         is supplied. See
         https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw
         for possible output formats but png, jpg, ps are safe bets.
-    
+
         :Format:
         XGMML      http://www.cs.rpi.edu/~puninj/XGMML/draft-xgmml.html#Intro and
                    GML http://www.infosun.fim.uni-passau.de/Graphlet/GML/
         dot        See http://graphviz.org/doc/info/attrs.html for attributes.
-        
+
         Note: On Mac OS X 10.3.9+fink the pygraphviz rendering is
         buggy and does not include node labels. Simply use the
         exported .dot file and use Mac OS X graphviz from
@@ -2206,7 +2208,7 @@ class CombinedGraph(HoppingGraph):
                 xattr['common'] = True
                 xattr['active'] = True
             elif graph_number == igraph:
-                e.attr['color'] = color['edge']['on']          
+                e.attr['color'] = color['edge']['on']
                 xattr['active'] = True
 
         # colouring and labeling of nodes
@@ -2289,15 +2291,15 @@ class CombinedGraph(HoppingGraph):
             xml.write("""</graph>\n""")
             xml.close()
         elif format == 'dot':
-            dotname = self.filename(filename,'.dot')       # load into graphviz 
+            dotname = self.filename(filename,'.dot')       # load into graphviz
             G.write(dotname)
-            if imageformat:            
+            if imageformat:
                 gfxname = filename+'.'+format
                 G.layout(prog='dot')
                 G.draw(path=gfxname,format=format)  # buggy on Mac OS X
-            
+
     def plot_fits(self,**kwargs):
-        raise NotImplementedError        
+        raise NotImplementedError
     def export3D(self,**kwargs):
         raise NotImplementedError
     def tabulate_k(self,**kwargs):
@@ -2309,7 +2311,7 @@ class CombinedGraph(HoppingGraph):
 
         :Arguments:
         graphnumber       index into CombinedGraph.graphs (typically, 0 or 1)
-        elabels           single label or list of labels of equivalence sites 
+        elabels           single label or list of labels of equivalence sites
                           (without a '*' if the default identifier is used)
         equivalence       True: interprete elabels as equivalence labels
                           False: elabels are labels local to the graph (as used
@@ -2327,7 +2329,7 @@ class fit_func(object):
 
     Attributes:
 
-    parameters     list of parameters of the fit    
+    parameters     list of parameters of the fit
     """
     # NOTE: this class must stay in the same file as HoppingGraph. Otherwise
     #       cPickle does not work on HoppingGraph (and one needs to implement
@@ -2339,7 +2341,7 @@ class fit_func(object):
         p0 = self.initial_values()
         fitfunc = self.f_factory()
         def errfunc(p,x,y):
-            return  fitfunc(p,x) - y     # residuals        
+            return  fitfunc(p,x) - y     # residuals
         p,msg = scipy.optimize.leastsq(errfunc,p0[:],args=(_x,_y))
         try:
             p[0]
@@ -2361,7 +2363,7 @@ class fit_func(object):
     def initial_values(self):
         """List of initital guesses for all parameters p[]"""
         # return [1.0, 2.0, 0.5]
-        raise NotImplementedError("base class must be extended for each fit function")    
+        raise NotImplementedError("base class must be extended for each fit function")
 
     def fit(self,x):
         """Applies the fit to all x values"""
@@ -2378,7 +2380,7 @@ class fitExp(fit_func):
         return [1.0]
     def __repr__(self):
         return "<fitExp "+str(self.parameters)+">"
-    
+
 class fitExp2(fit_func):
     """y = f(x) = p[0]*exp(-p[1]*x) + (1-p[0])*exp(-p[2]*x)"""
     def f_factory(self):
@@ -2400,7 +2402,7 @@ class fitlin(fit_func):
         return [1.0,0.0]
     def __repr__(self):
         return "<fitlin"+str(self.parameters)+">"
-    
+
 
 def survivalfunction(waitingtimes, block_w=200, block_t=1000):
     """Returns the survival function S(t), defined by a list of waiting times.
@@ -2423,17 +2425,17 @@ def survivalfunction(waitingtimes, block_w=200, block_t=1000):
     :TODO: Make S(t) an interpolation function: massive speedup and fewer memory problems
     """
     S_doc = """Survival function S(t).  t can be a array.
-        
+
     S(t) = <Theta(t0 - t)>_{t0} = <1-Theta(t-t0)>_{t0}
     """
-    
+
     # NOTE: These big functions S_numpy or S_lowmem are *evaluated
     # every time* S(t) is called. Should be optimized eventually.
 
     # straightforward version
     def S_numpy(t):
         return numpy.sum([Unitstep(t0,t) for t0 in waitingtimes],axis=0)/len(waitingtimes)
-        
+
     # work on chunks of waitingtimes of size block_w and chunks of times of size block_t
     def S_lowmem(t):
         _t = numpy.asarray(t)
@@ -2441,7 +2443,7 @@ def survivalfunction(waitingtimes, block_w=200, block_t=1000):
         func_values = numpy.zeros(N_t, dtype=float)    # final result S(t) = func_values[:]
         # need to block t, too, as it can be very large
         for j in numpy.arange(0, N_t, block_t):
-            tmp_t = _t[j:j+block_t]        
+            tmp_t = _t[j:j+block_t]
             values = numpy.zeros(len(tmp_t),dtype=float)
             for i in numpy.arange(0, len(waitingtimes), block_w):
                 # the list comprehension can blow up in memory (so we block it)
@@ -2455,7 +2457,7 @@ def survivalfunction(waitingtimes, block_w=200, block_t=1000):
     if len(waitingtimes) < block_w:
         # print "survivalfunction(): using standard version (len(tau)=%d < block_w=%d)" % (len(waitingtimes),block_w)
         S = S_numpy
-    else:        
+    else:
         # TODO: should really check if something like len(waitingtimes) * len(t) >
         # available memory but at this time t isn't known; I would have to put the
         # switching logic into the function S(t) itself The problem is really that for
@@ -2464,7 +2466,7 @@ def survivalfunction(waitingtimes, block_w=200, block_t=1000):
         # would be to use a larger dt when evaluating S(t). Right now we are trying to be
         # somewhat robust by simply blocking both waitingtimes ('block_w') and times t
         # ('block_t')
-        
+
         # print "survivalfunction(): using lowmem version (len(tau)=%d >= block_w=%d)" % (len(waitingtimes),block_w)
         S = S_lowmem
     S.__doc__ = S_doc
@@ -2487,4 +2489,4 @@ def Unitstep(x,x0):
     _x = numpy.asarray(x)
     _x0 = numpy.asarray(x0)
     return 0.5*(1 + numpy.sign(_x - _x0))
-    
+

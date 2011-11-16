@@ -24,6 +24,7 @@ hop.sitemap, MDAnalysis
 import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
+from MDAnalysis.core.log import ProgressMeter
 
 # used to be here, migrated to MDAnalysis
 import warnings
@@ -42,6 +43,10 @@ from hop.constants import SITELABEL
 import hop.utilities
 from hop.utilities import msg,set_verbosity
 from hop import SelectionError
+
+import logging
+logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
+
 def totaltime(trajectory):
     """Returns the total trajectory time from the DCDReader object."""
     return trajectory.totaltime
@@ -266,18 +271,16 @@ class HoppingTrajectory(object):
         dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='Hopping trajectory: x=site y=orbit_site z=0')
+        pm = ProgressMeter(self.numframes, interval=10,
+                           format="Mapping frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
-            if ts.frame % 10 == 0:
-                msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                        (ts.frame,self.numframes,100.0*ts.frame/self.numframes))
             dcdwriter.write_next_timestep(ts)
-        dcdwriter.close_trajectory()
-        msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,self.numframes,100.0*ts.frame/self.numframes))
-        msg(3,'\nFinished writing %s.\n' % dcdname)
+            pm.echo(ts.frame)
+        dcdwriter.close()
+        logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
-        msg(3,'\nWrote %s.\n' % psfname)
+        logger.info("HoppingTrajectory.write(): wrote hoppsf %r.", psfname)
 
         if load is True:
             self.__init__(filename=filename,verbosity=self.verbosity)
@@ -689,15 +692,13 @@ class TAPtrajectory(object):
         dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='TAP trajectory')
+        pm = ProgressMeter(self.numframes, interval=10,
+                           format="Mapping TAP frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
-            if ts.frame % 10 == 0:
-                msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                        (ts.frame,self.numframes,100.0*ts.frame/self.numframes))
             dcdwriter.write_next_timestep(ts)
-        dcdwriter.close_trajectory()
-        msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,self.numframes,100.0*ts.frame/self.numframes))
-        msg(3,'\nFinished writing %s.\n' % dcdname)
+            pm.echo(ts.frame)
+        dcdwriter.close()
+        logger.info("TAPTrajectory.write(): wrote TAP traj %r.", dcdname)
 
         if load is True:
             self.TAPtraj = MDAnalysis.DCD.DCDReader(dcdname)

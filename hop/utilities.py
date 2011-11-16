@@ -76,7 +76,7 @@ def filename_function(self,filename=None,ext=None,set_default=False,use_my_ext=F
     """
     if filename is None:
         if not hasattr(self,'_filename'):
-            self._filename = None        # add attribute to class 
+            self._filename = None        # add attribute to class
         if self._filename:
             filename = self._filename
         else:
@@ -86,7 +86,7 @@ def filename_function(self,filename=None,ext=None,set_default=False,use_my_ext=F
         filename, my_ext = os.path.splitext(filename)
         if set_default:                  # replaces existing default file name
             self._filename = filename
-    if my_ext and use_my_ext:  
+    if my_ext and use_my_ext:
         ext = my_ext
     if ext is not None:
         if ext.startswith('.'):
@@ -114,11 +114,11 @@ def XXXsave(self,filename=None):
     # TODO: need to properly design this whole pickling stuff
     data = {}
     if self._saved_attributes == 'all':
-        # HACK: manually filter out some attributes such as type('method-wrapper') 
+        # HACK: manually filter out some attributes such as type('method-wrapper')
         #       objects that cannot be pickled
         saved_attributes = [x for x in self.__dict__.keys() if x not in self._excluded_attributes]
     else:
-        saved_attributes = self._saved_attributes        
+        saved_attributes = self._saved_attributes
     for attr in saved_attributes:
         try:
             data[attr] = self.__dict__[attr]
@@ -126,19 +126,19 @@ def XXXsave(self,filename=None):
             warnings.warn("Attribute '"+attr+"' has not been computed and will not be saved.",
                           category=hop.MissingDataWarning)
     fh = open(self.filename(filename,'pickle',set_default=True),'wb')  # 2.5: with open(..) as fh:
-    try: 
+    try:
         cPickle.dump(data,fh,cPickle.HIGHEST_PROTOCOL)
     finally:
         fh.close()
     del data
 
-def XXXload(self,filename=None,merge=False):         
+def XXXload(self,filename=None,merge=False):
     """Reinstantiate class from a pickled file (produced with save())."""
     if not self._saved_attributes:
         warnings.warn("No data loaded: the object declared empty '_saved_attributes'.")
         return
     fh = open(self.filename(filename,'pickle',set_default=True),'rb')  # 2.5: with open(..) as fh:
-    try: 
+    try:
         data = cPickle.load(fh)
     finally:
         fh.close()
@@ -154,21 +154,21 @@ def XXXload(self,filename=None,merge=False):
             else:
                 self.__dict__[attr] = data[attr]
         except KeyError:
-            warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.", 
+            warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.",
                           category=hop.MissingDataWarning)
     del data
 
 
 class Saveable(object):
     """Baseclass that supports save()ing and load()ing.
-    
-    Override the class variables 
+
+    Override the class variables
 
       _saved_attributes = [] # list attributes to be pickled
       _merge_attributes = [] # list dicts to be UPDATED from the pickled file with load(merge=True)
       _excluded_attributes = [] # list attributes that should never be pickled
-      
-    Note: 
+
+    Note:
 
       _saved_attributes = 'all' # pickles ALL attributes, equivalent to self.__dict__.keys()
                                 # (use _excluded_attributes with 'all'!)
@@ -186,7 +186,7 @@ class Saveable(object):
         # TODO: should initialize _XXX_attributes[] via __init__() and use super(cls,Saveable).__init__()
         #       in subclasses
         kwargs.setdefault('filename',None)
-        # Multiple Inheritance is probably NOT going to work...                  
+        # Multiple Inheritance is probably NOT going to work...
         super(Saveable,self).__init__()        # XXX: ... shouldn't this take *args,**kwargs ?? OB-2009-06-10
         if kwargs['filename'] is not None:
             self.load(kwargs['filename'],'pickle')   # sets _saved_attributes in __dict__
@@ -204,7 +204,7 @@ class Saveable(object):
             #       cannot be pickled
             saved_attributes = [x for x in self.__dict__.keys() if x not in self._excluded_attributes]
         else:
-            saved_attributes = self._saved_attributes        
+            saved_attributes = self._saved_attributes
         for attr in saved_attributes:
             try:
                 data[attr] = self.__dict__[attr]
@@ -238,7 +238,7 @@ class Saveable(object):
         """
         if filename is None:
             if not hasattr(self,'_filename'):
-                self._filename = None        # add attribute to class 
+                self._filename = None        # add attribute to class
             if self._filename:
                 filename = self._filename
             else:
@@ -248,7 +248,7 @@ class Saveable(object):
             filename, my_ext = os.path.splitext(filename)
             if set_default:                  # replaces existing default file name
                 self._filename = filename
-        if my_ext and use_my_ext:  
+        if my_ext and use_my_ext:
             ext = my_ext
         if ext is not None:
             if ext.startswith('.'):
@@ -264,7 +264,7 @@ class Saveable(object):
         finally:
             fh.close()
 
-    def load(self,filename=None,merge=False):         
+    def load(self,filename=None,merge=False):
         """Reinstantiate class from a pickled file (produced with save())."""
         fh = open(self.filename(filename,'pickle',set_default=True),'rb')
         try:
@@ -277,7 +277,7 @@ class Saveable(object):
             warnings.warn("Loading an old-style save file.",category=DeprecationWarning)
             data = tmp  # just hope we got all attributes...
             # backwards-compatibility hacks:
-            try:    
+            try:
                 data['P'] = data['parameters']
             except KeyError:
                 pass
@@ -298,26 +298,26 @@ class Saveable(object):
                 else:
                     self.__dict__[attr] = data[attr]
             except KeyError:
-                warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.", 
+                warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.",
                               category=hop.MissingDataWarning)
         del data
         return True
 
 def easy_load(names,baseclass,keymethod):
     """Instantiate a class either from an existing instance or a pickled file.
-    
+
     instance_list = easy_load(names,baseclass,keymethod)
-    
+
     >>> x = easy_load(<filename>,Xclass,'my_method_name')
     >>> [x1,x2,...] = easy_load([<filename1>, <fn2>,...], Xclass,'my_method_name')
     >>> [x1,x2,...] = easy_load([x1, x2, ..], Xclass,'my_method_name')
-    
+
     If the argument does not implement the keymethod then try loading
-    from a file. 
+    from a file.
 
     API:
 
-    For this to work, the baseclass (eg Saveable) must be able to instantiate 
+    For this to work, the baseclass (eg Saveable) must be able to instantiate
     itself using
 
     x = baseclass(filename=name)
@@ -391,7 +391,7 @@ def get_verbosity():
 
 def msg(level,m=None):
     """msg(level,[m])
-       
+
     1) Print message string if the level <= verbose. level describes the
     priority with lower = more important.
 
@@ -430,8 +430,8 @@ def fixedwidth_bins(delta,xmin,xmax):
     N = numpy.ceil(_length/_delta).astype(numpy.int_)      # number of bins
     dx = 0.5 * (N*_delta - _length)   # add half of the excess to each end
     return {'Nbins':N, 'delta':_delta,'min':_xmin-dx, 'max':_xmax+dx}
-    
-    
+
+
 
 def flatiter(seq):
     """Returns an iterator that flattens a sequence of sequences of sequences...
@@ -477,14 +477,14 @@ def matplotlib_interactive(interactive=False):
     import matplotlib
     if not interactive:
         matplotlib.use('Agg')  # allows running without X11 on compute nodes
-    matplotlib.interactive(interactive)            
+    matplotlib.interactive(interactive)
     return interactive
 
 def iterable(obj):
     """Returns True if obj can be iterated over and is NOT a string."""
     try: len(obj)
     except: return False
-    if type(obj) is str:
+    if isinstance(obj, basestring):
         return False    # avoid iterating over characters of a string
     return True
 
@@ -492,7 +492,7 @@ def asiterable(obj):
     """Return an object that is an iterable: object itself or wrapepd in a list.
 
     iterable <-- asiterable(something)
-    
+
     Treats strings as NOT-iterable.
     """
     if not iterable(obj):
@@ -505,7 +505,7 @@ def Pearson_r(x,y):
     r = Pearson(x,y)
 
     x and y are arrays of same length
-    
+
     Historical note:
     Naive implementation of Pearson's r:
 
@@ -558,7 +558,7 @@ def linfit(x,y,dy=[]):
     m = len(y)
     if n != m:
         raise ValueError("lengths of x and y must match: %s != %s" % (n, m))
-    
+
     try:
         have_dy = (len(dy) > 0)
     except TypeError:
@@ -607,13 +607,13 @@ def linfit(x,y,dy=[]):
 def autocorrelation_fft(series,include_mean=False,periodic=False,
                         start=None,stop=None,**kwargs):
     """Calculate the auto correlation function.
-    
+
     acf = autocorrelation_fft(series,include_mean=False,**kwargs)
 
     The time series is correlated with itself across its whole length. It is 0-padded
     and the ACF is corrected for the 0-padding (the values for larger lags are
-    increased) unless mode='valid' (see below). 
-    Only the [0,len(series)[ interval is returned. The series is normalized to ots 0-th 
+    increased) unless mode='valid' (see below).
+    Only the [0,len(series)[ interval is returned. The series is normalized to ots 0-th
     element.
 
     Note that the series for mode='same'|'full' is inaccurate for long times and
@@ -642,7 +642,7 @@ def autocorrelation_fft(series,include_mean=False,periodic=False,
         start = start or 0
         stop = stop or len(series)
         if start >= stop:
-            raise ValueError('Must be start < stop but start = %(start)d >= stop = %(stop)d.' 
+            raise ValueError('Must be start < stop but start = %(start)d >= stop = %(stop)d.'
                              % locals())
 
     ac = scipy.signal.fftconvolve(series,series[stop:start:-1,...],**kwargs)
@@ -650,14 +650,14 @@ def autocorrelation_fft(series,include_mean=False,periodic=False,
     if kwargs['mode'] == 'valid':
         # origin at start+1
         norm = ac[start+1] or 1.0   # to guard against ACFs of zero arrays
-        # Note that this is periodic (and symmetric) over result[0,stop-start+1] and so we 
+        # Note that this is periodic (and symmetric) over result[0,stop-start+1] and so we
         # only return one half:
         ##return numpy.concatenate( (ac[start+1:], ac[:start+1]) )[:len(ac)/2] / norm
         # ac is symmetric around start+1 so we average the two halves (just in case):
         ac[:] = numpy.concatenate( (ac[start+1:], ac[:start+1]) ) / norm
         ac = numpy.resize(ac,len(ac)+1)   # make space for replicated 0-th element
         ac[-1] = ac[0]
-        if len(ac) % 2 == 1:   
+        if len(ac) % 2 == 1:
             # orig ac was even
             return 0.5*(ac[:len(ac)/2] + ac[:len(ac)/2:-1])
         else:
@@ -685,7 +685,7 @@ def averaged_autocorrelation(series,length=None,sliding_window=None,**kwargs):
     series          time series (by default, mean will be removed)
     length          length (in frames) of the ACF (default: 1/2*len(series))
     sliding_window  repeat ACF calculation every N frames (default: len(series)/100)
-    kwargs          additional arguments to autocorrelation_fft()    
+    kwargs          additional arguments to autocorrelation_fft()
     """
     import numpy
     kwargs.pop('start',None) # must filter those kwargs as we set them ourselves
@@ -696,7 +696,7 @@ def averaged_autocorrelation(series,length=None,sliding_window=None,**kwargs):
     sliding_window = sliding_window or nframes/100
     # note: do NOT be tempted to change nframes-_length to nframes-_length+1
     #       (this will make the last acf 1 step longer, see series[stop:start:-1] !)
-    acfs = numpy.array([autocorrelation_fft(series,start=start,stop=start+_length,**kwargs) 
+    acfs = numpy.array([autocorrelation_fft(series,start=start,stop=start+_length,**kwargs)
                  for start in xrange(0,nframes-_length,sliding_window)])
     return acfs.mean(axis=0), acfs.std(axis=0)
 
@@ -714,7 +714,7 @@ except NameError:
         Naive pre python 2.4 compatibility fudge.
 
         With key, cmp must make use of triplets (key,int,value).
-        It's a fudge after all. 
+        It's a fudge after all.
         """
         L = list(iterable)
         args = ()
@@ -726,7 +726,7 @@ except NameError:
             # decorate-sort-undecorate
             deco = [(key(x),i,x) for i,x in enumerate(L)]
             deco.sort(*args)
-            L[:] = [y[2] for y in deco] 
+            L[:] = [y[2] for y in deco]
         if reverse:
             L.reverse()
         return L
@@ -828,8 +828,19 @@ class IntrospectiveDict(dict):
     def _update(self):
         for k,v in self.items():  # initialisation of the attributes from the keys
             self._set(k,v)
-        
+
     def _set(self,k,v):
         if k not in self.__reserved:
             self.__setattr__(k,v)
 
+
+import MDAnalysis.core.log
+class CustomProgressMeter(MDAnalysis.core.log.ProgressMeter):
+    """ProgressMeter that uses addition '%(other)s' in format string.
+
+    .. SeeAlso:: :class:`MDAnalysis.core.log.ProgressMeter`
+    """
+    def echo(self, step, other):
+        """Output status for *step* with additional information *other*."""
+        self.other = other
+        return super(CustomProgressMeter, self).echo(step)

@@ -81,11 +81,13 @@ if __name__ == "__main__":
                       help="copy trajectory to a temporary local disk for better read performance. "
                       "Requires sufficient space in TEMP.")
 
-    parser.set_defaults(topology=None, trajectory=None, 
+    parser.set_defaults(topology=None, trajectory=None,
                         atomselection=None,
                         output="hoptraj")
 
     opts,args = parser.parse_args()
+
+    MDAnalysis.start_logging()
 
     if len(args) == 0:
         logger.fatal("A pickled density with bulk site is required. See --help.")
@@ -93,11 +95,10 @@ if __name__ == "__main__":
 
     density = hop.sitemap.Density(filename=args[0])
 
-    MDAnalysis.start_logging()
     if opts.topology:
         topology = os.path.abspath(opts.topology)
     else:
-        topology = os.path.abspath(density.metadata['PSF'])
+        topology = os.path.abspath(density.metadata['psf'])
     if not os.path.exists(topology):
         errmsg = "Topology %(topology)r not found; (use --topology)" % vars()
         logger.fatal(errmsg)
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     if opts.trajectory:
         trajectory = os.path.abspath(opts.trajectory)
     else:
-        trajectory = os.path.abspath(density.metadata['DCD'])
+        trajectory = os.path.abspath(density.metadata['dcd'])
     if not os.path.exists(trajectory):
         errmsg = "Trajectory %(trajectory)r not found; (use --trajectory)" % vars()
         logger.fatal(errmsg)
@@ -118,13 +119,13 @@ if __name__ == "__main__":
         atomselection = density.metadata['atomselection']
 
     #startdirectory = os.path.abspath(os.curdir)
-    #os.chdir(startdirectory)            
+    #os.chdir(startdirectory)
 
     logger.info("Generating hopping trajectory for density %r", args[0])
     logger.debug("density    = %r", args[0])
     logger.debug("topology   = %(topology)r", vars())
     logger.debug("trajectory = %(trajectory)r", vars())
-    logger.debug("selection  = %(atomselection)r", vars()) 
+    logger.debug("selection  = %(atomselection)r", vars())
 
     if not density.has_bulk():
         raise ValueError("The density does not have a bulk site---insert one!")
@@ -132,5 +133,5 @@ if __name__ == "__main__":
     hoptraj = generate_hoptraj_locally(topology, trajectory, density, opts.output,
                                          atomselection, localcopy=opts.localcopy)
     logger.info("Created hopping trajectory %(output)s.dcd with %(output)s.psf", vars(opts))
-    MDAnalysis.stop_logging()        
+    MDAnalysis.stop_logging()
 
