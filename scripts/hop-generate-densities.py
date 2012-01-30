@@ -34,7 +34,7 @@ logger = logging.getLogger('MDAnalysis.app')
 
 
 
-def generate_densities_locally(topology, trajectory, atomselection, localcopy=False, **kwargs):
+def generate_densities_locally(topology, trajectory, localcopy=False, **kwargs):
     # default values in hop.density.DensityGenerator
     def _generate_densities(traj):
         return hop.interactive.generate_densities(topology, traj, **kwargs)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     try:
         os.chdir(analysisdir)
         logger.debug("Working in %(analysisdir)r..." % vars())
-        densities = generate_densities_locally(topology, trajectory, opts.atomselection,
+        densities = generate_densities_locally(topology, trajectory, atomselection=opts.atomselection,
                                                solvent_threshold=opts.solvent_threshold, delta=opts.delta,
                                                soluteselection=opts.soluteselection, cutoff=opts.cutoff,
                                                localcopy=opts.localcopy)
