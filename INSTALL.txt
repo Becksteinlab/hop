@@ -56,7 +56,7 @@ Required python modules
 -----------------------
 
 ::
-   MDAnalysis      >= 0.6.3              http://mdanalysis.googlecode.com
+   MDAnalysis      >= 0.7.5              http://mdanalysis.googlecode.com
    numpy           >=1.0.3               http://numpy.scipy.org/
    NetworkX        >=1.0                 https://networkx.lanl.gov/
    GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
@@ -66,9 +66,9 @@ its home page. Get the latest snapshot from
 
   http://mdanalysis.googlecode.com/files/
 
-or get the development version via subversion::
+or install it with ::
 
-  svn checkout http://mdanalysis.googlecode.com/svn/trunk MDAnalysis 
+  easy_install MDAnalysis
 
 Note that installation of ``MDAnalysis`` can take a while because it
 requires a python environment that is fully set up for scientific

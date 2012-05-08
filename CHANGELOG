@@ -2,6 +2,14 @@
  Changes in Hop
 ================
 
+0.3.3 
+
+   * requires MDAnalysis 0.7.5
+   * various minor fixes
+
+0.3.2
+   * scripts to automate some common tasks
+
 0.3.1
    
    * removed gridDataFormats; separately available from 

@@ -71,7 +71,7 @@ class DensityAnalysis:
         elif bulkname:
             self.refbulkdensity = hop.utilities.easy_load(
                 os.path.join(os.path.dirname(self.reference.filename()),bulkname),
-                hop.sitemap.Density,'stats')  
+                hop.sitemap.Density,'stats')
             self.bulkdensities = [ hop.utilities.easy_load(
                     os.path.join(os.path.dirname(d.filename()),bulkname),
                     hop.sitemap.Density,'stats') for d in self.densities ]
@@ -130,14 +130,14 @@ class DensityAnalysis:
         """Load the pickled results from a scan."""
         self.scanner.load(filename)
     def plotscan(self,filename=None,properties=None,fignumber=1):
-        """Plot results of a scan(). 
-        
+        """Plot results of a scan().
+
         plotscan('figs/scan.pdf')
 
         See scanner.plot for docs."""
         if filename is None:
             filename = self.pdf['scan']
-        self.scanner.plot(filename,properties=properties,fignumber=fignumber)        
+        self.scanner.plot(filename,properties=properties,fignumber=fignumber)
 
 class DensityScanner(hop.utilities.Saveable):
     # use scanstats for archival because it is more flexible than the record and can be easily updated
@@ -159,7 +159,7 @@ class DensityScanner(hop.utilities.Saveable):
             raise ValueError("Densities (including bulk) are required for a scan.")
         if not merge:
             self.scanstats = {}    # indexed by cutoff, list of stats
-        
+
         self._check_and_remap([self.refbulkdensity])
         self._check_and_remap(self.densities)
         self._check_and_remap(self.bulkdensities)
@@ -190,7 +190,7 @@ class DensityScanner(hop.utilities.Saveable):
             if dens.map.shape != self.reference.map.shape:
                 msg(1, "Must remap density "+str(dens)+" to the reference "+str(self.reference)+"\n")
                 dens_remapped = hop.sitemap.remap_density(dens,self.reference) # copy
-                densityList[k] = dens_remapped    # assignment (no idea why it has to be that clumsy)  
+                densityList[k] = dens_remapped    # assignment (no idea why it has to be that clumsy)
 
     def load(self,fn,merge=True):
         super(DensityScanner,self).load(fn,merge=merge)
@@ -219,7 +219,7 @@ class DensityScanner(hop.utilities.Saveable):
                                  'occupancy': {'ylim': (0,0.8),
                                                'ylabel': 'occupancy from rho',
                                                'xlabel':'rho_cutoff',
-                                               },             
+                                               },
                                  }
 
     def plot(self,fn=None,idens=0,functions='all',properties=None,fignumber=1):
@@ -265,8 +265,8 @@ class DensityScanner(hop.utilities.Saveable):
 
         r = self.scanarrays['reference']
         d = self.scanarrays[idens]
-                
-        pylab.figure(fignumber)        
+
+        pylab.figure(fignumber)
         pylab.clf()
         pylab.axes(axisbg='w',frameon=False)
 
@@ -312,7 +312,7 @@ class HopgraphAnalysis:
     """Comprehensive analysis of an annotated hop graph."""
     def __init__(self,hopgraph,dir=".",verbosity=3):
         """Analyse hopgraph.
-        
+
         a = HopgraphAnalysis(hopgraph)
 
         The show() method prints statistics on the HoppingGraph and histograms()
@@ -327,7 +327,7 @@ class HopgraphAnalysis:
         :Attributes:
         S              statistics dictionary (see keys for explanation)
         D              raw data dictionary
-        
+
         :Methods:
         all()          show() and histograms()
         show()         print stats
@@ -338,7 +338,7 @@ class HopgraphAnalysis:
         self.pdf = {'degree':'degree.pdf',
                     'occupancy':'occupancy.pdf',
                     'lifetime':'lifetime.pdf',
-                    }        
+                    }
         self.D = {}
         self.S = h.stats(data=self.D)    # pulls out all the statistics from graph
         for k,v in self.pdf.items():
@@ -364,7 +364,7 @@ class HopgraphAnalysis:
 
     def _degree_histo(self,numfig=1):
         import pylab
-        
+
         def degreehisto(a):
             return  numpy.histogram(a,bins=numpy.arange(0,numpy.max(a)))
 
@@ -395,7 +395,7 @@ class HopgraphAnalysis:
 
     def _lifetime_histo(self,numfig=1):
         import pylab
-        
+
         msg(1,"figure %(lifetime)s: life time histogram" % self.pdf)
         pylab.figure(numfig)
         pylab.clf()
@@ -420,7 +420,7 @@ class HopgraphAnalysis:
 
     def _occupancy_histo(self,numfig=1):
         import pylab
-        
+
         msg(1,"figure %(occupancy)s: occupancy histograms" % self.pdf)
         pylab.figure(numfig)
         pylab.clf()
@@ -430,7 +430,7 @@ class HopgraphAnalysis:
         n,bins = numpy.histogram(self.D['site_occupancy_kin_avg'],bins=numpy.arange(0.1,1.6,0.1))
         lines = pylab.bar(bins,n,align='edge',color='k',linewidth=0,width=0.1)
         barlegend.append(lines[0],'from kinetics')
-        
+
         n,bins = numpy.histogram(self.D['site_occupancy_rho_avg'],bins=numpy.arange(0.1,1.6,0.1))
         lines = pylab.bar(bins,n,align='edge',color=(0.7,0.7,0.7),alpha=0.7,linewidth=0.1,width=0.1)
         barlegend.append(lines[0],'from density')
@@ -466,7 +466,7 @@ class HeatmapAnalysis:
     package is installed in the system. The idea is to quickly compare a number
     simulations based on a combination of observables.
     """
-    
+
     prune_default = ['G_degree_in','G_degree_out',
                      'G_degree_nobulk','G_degree_in_nobulk','G_degree_out_nobulk',
                      'G_degree_min','G_degree_in_min','G_degree_out_min',
@@ -478,27 +478,27 @@ class HeatmapAnalysis:
 
     def __init__(self,hoppinggraphs,normalization="maxabs",verbosity=1,prune='default'):
         """Create a 'heatmap' for the Hopgraph statistics from a dictionary of CombinedGraphs.
-        
+
         >>> hm = HeatmapAnalysis(hg,normalize="maxabs")
-        
+
         :Arguments:
-        HoppingGraphs    Dictionary of HoppingGraph instances. The key is used to label 
-                         the simulation in the heat map and thus should be expressive.          
-        normalization    Method to normalize the data across observables. Can be None 
+        HoppingGraphs    Dictionary of HoppingGraph instances. The key is used to label
+                         the simulation in the heat map and thus should be expressive.
+        normalization    Method to normalize the data across observables. Can be None
                          (not recommended), 'maxabs', or 'zscore'. See the normalize()
                          method for documentation.
-                         NOTE that the normalization strongly influences the clustering 
+                         NOTE that the normalization strongly influences the clustering
                          in the heat map.
-        verbosity        Chattiness; use at least 1 in order to be notified if you 
-                         should install additional packages. Otherwise a less powerful 
+        verbosity        Chattiness; use at least 1 in order to be notified if you
+                         should install additional packages. Otherwise a less powerful
                          alternative is chosen silently,
-        prune            dict with keys that are removed from the heat map; see 
+        prune            dict with keys that are removed from the heat map; see
                          prune_default class attribute.
 
         :Methods:
         plot             plot the heat map
         normalize        normalize using the 'normalize' method
-        labels           dictionary of row, column names (and the normalization constants 
+        labels           dictionary of row, column names (and the normalization constants
                          as strings)
         annotation       'enumerate' dictionaries of labels but not stringified
         """
@@ -509,7 +509,7 @@ class HeatmapAnalysis:
 
         hg = hoppinggraphs
         self._filename = None   # holds default filename
-        
+
         if prune is 'default':
             prune = self.prune_default
         elif prune is None:
@@ -527,9 +527,9 @@ class HeatmapAnalysis:
         table = {}
         for sim,hopgraph in hg.items():
             for k,v in hopgraph.stats().items():
-                try: 
+                try:
                     table[k].append(v)
-                except: 
+                except:
                     table[k] = [v]
         self.names = [k for k in sorted(table.keys()) if k not in prune]
         self.data  = numpy.array([table[k] for k in self.names])
@@ -608,7 +608,7 @@ class HeatmapAnalysis:
           plot('hm')         # --> hm.pdf
           plot('hm.png')     # --> hm.png
           plot('hm','png')   # --> hm.png
-        
+
         By default a clustered heat map is constructed using R's heatmap.2
         function. If R cannot be found, an unclustered heat map is
         plotted. **kwargs can be used to customize the output.
@@ -617,7 +617,7 @@ class HeatmapAnalysis:
         filename       name of the image file; may contain extension
                        If empty use the windowing system.
         format         eps,pdf,png... whatever matplotlib understands
-        
+
         **kwargs for R:
         scale          Determines the coloring. Choose between 'none' (the
                        actual values in the heat map (possibly already normalized)),
@@ -659,9 +659,6 @@ class HeatmapAnalysis:
             from rpy import r, RException
         except ImportError:
             from rpy2.rpy_classic import r, RException
-            # http://www.mail-archive.com/rpy-list@lists.sourceforge.net/msg01893.html
-            import rpy2.rpy_classic
-            rpy2.rpy_classic.set_default_mode(rpy.BASIC_CONVERSION)
 
         hm_args = dict(scale='none',
                        margins=(10,10), # space for long labels
@@ -707,7 +704,7 @@ class HeatmapAnalysis:
                 ">>> import rpy\n"
                 ">>> rpy.r.install_packages('gplots',type='source')")
             r_heatmap = r.heatmap
-        
+
         r_format()
         r_heatmap(self.heatmap,
                   labRow=labels['observables'],
@@ -719,29 +716,29 @@ class HeatmapAnalysis:
     def _heatmap_matplotlib(self,labels,filename=None,format='pdf',**kwargs):
         """Plot a un-clustered heat map using matplotlib."""
         import pylab
-        
+
         pylab.clf()
         pylab.imshow(self.heatmap,interpolation='nearest')
         pylab.axis('off')
         pylab.colorbar(pad=0.075)
-        col_labels = [_add_x_ticklabel(n,label,**kwargs) 
+        col_labels = [_add_x_ticklabel(n,label,**kwargs)
                       for n,label in enumerate(labels['columns'])]
-        row_labels = [_add_y_ticklabel(n,label,**kwargs) 
+        row_labels = [_add_y_ticklabel(n,label,**kwargs)
                       for n,label in enumerate(labels['observables'])]
         norm_labels = [_add_y_ticklabel(n,label,
                                        offset=self.heatmap.shape[1], # number of colums
                                        horizontalalignment='left',
-                                       **kwargs) 
+                                       **kwargs)
                        for n,label in enumerate(labels['normalizations'])]
-        if filename is not None:                
+        if filename is not None:
             pylab.savefig(self.filename(filename,ext=format,set_default=True))
         else:
             msg(3,"Only display, no file written because filename == None.")
 
-        
+
     def annotation(self):
         self.columns_idict = self._make_idict(self.columns)
-        self.observables_idict = self._make_idict(self.names)        
+        self.observables_idict = self._make_idict(self.names)
         self.normalizations_idict = self._make_idict(self.normalizations)
         return {'columns':self.columns_idict,
                 'observables':self.observables_idict,
@@ -751,7 +748,7 @@ class HeatmapAnalysis:
         """labels of the columns (simulations) and rows (observables)"""
         return {'columns': map(str,self.columns),
                     'observables': map(str,self.names),
-                    'normalizations': ["%g" % round(x,precision) 
+                    'normalizations': ["%g" % round(x,precision)
                                        for x in self.normalizations]}
 
     def print_annotation(self):
@@ -759,7 +756,7 @@ class HeatmapAnalysis:
         print "column legend (sims) columns_idict"
         pp.pprint(self.columns_idict)
         print "row legend (observable) observables_idict"
-        pp.pprint(self.observables_idict)        
+        pp.pprint(self.observables_idict)
 
     def _make_idict(self,a):
         return dict(enumerate(a))
@@ -778,11 +775,11 @@ def _add_x_ticklabel(x,s,offset=-1,**kwargs):
                     rotation='vertical',
                     verticalalignment='bottom',horizontalalignment='center')
     textargs.update(kwargs)
-    y = offset  # -1 == over top of axis, in image coords    
+    y = offset  # -1 == over top of axis, in image coords
     return pylab.text(x,y,s,**textargs)
 
 def kill_R():
     """Manual last resort to kill the R quartz() window."""
     from rpy import r
     r.dev_off()
-    
+
