@@ -19,11 +19,11 @@ Quick instructions
 
 If you are familiar with ``easy_install`` from ``setuptools`` then try
 
-  easy_install Hop-0.3.1.tar.gz
+  easy_install Hop-0.3.3.tar.gz
 
 or 
 
-  cd Hop-0.3.1
+  cd Hop-0.3.3
   python setup.py install
 
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
@@ -142,7 +142,7 @@ The Hop package can be installed with 'EasyInstall' which is part of
 If you have setuptools already installed you should be able to simply
 install with
 
-   easy_install Hop-0.3.1.tar.gz
+   easy_install Hop-0.3.3.tar.gz
 
 You can install ``setuptools`` by following the instructions at
 http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
@@ -166,7 +166,7 @@ which describes custom installations.
 From python 2.6 onwards, an installation in a specific user directory
 is supported. It is recommended to install in the following manner::
 
-  cd Hop-0.3.1
+  cd Hop-0.3.3
   python setup.py install --user
 
 

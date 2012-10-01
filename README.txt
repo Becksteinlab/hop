@@ -9,8 +9,24 @@
  | still in heavy development. Feedback is very welcome (see below).
  |
  | The package is NOT publicly distributed yet. Please do not pass
- | on the code to third parties but direct them to me instead.
- | (The package will be released under GPL once it is ready.)
+ | on the code to third parties but direct them to us instead.
+ | (See AUTHORS).
+ |
+ | (The package will be released under the GNU Public Licence, v3 (GPL)
+ | once it is ready; therefore the code already contains GPL
+ | notes but for the time being you are bound by the CONDITIONS below.
+ | Once it is released officially, this notice will disappear and 
+ | distribution and use will be solely governed by the GPL as 
+ | described in the file COPYING.)
+ |
+ | CONDITIONS FOR USING THE DEVELOPMENT PRE-RELEASE 
+ | 
+ | You agree to
+ |
+ | * Keep the code confidential and not distribute it further
+ |   without express permission of the authors.
+ | * Make any code improvements and bug fixes available to the
+ |   authors under a licence compatible with the GPL v3 or higher.
  +--------------------------------------------------------------
  
 
