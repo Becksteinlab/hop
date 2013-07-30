@@ -1,0 +1,1030 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Generating and analyzing a hopping graph — hop.graph &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
+    <link rel="up" title="Hop package — hop" href="../hop.html" />
+    <link rel="next" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC" href="MCMC.html" />
+    <link rel="prev" title="Generating the hopping trajectory — hop.trajectory" href="trajectory.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="MCMC.html" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-hop.graph"></span><div class="section" id="generating-and-analyzing-a-hopping-graph-hop-graph">
+<h1>Generating and analyzing a hopping graph &#8212; <a class="reference internal" href="#module-hop.graph" title="hop.graph"><tt class="xref py py-mod docutils literal"><span class="pre">hop.graph</span></tt></a><a class="headerlink" href="#generating-and-analyzing-a-hopping-graph-hop-graph" title="Permalink to this headline">¶</a></h1>
+<p>Interprete the high density sites as graph (&#8216;transport graph&#8217;), with
+the sites as vertices and transitions (sampled by the simulation) as
+edges. The graph is directed.</p>
+<p>Each edge (transition) is decorated with the dominant transition rate,
+the number of events seen, and an instance of fit_func, which
+represents the fitted function to the survival times.</p>
+<p>Each vertex (site) is decorated with the average residency time (and stdev, N).</p>
+<p>Typical use of the module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TN</span> <span class="o">=</span> <span class="n">TransportNetwork</span><span class="p">(</span><span class="n">hoppingTrajectory</span><span class="p">,</span><span class="n">density</span><span class="p">)</span>
+<span class="n">hopgraph</span> <span class="o">=</span> <span class="n">TN</span><span class="o">.</span><span class="n">HoppingGraph</span><span class="p">()</span>
+<span class="n">hopgraph</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;hopgraph&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The basic object is the <a class="reference internal" href="#hop.graph.HoppingGraph" title="hop.graph.HoppingGraph"><tt class="xref py py-class docutils literal"><span class="pre">hop.graph.HoppingGraph</span></tt></a>; see its
+documentation for further analysis methods.</p>
+<div class="section" id="classes-and-functions">
+<h2>Classes and functions<a class="headerlink" href="#classes-and-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="hop.graph.CombinedGraph">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">CombinedGraph</tt><big>(</big><em>g0=None</em>, <em>g1=None</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hybrid graph between hop graphs that share common nodes.</p>
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.equivalent_sites_stats">
+<tt class="descname">equivalent_sites_stats</tt><big>(</big><em>graphnumber</em>, <em>elabels</em>, <em>equivalence=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.equivalent_sites_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.equivalent_sites_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print statistics about one or a list of equivalence sites for the numbered graph.</p>
+<p>CombinedGraph.equivalent_sites_stats(graphnumber,elabels)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>graphnumber       index into CombinedGraph.graphs (typically, 0 or 1)
+elabels           single label or list of labels of equivalence sites</p>
+<blockquote>
+<div>(without a &#8216;*&#8217; if the default identifier is used)</div></blockquote>
+<dl class="docutils">
+<dt>equivalence       True: interprete elabels as equivalence labels</dt>
+<dd><dl class="first last docutils">
+<dt>False: elabels are labels local to the graph (as used</dt>
+<dd>in the output of this method)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.export">
+<tt class="descname">export</tt><big>(</big><em>igraph</em>, <em>filename=None</em>, <em>format='XGMML'</em>, <em>imageformat=None</em>, <em>use_filtered_graph=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layout the combined graph and highlight the chosen graph.</p>
+<p>h.export(igraph=0)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>graph        0 or 1, selects which graph is to be highlighted
+filename     name for the output files; appropriate suffixes are added</p>
+<blockquote>
+<div>automatically</div></blockquote>
+<p>format       XGMML or dot
+imageformat  graphics output format (png, jpg, ps, svg, ... see below)
+use_filtered_graph</p>
+<blockquote>
+<div>By default, the filtered graph (see the filter() method) is
+plotted. If set to False then the original HoppingGraph is
+used instead.</div></blockquote>
+<p>Common nodes are always highlighted in red and shown with the
+common label. Nodes and edges belonging to the selected graph
+are shown in black; the other graph is only shown in light
+gray.</p>
+<p>The graph is only written to an image file if an image format
+is supplied. See
+<a class="reference external" href="https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw">https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw</a>
+for possible output formats but png, jpg, ps are safe bets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Format :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>XGMML      <a class="reference external" href="http://www.cs.rpi.edu/~puninj/XGMML/draft-xgmml.html#Intro">http://www.cs.rpi.edu/~puninj/XGMML/draft-xgmml.html#Intro</a> and</dt>
+<dd>GML <a class="reference external" href="http://www.infosun.fim.uni-passau.de/Graphlet/GML/">http://www.infosun.fim.uni-passau.de/Graphlet/GML/</a></dd>
+</dl>
+<p>dot        See <a class="reference external" href="http://graphviz.org/doc/info/attrs.html">http://graphviz.org/doc/info/attrs.html</a> for attributes.</p>
+<p>Note: On Mac OS X 10.3.9+fink the pygraphviz rendering is
+buggy and does not include node labels. Simply use the
+exported .dot file and use Mac OS X graphviz from
+<a class="reference external" href="http://www.pixelglow.com/graphviz/">http://www.pixelglow.com/graphviz/</a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.is_connected">
+<tt class="descname">is_connected</tt><big>(</big><em>igraph</em>, <em>n1</em>, <em>n2</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.is_connected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.is_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if nodes n1 and n2 in graph igraph are connected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.load">
+<tt class="descname">load</tt><big>(</big><em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinstantiate CombinedGraph from a pickled CombinedGraph (from save()).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.plot">
+<tt class="descname">plot</tt><big>(</big><em>igraph</em>, <em>filename=None</em>, <em>format='png'</em>, <em>use_filtered_graph=True</em>, <em>label_sites=None</em>, <em>prog='neato'</em>, <em>cmap=None</em>, <em>max_node_size=500</em>, <em>interactive=True</em>, <em>**drawargs</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot filtered graph using matplotlib.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>igraph         number of the graph (0 or 1)
+filename       file to write to
+format         any format that matplotlib allows and pdf
+use_filtered_graph</p>
+<blockquote>
+<div>use a previously defined filtered graph (should be True)</div></blockquote>
+<dl class="docutils">
+<dt>label_sites    {&#8216;all&#8217;:False, &#8216;common&#8217;:True, &#8216;none&#8217;:False} switches that determine</dt>
+<dd>which labels to add to the nodes</dd>
+<dt>prog           layout program, can be any of the graphviz programs</dt>
+<dd>&#8216;dot&#8217;,&#8217;neato&#8217;,&#8217;twopi&#8217;,&#8217;circo&#8217;,&#8217;fdp&#8217;,&#8217;nop&#8217;</dd>
+<dt>cmap           matplotlib color map: nodes are colored by distance of the site from</dt>
+<dd>the geometric center of all sites (excluding bulk)</dd>
+</dl>
+<p>max_node_size  maximum node size (in point**2, q.v. matplotlib.scatter())
+interactive    True: display graph. False: only save to file (eg if no X11)
+<a href="#id1"><span class="problematic" id="id2">**</span></a>drawargs     additional keyword arguments to networkx.draw() (q.v.)</p>
+<blockquote>
+<div>eg &#8216;linewidths=(0.01,)&#8217; for vanishing outlines.</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.graph.CombinedGraph.site_properties">
+<tt class="descname">site_properties</tt><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.site_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.site_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>site_properties of the combined graph, indexed by node label.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.CombinedGraph.stats">
+<tt class="descname">stats</tt><big>(</big><em>igraph</em>, <em>data=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph.stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Statistics for the hopping graph.</p>
+<p>d = stats(igraph,[data=dict])</p>
+<p>Without the data argument, the method just returns some
+interesting values gathered from the graph igraph and the density. If
+a data dictionary is given, then the raw data are loaded into
+the dict and can be processed further by histogramming etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>igraph        number of the graph
+data          optional dictionary to hold raw data for</p>
+<blockquote>
+<div>processing; modified by method</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>d             dictionary with expressive keys, holding the results</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.HoppingGraph">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">HoppingGraph</tt><big>(</big><em>graph=None</em>, <em>properties=None</em>, <em>filename=None</em>, <em>trjdata=None</em>, <em>site_properties=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>A directed graph that describes the average movement of
+molecules between different well-defined sites by treating the
+sites as nodes and transitions as edges.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>graph</dt>
+<dd>graph with edges; edges contain rates, fit functions, etc</dd>
+<dt>properties</dt>
+<dd>raw data for edges</dd>
+<dt>trjdata</dt>
+<dd>metadata of the original trajectory</dd>
+<dt>site_properties</dt>
+<dd>density-derived node properties, imported from hop.sitemap.Density</dd>
+<dt>theta</dt>
+<dd>dict of nodes with residence times (see compute_site_times())</dd>
+<dt>occupancy_avg</dt>
+<dd>average occupancy with standard deviation (see compute_site_occupancy())</dd>
+<dt>occupancy_std</dt>
+<dd>(numpy array)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Methods :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>compute_site_occupancy()</dt>
+<dd>Computes occupancies from the residency times theta and
+updates self.occupancy_avg and self.occupancy_std.</dd>
+<dt>compute_site_times()</dt>
+<dd>Computes residency time theta.</dd>
+<dt>save()</dt>
+<dd>save graph as a pickled file</dd>
+<dt>load()</dt>
+<dd>reinstantiate graph from saved file; typically just use the
+constructor with the filename argument</dd>
+<dt>filter()</dt>
+<dd>make a filtered graph for further analysis and visualization;
+most plot/export functions require a filtered graph</dd>
+<dt>plot_fits()</dt>
+<dd>plot fits of the survival time against the data</dd>
+<dt>tabulate_k()</dt>
+<dd>table of rate constants</dd>
+<dt>export()</dt>
+<dd>export graph as a dot file that can be used with graphviz</dd>
+<dt>export3D()</dt>
+<dd>export graph as a psf/pdb file combination for visualization in VMD</dd>
+</dl>
+<p>Properties for nodes are always stored as numpy arrays so that one
+can directly index with the node label (==site label), which is an
+integer from 0 to the number of nodes. Note that 0 is the
+interstitial (and only contains bogus data or None), and 1 is the
+bulk. The bulk site is often excluded from analysis because it is
+different in nature from the &#8216;real&#8217; sites defined as high density
+regions.</p>
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.compute_site_occupancy">
+<tt class="descname">compute_site_occupancy</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.compute_site_occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.compute_site_occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes occupancies from the residency times theta and updates self.occupancy.</p>
+<p>compute_site_occupancy()</p>
+<dl class="docutils">
+<dt>occupancy::</dt>
+<dd><blockquote class="first">
+<div><blockquote>
+<div>N_i</div></blockquote>
+<dl class="docutils">
+<dt>o[i] = 1/T Sum theta[i,k]</dt>
+<dd>k=1</dd>
+</dl>
+</div></blockquote>
+<p class="last">where T is the total trajectory time and the sum runs over
+all residency times that were recorded for the site i.</p>
+</dd>
+</dl>
+<p>attributes:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>self.occupancy_avg</dt>
+<dd>numpy array with occupancies, site label == index</dd>
+<dt>self.occupancy_std</dt>
+<dd>numpy array with error estimates for occupancies
+(Delta = Delta(theta)/T; this is a biased estimate because
+Delta(theta) is calculated with N instead of N-1)</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.compute_site_times">
+<tt class="descname">compute_site_times</tt><big>(</big><em>verbosity=3</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.compute_site_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.compute_site_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the &#8216;residency&#8217; time of each water molecule on each site.</p>
+<p>compute_site_times()</p>
+<p>The &#8216;life time&#8217; of a site i is computed as</p>
+<blockquote>
+<div>theta[i] = &lt;t[<a href="#id3"><span class="problematic" id="id4">*</span></a>,i]&gt;</div></blockquote>
+<p>where t[<a href="#id5"><span class="problematic" id="id6">*</span></a>,i] stands for all waiting times t[j,i] for hops from
+site i to all other sites AND the waiting times t[i] of
+molecules that are not observed to leave site i.</p>
+<ul class="simple">
+<li>The function updates self.theta[site] for each site with an</li>
+</ul>
+<p>array of residency times (in ps).</p>
+<ul class="simple">
+<li>The life times are stored in self.lifetime_avg[site] and
+self.lifetime_std[site]</li>
+</ul>
+<p>TODO:
+* Maybe use the barrier time as well (or a portion thereof,</p>
+<blockquote>
+<div>perhaps proportional to the barrier height (related to the
+kji) &#8212; rate theory??)</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.connectedness">
+<tt class="descname">connectedness</tt><big>(</big><em>n</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.connectedness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.connectedness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return values that measure connectedness (can be used in occupancy field)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.equivalent_sites_stats">
+<tt class="descname">equivalent_sites_stats</tt><big>(</big><em>elabels</em>, <em>equivalence=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.equivalent_sites_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.equivalent_sites_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Statistics about one or a list of equivalence sites.</p>
+<p>g.equivalent_sites_stats(elabels,equivalence=True)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>elabels         a single label or a list of node labels
+equivalence     True: interprete elabels as &#8216;equivalence labels&#8217;, i.e. the label</p>
+<blockquote>
+<div>attached to a site common to two densities
+False: elabels are labels local to the graph</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.export">
+<tt class="descname">export</tt><big>(</big><em>filename=None</em>, <em>format='XGMML'</em>, <em>use_filtered_graph=True</em>, <em>use_mapped_labels=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export the graph to a graph format or an image.</p>
+<p>export(&#8216;hopgraph&#8217;,format=&#8217;XGMML&#8217;,use_filtered_graph=True)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>filename     name for the output files; appropriate suffixes are added</dt>
+<dd>automatically</dd>
+</dl>
+<p>format       output format: graphs (XGMML or DOT) or image  (png, jpg, ps, svg)
+use_filtered_graph</p>
+<blockquote>
+<div>By default, the filtered graph (see the filter() method) is
+plotted. If set to False then the original HoppingGraph is
+used instead.</div></blockquote>
+<dl class="docutils">
+<dt>use_mapped_labels</dt>
+<dd>If site_properties is provided then each node that has been
+identified to exist in a reference network is coloured black
+and the mapped label is printed instead of the graph label.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.export3D">
+<tt class="descname">export3D</tt><big>(</big><em>density=None</em>, <em>filename=None</em>, <em>use_filtered_graph=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.export3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.export3D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export pdb and psf file for visualization in 3D.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">export3D</span><span class="p">()</span>
+<span class="go">Uses h.site_properties if it exists.</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">export3D</span><span class="p">(</span><span class="n">density</span><span class="p">)</span>
+<span class="go">Uses a (hopefully matching) Density object to pull in site_properties.</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>density      hop.sitemap.Density with full site_properties
+filename     prefix for output files: &lt;filename&gt;.psf and &lt;filename&gt;.pdb
+use_filtered_graph</p>
+<blockquote>
+<div>define a filtered graph with h.filter() first</div></blockquote>
+<p>The method writes a psf and a pdb file from the graph, suitable
+for visualization in, for instance, VMD.</p>
+<p>Sites are represented as residues of resname &#8216;NOD&#8217;; each site
+is marked by one &#8216;ATOM&#8217; (of type CA) at the center of geometry
+of the site. Edges are bonds between those pseudo atoms.</p>
+<p>#Currently: B-factor 1 if common site label exist, 0 otherwis
+#           occupancy: avg site occupancy
+# (but this should become customizable)</p>
+<p>One should use a filtered graph with the bulk site removed for
+visualization.</p>
+<p>Bugs:
+* with a filtered graph, the degree is the one of the filtered</p>
+<blockquote>
+<div>graph and not of the real underlying graph</div></blockquote>
+<ul class="simple">
+<li>cannot yet select what to display in B-factor and occupancy field:
+choose from: [&#8216;identity&#8217;,&#8217;occupancy&#8217;,&#8217;degree&#8217;,&#8217;volume&#8217;]</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.filename">
+<tt class="descname">filename</tt><big>(</big><em>filename=None</em>, <em>ext=None</em>, <em>set_default=False</em>, <em>use_my_ext=False</em><big>)</big><a class="headerlink" href="#hop.graph.HoppingGraph.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Supply a file name for the object.</p>
+<p>fn = filename()             &#8212;&gt; &lt;default_filename&gt;
+fn = filename(&#8216;name.ext&#8217;)   &#8212;&gt; &#8216;name&#8217;
+fn = filename(ext=&#8217;pickle&#8217;) &#8212;&gt; &lt;default_filename&gt;&#8217;.pickle&#8217;
+fn = filename(&#8216;name.inp&#8217;,&#8217;pdf&#8217;) &#8211;&gt; &#8216;name.pdf&#8217;
+fn = filename(&#8216;foo.pdf&#8217;,ext=&#8217;png&#8217;,use_my_ext=True) &#8211;&gt; &#8216;foo.pdf&#8217;</p>
+<p>The returned filename is stripped of the extension (use_my_ext=False) and
+if provided, another extension is appended. Chooses a default if no
+filename is given.  Raises a ValueError exception if no default file name
+is known.</p>
+<p>If set_default=True then the default filename is also set.</p>
+<p>use_my_ext=True lets the suffix of a provided filename take priority over a
+default ext(tension).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.filter">
+<tt class="descname">filter</tt><big>(</big><em>exclude=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a filtered version of the graph.</p>
+<p>For looking at most things:
+&gt;&gt;&gt; h.filter(exclude={&#8216;outliers&#8217;:True})</p>
+<p>For looking at exchange rates and plotting:
+&gt;&gt;&gt; h.filter(exclude={&#8216;outliers&#8217;:True, &#8216;Nmin&#8217;:5, &#8216;unconnected&#8217;:True})</p>
+<p>For export3D do not use the bulk site:
+&gt;&gt;&gt; h.filter(exclude={&#8216;outliers&#8217;:True,&#8217;bulk&#8217;:True})</p>
+<p>This method makes a copy of the hopping graph and applies the
+filter rules to the copy. Other output functions use this copy
+if it exists.</p>
+<dl class="docutils">
+<dt>exclude      dict of components to exclude. May contain</dt>
+<dd><dl class="first docutils">
+<dt>{&#8216;outliers&#8217;:True, &#8216;Nmin&#8217;:integer,</dt>
+<dd>&#8216;bulk&#8217;: True, &#8216;unconnected&#8217;:True}</dd>
+</dl>
+<p>If outliers == True then all edges from the &#8216;outlier&#8217; node
+are deleted previous to displaying the
+graph. Those edges correspond to particles
+starting in a region not covered by the intial
+histogram boundaries and enter a mapped site at a
+later point in time.</p>
+<p>With Nmin, any node that has fewer than Nmin transition
+is discarded.</p>
+<p class="last">unconnected == True finaly filters all nodes that have no
+edges left</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.from_site">
+<tt class="descname">from_site</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.from_site"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.from_site" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the originating site of hop.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.internal_sites">
+<tt class="descname">internal_sites</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.internal_sites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.internal_sites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of sites that have no connection to the bulk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.is_connected">
+<tt class="descname">is_connected</tt><big>(</big><em>n1</em>, <em>n2</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.is_connected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.is_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if node n1 has any connection to the site n2.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.is_from_bulk">
+<tt class="descname">is_from_bulk</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.is_from_bulk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.is_from_bulk" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the edge originated in the bulk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.is_internal">
+<tt class="descname">is_internal</tt><big>(</big><em>n</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.is_internal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.is_internal" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if site n has no connection to the bulk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.is_isolated">
+<tt class="descname">is_isolated</tt><big>(</big><em>n</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.is_isolated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.is_isolated" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if site n has no connections to other sites (ie its degree equals 0).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.isolated_sites">
+<tt class="descname">isolated_sites</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.isolated_sites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.isolated_sites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of sites that have no other connections.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.load">
+<tt class="descname">load</tt><big>(</big><em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinstantiate HoppingGraph from a pickled HoppingGraph (from save()).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.number_of_hops">
+<tt class="descname">number_of_hops</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.number_of_hops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.number_of_hops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of transitions recorded.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.plot_fits">
+<tt class="descname">plot_fits</tt><big>(</big><em>ncol=2</em>, <em>nrow=3</em>, <em>dt=None</em>, <em>plottype='log'</em>, <em>use_filtered_graph=True</em>, <em>directory='survival_times'</em>, <em>format='png'</em>, <em>interactive=False</em>, <em>verbosity=3</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.plot_fits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.plot_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot survival time fit against data.</p>
+<p>plot_fits(ncol=2)</p>
+<p>The time values are taken to cover all measured tau.</p>
+<p>ncol         number of columns
+nrow         number of rows per page
+plottype     &#8216;linear&#8217; or &#8216;log&#8217;
+dt           time step in ps; use value in self.trjdata[&#8216;dt&#8217;] or 1ps
+use_filtered_graph</p>
+<blockquote>
+<div>True: use the filtered graph (see filter()),
+False: use raw data.</div></blockquote>
+<p>directory    save all pdf files under this directory
+format       file format for plot (png,eps,pdf... depends on matplotlib)
+interactive  False: do not display graphs on scren (default)</p>
+<blockquote>
+<div>True: show graphs on screen, can be slow and probably
+requires ipython as your python shell</div></blockquote>
+<p>verbosity    chattiness level</p>
+<p>All N graphs are laid out in nrow x ncol grids on as many
+pages/figures as necessary.</p>
+<p>The pages are written as eps/pdf files using a fixed filename
+in the given directory (&#8216;survival_times&#8217; by default).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.rate">
+<tt class="descname">rate</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the fastest rate on an edge, in ns^-1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.rates">
+<tt class="descname">rates</tt><big>(</big><em>n</em>, <em>use_filtered_graph=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns k_tot, k_in, k_out (and N_*) for site n (bulk rates omitted from k).</p>
+<p>dictionary = rates(n,use_filtered=True)</p>
+<p>k_in  = sum_j k_nj  (&gt; 0)     j&lt;&gt;bulk
+k_out = sum_j k_jn  (&lt; 0)     j&lt;&gt;bulk
+k_tot = k_in + k_out</p>
+<p>Note that k_tot should be ~0 if a bulk rate is included
+because the graph should obey detailed balance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.save">
+<tt class="descname">save</tt><big>(</big><em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save HoppingGraph as a pickled python object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.select_graph">
+<tt class="descname">select_graph</tt><big>(</big><em>use_filtered_graph</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.select_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.select_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns filtered graph for True argument, or the raw graph otherwise)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.show_rates">
+<tt class="descname">show_rates</tt><big>(</big><em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.show_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.show_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the rates (in 1/ns) between sites, and the total number of observations.</p>
+<p>show_rates(file=filename)</p>
+<p>By default, prints to stdout but if <em>file</em> = filename then
+filename is opened and data are written to the file.</p>
+<p>A description of the fit function used to obtain the rate is
+also printed in the last column.</p>
+<p>Only the &#8220;dominant&#8221; rate is shown; see the fit_func
+description for cases when two rates were computed.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#hop.graph.HoppingGraph.tabulate_k" title="hop.graph.HoppingGraph.tabulate_k"><tt class="xref py py-func docutils literal"><span class="pre">HoppingGraph.tabulate_k()</span></tt></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.show_site">
+<tt class="descname">show_site</tt><big>(</big><em>sites</em>, <em>use_filtered_graph=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.show_site"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.show_site" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display data about sites (list of site labels or single site).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.show_total_rates">
+<tt class="descname">show_total_rates</tt><big>(</big><em>use_filtered_graph=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.show_total_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.show_total_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display total rates for all nodes (excluding bulk &#8211;&gt; site contributions).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.graph.HoppingGraph.site_properties">
+<tt class="descname">site_properties</tt><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.site_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.site_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Site_properties, indexed by node label.
+Setting this attribut also updates self.equivalent_sites_index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.stats">
+<tt class="descname">stats</tt><big>(</big><em>data=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Statistics for the hopping graph.</p>
+<blockquote>
+<div>stats([data=dict]) &#8211;&gt; dict</div></blockquote>
+<p>Without the data argument, the method just returns some
+interesting values gathered from the graph and the density. If
+a data dictionary is given, then the raw data are loaded into
+the dict and can be processed further by histogramming etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first docutils">
+<dt>data</dt>
+<dd><p class="first last">optional dictionary to hold raw data for processing;
+modified by method</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last">dictionary with expressive keys, holding the results</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.tabulate_k">
+<tt class="descname">tabulate_k</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.tabulate_k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.tabulate_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of tuples (from, to, rate (in 1/ns), number of transitions).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.to_site">
+<tt class="descname">to_site</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.to_site"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.to_site" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the site to which a hop is directed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.waitingtime_fit">
+<tt class="descname">waitingtime_fit</tt><big>(</big><em>edge</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.waitingtime_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.waitingtime_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the fit function for the edge&#8217;s waiting time distribution.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.HoppingGraph.write_psf">
+<tt class="descname">write_psf</tt><big>(</big><em>graph</em>, <em>props</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#HoppingGraph.write_psf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.HoppingGraph.write_psf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pseudo psf with nodes as atoms and edges as bonds</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.TransportNetwork">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">TransportNetwork</tt><big>(</big><em>trajectory</em>, <em>density=None</em>, <em>sitelabels=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>A framework for computing graphs from hopping trajectories.</p>
+<p>The unit of time is ps.</p>
+<p>The <a class="reference internal" href="#hop.graph.TransportNetwork" title="hop.graph.TransportNetwork"><tt class="xref py py-class docutils literal"><span class="pre">TransportNetwork</span></tt></a> is an intermediate data structure
+that is mainly used in order to build a <a class="reference internal" href="#hop.graph.HoppingGraph" title="hop.graph.HoppingGraph"><tt class="xref py py-class docutils literal"><span class="pre">HoppingGraph</span></tt></a> with
+the <a class="reference internal" href="#hop.graph.TransportNetwork.HoppingGraph" title="hop.graph.TransportNetwork.HoppingGraph"><tt class="xref py py-meth docutils literal"><span class="pre">TransportNetwork.HoppingGraph()</span></tt></a> method.</p>
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.HoppingGraph">
+<tt class="descname">HoppingGraph</tt><big>(</big><em>verbosity=3</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.HoppingGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.HoppingGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the HoppingGraph from the data and return it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.compute_site_occupancy">
+<tt class="descname">compute_site_occupancy</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.compute_site_occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.compute_site_occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes occupancies from the residency times theta and updates self.occupancy.</p>
+<dl class="docutils">
+<dt>occupancy::</dt>
+<dd><blockquote class="first">
+<div>N_i</div></blockquote>
+<dl class="last docutils">
+<dt>o[i] = 1/T Sum theta[i,k]</dt>
+<dd>k=1</dd>
+</dl>
+</dd>
+</dl>
+<p>where T is the total trajectory time and the sum runs over
+all residency times that were recorded for the site i.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>self.occupancy</dt>
+<dd>numpy array with occupancies, site label == index</dd>
+<dt>self.occupancy_error</dt>
+<dd>numpy array with error estimates for
+occupancies (Delta = Delta(theta)/T; this is
+a biased estimate because Delta(theta) is
+calculated with N instead of N-1)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.compute_site_times">
+<tt class="descname">compute_site_times</tt><big>(</big><em>verbosity=3</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.compute_site_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.compute_site_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the &#8216;residency&#8217; time of each water molecule on each site.</p>
+<p>The &#8216;site time&#8217; of a site i is computed as:</p>
+<div class="highlight-python"><pre>theta[i] = 1/T_sim ( Sum_j tau[j,i] + Sum tau[i] )</pre>
+</div>
+<p>tau[j,i] is the waiting time for hops from i to j. tau[i] is
+the waiting time for molecules that are not observed to leave
+site i.</p>
+<p>The function updates self.theta[site] for each site with an
+array of residency times (in ps).</p>
+<p>It uses the residency times and thus requires
+compute_residency_times() was run previously.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">Maybe use the barrier time as well (or a portion thereof,
+perhaps proportional to the barrier height (related to the
+kji) &#8212; rate theory??)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.export">
+<tt class="descname">export</tt><big>(</big><em>filename=None</em>, <em>format='png'</em>, <em>exclude_outliers=False</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export the graph as dot file and as an image.</p>
+<p>export(filename)</p>
+<p>See <a class="reference external" href="https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw">https://networkx.lanl.gov/reference/pygraphviz/pygraphviz.agraph.AGraph-class.html#draw</a> for possible output formats.</p>
+<p>See <a class="reference external" href="http://graphviz.org/doc/info/attrs.html">http://graphviz.org/doc/info/attrs.html</a> for attributes.</p>
+<p>Note: On Mac OS X 10.3.9+fink the pygraphviz rendering is
+buggy and does not include node labels. Simply use the
+exported .dot file and use Mac OS X graphviz from
+<a class="reference external" href="http://www.pixelglow.com/graphviz/">http://www.pixelglow.com/graphviz/</a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.graph_alltransitions">
+<tt class="descname">graph_alltransitions</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.graph_alltransitions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.graph_alltransitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs the graph that contains all transitions in the trajectory.</p>
+<p>Populates TransportGraph.graph with a graph that contains all
+sites and one edge for each transition that was observed in
+the trajectory. Useful for an initial appraisal of the
+complexity of the problem.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Erases any previous contents of graph.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.plot_residency_times">
+<tt class="descname">plot_residency_times</tt><big>(</big><em>filename</em>, <em>bins=None</em>, <em>exclude_outliers=True</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.plot_residency_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.plot_residency_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot histograms of all sites</p>
+<p>plot_residency_times(&#8216;sitetime.eps&#8217;)</p>
+<p>pylab always writes the figure to the named file. If pylab is
+already running, display the graph with pylab.show().</p>
+<p>The histograms are normalized and the time values are the left
+edges of the bins.</p>
+<p>If bins=None then the number of bins is determined heuristically.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.TransportNetwork.plot_site_occupancy">
+<tt class="descname">plot_site_occupancy</tt><big>(</big><em>filename, bins=10, exclude_sites=[0, 1]</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#TransportNetwork.plot_site_occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.TransportNetwork.plot_site_occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot site occupancy (from compute_site_occupancy().</p>
+<p>plot_site_occupancy(filename,exclude_sites=[0,1])</p>
+<p>filename         name of output file
+bins             bins for histogram (see numpy.histogram)
+exclude_site     list of site labels which are NOT plotted. Typically,</p>
+<blockquote>
+<div>exclude interstitial and bulk.</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.graph.Unitstep">
+<tt class="descclassname">hop.graph.</tt><tt class="descname">Unitstep</tt><big>(</big><em>x</em>, <em>x0</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#Unitstep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.Unitstep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Heaviside step function
+/ 1    if x &gt;= x0
+Unitstep(x,x0) == Theta(x - x0) = {  0.5  if x == x0</p>
+<blockquote>
+<div>0    if x &lt;  x0</div></blockquote>
+<p>This is a numpy ufunc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Caveat :</th><td class="field-body">If both x and x0 are arrays of length &gt; 1 then weird things are
+going to happen because of broadcasting.
+Using nD arrays can also lead to surprising results.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">See also:</th><td class="field-body"><a class="reference external" href="http://mathworld.wolfram.com/HeavisideStepFunction.html">http://mathworld.wolfram.com/HeavisideStepFunction.html</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.fitExp">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">fitExp</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fitExp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fitExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>y = f(x) = exp(-p[0]*x)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.fitExp2">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">fitExp2</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fitExp2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fitExp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>y = f(x) = p[0]*exp(-p[1]*x) + (1-p[0])*exp(-p[2]*x)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.fit_func">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">fit_func</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fit_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fit_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a function f to data (x,y) using the method of least squares.</p>
+<p>Attributes:</p>
+<p>parameters     list of parameters of the fit</p>
+<dl class="method">
+<dt id="hop.graph.fit_func.f_factory">
+<tt class="descname">f_factory</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fit_func.f_factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fit_func.f_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stub for fit function factory, which returns the fit function.
+Override for derived classes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.fit_func.fit">
+<tt class="descname">fit</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fit_func.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fit_func.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the fit to all x values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.graph.fit_func.initial_values">
+<tt class="descname">initial_values</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fit_func.initial_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fit_func.initial_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of initital guesses for all parameters p[]</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.graph.fitlin">
+<em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">fitlin</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#fitlin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.fitlin" title="Permalink to this definition">¶</a></dt>
+<dd><p>y = f(x) = p[0]*x + p[1]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.graph.survivalfunction">
+<tt class="descclassname">hop.graph.</tt><tt class="descname">survivalfunction</tt><big>(</big><em>waitingtimes</em>, <em>block_w=200</em>, <em>block_t=1000</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#survivalfunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.survivalfunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the survival function S(t), defined by a list of waiting times.</p>
+<blockquote>
+<div>survival([t0, t1, ..., tN]) &#8211;&gt; S(t)</div></blockquote>
+<p>S(t) is a function that gives the fractional number of particles that
+have not yet left the site after time t. It is 1 at t=0 and decays to 0.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><blockquote class="first">
+<div><dl class="docutils">
+<dt>waitingtimes</dt>
+<dd><p class="first last">sequence of the waiting times from the simulations</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>block_w</dt>
+<dd><p class="first last">reduce memory consumption by working on chunks of
+the waiting times of size &lt;block_w&gt;; reduce block_w if
+the code crashes with <a href="#id7"><span class="problematic" id="id8">:Exception:`MemoryError`</span></a>.</p>
+</dd>
+<dt>block_t</dt>
+<dd><p class="first last">chunk input function arguments into blocks of size block_t</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Todo :</th><td class="field-body"><p class="first last">Make S(t) an interpolation function: massive speedup and fewer memory problems</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Generating and analyzing a hopping graph &#8212; <tt class="docutils literal"><span class="pre">hop.graph</span></tt></a><ul>
+<li><a class="reference internal" href="#classes-and-functions">Classes and functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="trajectory.html"
+                        title="previous chapter">Generating the hopping trajectory &#8212; <tt class="docutils literal"><span class="pre">hop.trajectory</span></tt></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MCMC.html"
+                        title="next chapter">Markov Chain Monte Carlo on hopping graph &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop.MCMC</span></tt></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/hop/graph.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="MCMC.html" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+             >previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

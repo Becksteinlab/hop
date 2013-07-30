@@ -1,0 +1,879 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hop.analysis &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hop.analysis</h1><div class="highlight"><pre>
+<span class="c"># $Id$</span>
+<span class="c"># Hop --- a framework to analyze solvation dynamics from MD simulations</span>
+<span class="c"># Copyright (c) 2009 Oliver Beckstein &lt;orbeckst@gmail.com&gt;</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;A collection of functions and classes to extract statistics and plot</span>
+<span class="sd">histograms. Use this as examples how to write your own.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">hop.graph</span><span class="o">,</span> <span class="nn">hop.sitemap</span><span class="o">,</span> <span class="nn">hop.utilities</span>
+<span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="n">msg</span><span class="p">,</span><span class="n">set_verbosity</span><span class="p">,</span><span class="n">verbosity</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">cPickle</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">os.path</span>
+
+<span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="nb">sorted</span>
+
+
+<span class="n">pp</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">PrettyPrinter</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DensityAnalysis</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">densities</span><span class="p">,</span><span class="n">reference</span><span class="p">,</span><span class="nb">dir</span><span class="o">=</span><span class="s">&quot;./figs&quot;</span><span class="p">,</span>
+                 <span class="n">bulkdensities</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">refbulkdensity</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">bulkname</span><span class="o">=</span><span class="s">&#39;bulk&#39;</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Analyze densities.</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        densities      list of densities (instances or filenames)</span>
+<span class="sd">        reference      reference density (instance or filename)</span>
+<span class="sd">        bulkdensities  needed to rebuild densities with scan; same</span>
+<span class="sd">                       sequence as densities</span>
+<span class="sd">        refbulkdensity ...</span>
+<span class="sd">        bulkname       eg &#39;bulk&#39;: searches for &#39;&lt;bulkname&gt;.pickle&#39; in</span>
+<span class="sd">                       the same directory as the density</span>
+<span class="sd">        dir            basedir for graphs</span>
+<span class="sd">        verbosity=3    chattiness</span>
+
+<span class="sd">        :Methods:</span>
+<span class="sd">        show()         basic stats</span>
+<span class="sd">        scan()         scan statistics for a range of rho_cut</span>
+<span class="sd">        save()         pickle scan results</span>
+<span class="sd">        load()         load scan results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">densities</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span><span class="n">densities</span><span class="p">,</span><span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span><span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">densities</span><span class="p">)</span>   <span class="c"># densities are numbered 0 .. n-1</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">densities</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">densities</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">bulkdensities</span> <span class="ow">and</span> <span class="n">refbulkdensity</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span><span class="n">bulkdensities</span><span class="p">,</span><span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span><span class="n">refbulkdensity</span><span class="p">,</span><span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">bulkname</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">filename</span><span class="p">()),</span><span class="n">bulkname</span><span class="p">),</span>
+                <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="o">=</span> <span class="p">[</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">filename</span><span class="p">()),</span><span class="n">bulkname</span><span class="p">),</span>
+                    <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">densities</span> <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span><span class="p">]</span>
+
+
+        <span class="c"># D contains raw data, indexed by density or &#39;reference&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">k</span><span class="p">,{})</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)]</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># S contains all the statistics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span><span class="n">x</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">densities</span><span class="p">)]</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="s">&#39;reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;reference&#39;</span><span class="p">])</span>
+        <span class="c"># scanner is used for scan()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span> <span class="o">=</span> <span class="n">DensityScanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c"># default pdf file names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;scan&#39;</span><span class="p">:</span><span class="s">&#39;scan.pdf&#39;</span><span class="p">,</span>
+                    <span class="p">}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">filename_function</span>
+
+    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;Statistics S&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;------------&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Data in D&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;---------&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoffs</span><span class="p">,</span><span class="n">merge</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recompute density stats for various cutoffs  (thresholds)</span>
+<span class="sd">        in self.scanstats.</span>
+
+<span class="sd">          scan([1.5,2.0, 2.72, 3.0],merge=True)</span>
+
+<span class="sd">        merge        True: add/replace to scanstats, False: erase</span>
+<span class="sd">        See also DensityAnalysis.scanner.scanarrays for a dict of</span>
+<span class="sd">        numpy.recarrays of the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span><span class="n">merge</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pickle the results from scan().&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load the pickled results from a scan.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">plotscan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">properties</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fignumber</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot results of a scan().</span>
+
+<span class="sd">        plotscan(&#39;figs/scan.pdf&#39;)</span>
+
+<span class="sd">        See scanner.plot for docs.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="s">&#39;scan&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">properties</span><span class="o">=</span><span class="n">properties</span><span class="p">,</span><span class="n">fignumber</span><span class="o">=</span><span class="n">fignumber</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DensityScanner</span><span class="p">(</span><span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">Saveable</span><span class="p">):</span>
+    <span class="c"># use scanstats for archival because it is more flexible than the record and can be easily updated</span>
+    <span class="n">_saved_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;scanstats&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">densityAnalysis</span><span class="p">,</span><span class="n">with_densities</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanstats</span> <span class="o">=</span> <span class="p">{}</span>         <span class="c"># results from scan()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">with_densities</span> <span class="o">=</span> <span class="n">with_densities</span>
+        <span class="k">if</span> <span class="n">with_densities</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="n">densityAnalysis</span><span class="o">.</span><span class="n">reference</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span> <span class="o">=</span> <span class="n">densityAnalysis</span><span class="o">.</span><span class="n">refbulkdensity</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">densities</span> <span class="o">=</span> <span class="n">densityAnalysis</span><span class="o">.</span><span class="n">densities</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="o">=</span> <span class="n">densityAnalysis</span><span class="o">.</span><span class="n">bulkdensities</span>
+
+    <span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoffs</span><span class="p">,</span><span class="n">merge</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_densities</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span><span class="p">):</span>
+            <span class="c"># need bulk densities because redrawing the map at a new</span>
+            <span class="c"># cutoff completely erases the manually inserted bulk</span>
+            <span class="c"># density</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Densities (including bulk) are required for a scan.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">merge</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanstats</span> <span class="o">=</span> <span class="p">{}</span>    <span class="c"># indexed by cutoff, list of stats</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_remap</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_remap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">densities</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_remap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">iter</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">cutoffs</span> <span class="o">=</span> <span class="p">[</span><span class="n">cutoffs</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">rhocut</span> <span class="ow">in</span> <span class="n">cutoffs</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&quot;rhocut = </span><span class="si">%5.2f</span><span class="s">: &quot;</span> <span class="o">%</span> <span class="n">rhocut</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">map_sites</span><span class="p">(</span><span class="n">rhocut</span><span class="p">)</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">site_insert_bulk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refbulkdensity</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">densities</span><span class="p">):</span>
+                <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;</span><span class="si">%d</span><span class="s">/ref &quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">map_sites</span><span class="p">(</span><span class="n">rhocut</span><span class="p">)</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">site_insert_bulk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bulkdensities</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">find_equivalence_sites_with</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scanstats</span><span class="p">[</span><span class="n">rhocut</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;reference&#39;</span><span class="p">:</span><span class="n">r</span><span class="o">.</span><span class="n">stats</span><span class="p">(),</span><span class="n">k</span><span class="p">:</span><span class="n">d</span><span class="o">.</span><span class="n">stats</span><span class="p">()}</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan2recarray</span><span class="p">()</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&quot;Scan complete. See scanstats and scanarrays attributes.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_and_remap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">densityList</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;check that all densities are compatible with the reference</span>
+<span class="sd">        density (densities are NOT saved)&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">dens</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">densityList</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dens</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Must remap density &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">dens</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; to the reference &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                <span class="n">dens_remapped</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">remap_density</span><span class="p">(</span><span class="n">dens</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span> <span class="c"># copy</span>
+                <span class="n">densityList</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">dens_remapped</span>    <span class="c"># assignment (no idea why it has to be that clumsy)</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fn</span><span class="p">,</span><span class="n">merge</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DensityScanner</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="n">merge</span><span class="o">=</span><span class="n">merge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan2recarray</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_scan2recarray</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># unwrapping/assembling table from stats</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanstats</span>
+        <span class="n">xkeys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span> <span class="n">stats</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span> <span class="n">stats</span><span class="p">[</span><span class="n">xkeys</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">fieldnames</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span> <span class="n">stats</span><span class="p">[</span><span class="n">xkeys</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanarrays</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">fieldnames</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">stats</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="nb">id</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xkeys</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanarrays</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">fromarrays</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">fieldnames</span><span class="p">],</span><span class="n">names</span><span class="o">=</span><span class="n">fieldnames</span><span class="p">)</span>
+
+    <span class="n">__plot_properties_default</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;sites&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;ylim&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                                           <span class="s">&#39;ylabel&#39;</span><span class="p">:</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+                                           <span class="p">},</span>
+                                 <span class="s">&#39;volume&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;ylim&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span>
+                                            <span class="s">&#39;ylabel&#39;</span><span class="p">:</span><span class="s">&#39;site volume/Angstrom^3&#39;</span><span class="p">,</span>
+                                            <span class="p">},</span>
+                                 <span class="s">&#39;occupancy&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;ylim&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.8</span><span class="p">),</span>
+                                               <span class="s">&#39;ylabel&#39;</span><span class="p">:</span> <span class="s">&#39;occupancy from rho&#39;</span><span class="p">,</span>
+                                               <span class="s">&#39;xlabel&#39;</span><span class="p">:</span><span class="s">&#39;rho_cutoff&#39;</span><span class="p">,</span>
+                                               <span class="p">},</span>
+                                 <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fn</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">idens</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">functions</span><span class="o">=</span><span class="s">&#39;all&#39;</span><span class="p">,</span><span class="n">properties</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fignumber</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot density statistics against rho_cut for reference (black) and density 0 (red).</span>
+
+<span class="sd">        plot(filename,properties=&lt;dict of dicts&gt;)</span>
+
+<span class="sd">        Plot various functions of the density cut-off rho_cut. Current</span>
+<span class="sd">        functions are &#39;sites&#39;, &#39;volume&#39;, &#39;occupancy&#39;, or &#39;all&#39;.</span>
+
+<span class="sd">        Plots can be customized by using the properties dict. To</span>
+<span class="sd">        change the ylim and add an title to the sites graph, use</span>
+
+<span class="sd">           properties = {&#39;sites&#39;: {ylim&#39;:(0,220),&#39;title&#39;:&#39;number of sites&#39;}}</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        fn            file name for the file; default is scan.pdf. Suffix determines file type.</span>
+<span class="sd">        idens         number of density plot; the first one is 0 in self.scanarrays[].</span>
+<span class="sd">        functions     list of function names or &#39;all&#39;</span>
+<span class="sd">        properties    dict1 of dicts; keys1: sites, volume, occupancy;</span>
+<span class="sd">                      keys2: any matplotlib settable property, values2: appropriate values</span>
+<span class="sd">        fignumber     pylab figure number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="n">available_functions</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;sites&#39;</span><span class="p">,</span> <span class="s">&#39;volume&#39;</span><span class="p">,</span> <span class="s">&#39;occupancy&#39;</span><span class="p">]</span>
+        <span class="n">plot_functions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">functions</span> <span class="ow">is</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+            <span class="n">plot_functions</span> <span class="o">=</span> <span class="n">available_functions</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">available_functions</span><span class="p">:</span>
+                    <span class="n">plot_functions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;No function &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; is available, only &#39;</span><span class="o">+</span>
+                                     <span class="nb">str</span><span class="p">(</span><span class="n">available_functions</span><span class="p">))</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__plot_properties_default</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">userparams</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">userparams</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">userparams</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanarrays</span><span class="p">[</span><span class="s">&#39;reference&#39;</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanarrays</span><span class="p">[</span><span class="n">idens</span><span class="p">]</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">fignumber</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">axisbg</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="n">par</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s">&#39;sites&#39;</span><span class="p">]</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">221</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">N_equivalence_sites</span><span class="p">,</span><span class="s">&#39;ko&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&quot;N_equiv&quot;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">N_sites</span><span class="p">,</span><span class="s">&#39;kx&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&quot;N_sites&quot;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">d</span><span class="o">.</span><span class="n">N_sites</span><span class="p">,</span><span class="s">&#39;rx&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;ylim&#39;</span><span class="p">])</span>
+        <span class="c">#pylab.legend()</span>
+
+        <span class="c"># refine err bar plots</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c"># acts on the line not on the errorbar markers</span>
+        <span class="n">capsize</span><span class="o">=</span><span class="mi">0</span>
+
+        <span class="n">par</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s">&#39;volume&#39;</span><span class="p">]</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">222</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">site_volume_avg</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">site_volume_std</span><span class="p">,</span>
+                       <span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="n">capsize</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&quot;volume&quot;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">d</span><span class="o">.</span><span class="n">site_volume_avg</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">site_volume_std</span><span class="p">,</span>
+                       <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="n">capsize</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&quot;volume&quot;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;ylim&#39;</span><span class="p">])</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;ylabel&#39;</span><span class="p">])</span>
+        <span class="c"># [pylab.set(pylab.gca(), k, v) for k,v in par.items()]</span>
+
+        <span class="n">par</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s">&#39;occupancy&#39;</span><span class="p">]</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">223</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">site_occupancy_rho_avg</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">site_occupancy_rho_std</span><span class="p">,</span>
+                       <span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="n">capsize</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">rho_cut</span><span class="p">,</span><span class="n">d</span><span class="o">.</span><span class="n">site_occupancy_rho_avg</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">site_occupancy_rho_std</span><span class="p">,</span>
+                       <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="n">capsize</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="c">#pylab.legend()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;ylim&#39;</span><span class="p">])</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;xlabel&#39;</span><span class="p">])</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="s">&#39;ylabel&#39;</span><span class="p">])</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Graph saved to </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fignumber</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HopgraphAnalysis"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.HopgraphAnalysis">[docs]</a><span class="k">class</span> <span class="nc">HopgraphAnalysis</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Comprehensive analysis of an annotated hop graph.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hopgraph</span><span class="p">,</span><span class="nb">dir</span><span class="o">=</span><span class="s">&quot;.&quot;</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Analyse hopgraph.</span>
+
+<span class="sd">        a = HopgraphAnalysis(hopgraph)</span>
+
+<span class="sd">        The show() method prints statistics on the HoppingGraph and histograms()</span>
+<span class="sd">        produces a number of plots as pdf files in the current directory.</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        hopgraph       can be the name of a pickled file or a HoppingGraph</span>
+<span class="sd">                       instance</span>
+<span class="sd">        dir            save figures in this directory</span>
+<span class="sd">        verbosity=3    chattiness</span>
+
+<span class="sd">        :Attributes:</span>
+<span class="sd">        S              statistics dictionary (see keys for explanation)</span>
+<span class="sd">        D              raw data dictionary</span>
+
+<span class="sd">        :Methods:</span>
+<span class="sd">        all()          show() and histograms()</span>
+<span class="sd">        show()         print stats</span>
+<span class="sd">        histograms()   produce histograms</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="n">verbosity</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">easy_load</span><span class="p">(</span><span class="n">hopgraph</span><span class="p">,</span><span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">HoppingGraph</span><span class="p">,</span><span class="s">&#39;stats&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;degree&#39;</span><span class="p">:</span><span class="s">&#39;degree.pdf&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;occupancy&#39;</span><span class="p">:</span><span class="s">&#39;occupancy.pdf&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;lifetime&#39;</span><span class="p">:</span><span class="s">&#39;lifetime.pdf&#39;</span><span class="p">,</span>
+                    <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span>    <span class="c"># pulls out all the statistics from graph</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histograms</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;Statistics S&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;------------&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Data in D&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;---------&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">histograms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_degree_histo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lifetime_histo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_occupancy_histo</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_degree_histo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">numfig</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="k">def</span> <span class="nf">degreehisto</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+            <span class="k">return</span>  <span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">bins</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">a</span><span class="p">)))</span>
+
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;figure </span><span class="si">%(degree)s</span><span class="s">: node degree histograms &quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">numfig</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">axisbg</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># bg not visible?</span>
+        <span class="n">barlegend</span> <span class="o">=</span> <span class="n">LegendContainer</span><span class="p">()</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="n">degreehisto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;degree&#39;</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;black&#39;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;total&#39;</span><span class="p">)</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="n">degreehisto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;indegree&#39;</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;yellow&#39;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">2.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="n">degreehisto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;outdegree&#39;</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;out&#39;</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="o">*</span><span class="n">barlegend</span><span class="o">.</span><span class="n">args</span><span class="p">())</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;degree&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span>
+        <span class="c">#pylab.title(&quot;Distribution of node degrees (including connections with bulk)&quot;)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="s">&#39;degree&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_lifetime_histo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">numfig</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;figure </span><span class="si">%(lifetime)s</span><span class="s">: life time histogram&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">numfig</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">axisbg</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># bg not visible?</span>
+        <span class="n">barlegend</span> <span class="o">=</span> <span class="n">LegendContainer</span><span class="p">()</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;site_lifetime_avg&#39;</span><span class="p">],</span>
+                               <span class="n">bins</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">50</span><span class="p">),</span>
+                                                       <span class="p">[</span><span class="mi">1000</span><span class="p">,</span><span class="mi">5000</span><span class="p">,</span><span class="mi">10000</span><span class="p">,</span><span class="mi">20000</span><span class="p">])))</span>
+        <span class="n">xcutoff</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="n">N_outliers</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="n">bins</span> <span class="o">&gt;</span> <span class="n">xcutoff</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;edge&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                          <span class="n">label</span><span class="o">=</span><span class="s">&#39;life time&#39;</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;life time</span><span class="se">\n</span><span class="s">(</span><span class="si">%(N_outliers)d</span><span class="s"> counts &gt; &#39;</span>
+                         <span class="s">&#39;</span><span class="si">%(xcutoff)g</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">()</span> <span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">xcutoff</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="o">*</span><span class="n">barlegend</span><span class="o">.</span><span class="n">args</span><span class="p">())</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;life time/ps&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="s">&#39;lifetime&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_occupancy_histo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">numfig</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;figure </span><span class="si">%(occupancy)s</span><span class="s">: occupancy histograms&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">numfig</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">axisbg</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># bg not visible?</span>
+        <span class="n">barlegend</span> <span class="o">=</span> <span class="n">LegendContainer</span><span class="p">()</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;site_occupancy_kin_avg&#39;</span><span class="p">],</span><span class="n">bins</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">0.1</span><span class="p">))</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;edge&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;from kinetics&#39;</span><span class="p">)</span>
+
+        <span class="n">n</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">[</span><span class="s">&#39;site_occupancy_rho_avg&#39;</span><span class="p">],</span><span class="n">bins</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">0.1</span><span class="p">))</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">align</span><span class="o">=</span><span class="s">&#39;edge&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">),</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">barlegend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;from density&#39;</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="o">*</span><span class="n">barlegend</span><span class="o">.</span><span class="n">args</span><span class="p">())</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;occupancy&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="s">&#39;occupancy&#39;</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="LegendContainer"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.LegendContainer">[docs]</a><span class="k">class</span> <span class="nc">LegendContainer</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;For each bar plot, record first lines instance and the label</span>
+<span class="sd">    with</span>
+<span class="sd">    &gt;&gt;&gt; Legend = LegendContainer()</span>
+<span class="sd">    &gt;&gt;&gt; lines = pylab.bar(...)</span>
+<span class="sd">    &gt;&gt;&gt; Legend.append(lines[0],&#39;plotlabel&#39;)</span>
+<span class="sd">    Once all legends have been collected, build the legend with</span>
+<span class="sd">    &gt;&gt;&gt; pylab.legend(*Legend.args())</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">line</span><span class="p">,</span><span class="n">label</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+<div class="viewcode-block" id="LegendContainer.args"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.LegendContainer.args">[docs]</a>    <span class="k">def</span> <span class="nf">args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Use as pylab.legend(**Legend.args()).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="HeatmapAnalysis"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.HeatmapAnalysis">[docs]</a><span class="k">class</span> <span class="nc">HeatmapAnalysis</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Combine Hopgraph statistics for a number of simulations into a grid,</span>
+<span class="sd">    normalize each observable, and color. Clustering is performed if the R</span>
+<span class="sd">    package is installed in the system. The idea is to quickly compare a number</span>
+<span class="sd">    simulations based on a combination of observables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">prune_default</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;G_degree_in&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_out&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;G_degree_nobulk&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_in_nobulk&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_out_nobulk&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;G_degree_min&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_in_min&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_out_min&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;G_degree_in_max&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_out_max&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;G_degree_in_nobulk_min&#39;</span><span class="p">,</span><span class="s">&#39;G_degree_out_nobulk_min&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;G_order_nobulk&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;site_N_equivalence_sites&#39;</span><span class="p">,</span><span class="s">&#39;site_N_subsites&#39;</span><span class="p">,</span>
+                     <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hoppinggraphs</span><span class="p">,</span><span class="n">normalization</span><span class="o">=</span><span class="s">&quot;maxabs&quot;</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">prune</span><span class="o">=</span><span class="s">&#39;default&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a &#39;heatmap&#39; for the Hopgraph statistics from a dictionary of CombinedGraphs.</span>
+
+<span class="sd">        &gt;&gt;&gt; hm = HeatmapAnalysis(hg,normalize=&quot;maxabs&quot;)</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        HoppingGraphs    Dictionary of HoppingGraph instances. The key is used to label</span>
+<span class="sd">                         the simulation in the heat map and thus should be expressive.</span>
+<span class="sd">        normalization    Method to normalize the data across observables. Can be None</span>
+<span class="sd">                         (not recommended), &#39;maxabs&#39;, or &#39;zscore&#39;. See the normalize()</span>
+<span class="sd">                         method for documentation.</span>
+<span class="sd">                         NOTE that the normalization strongly influences the clustering</span>
+<span class="sd">                         in the heat map.</span>
+<span class="sd">        verbosity        Chattiness; use at least 1 in order to be notified if you</span>
+<span class="sd">                         should install additional packages. Otherwise a less powerful</span>
+<span class="sd">                         alternative is chosen silently,</span>
+<span class="sd">        prune            dict with keys that are removed from the heat map; see</span>
+<span class="sd">                         prune_default class attribute.</span>
+
+<span class="sd">        :Methods:</span>
+<span class="sd">        plot             plot the heat map</span>
+<span class="sd">        normalize        normalize using the &#39;normalize&#39; method</span>
+<span class="sd">        labels           dictionary of row, column names (and the normalization constants</span>
+<span class="sd">                         as strings)</span>
+<span class="sd">        annotation       &#39;enumerate&#39; dictionaries of labels but not stringified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: input a dict of HopGraph or CombinedGraph instances</span>
+        <span class="c">#       and a dict with metadata</span>
+        <span class="c"># Currently assumes CombinedGraph as input</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="n">hg</span> <span class="o">=</span> <span class="n">hoppinggraphs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="bp">None</span>   <span class="c"># holds default filename</span>
+
+        <span class="k">if</span> <span class="n">prune</span> <span class="ow">is</span> <span class="s">&#39;default&#39;</span><span class="p">:</span>
+            <span class="n">prune</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prune_default</span>
+        <span class="k">elif</span> <span class="n">prune</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">prune</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span> <span class="s">&#39;foo&#39;</span> <span class="ow">in</span> <span class="n">prune</span>
+            <span class="k">except</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;prune must support &#39;in&#39; lookup&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">hg</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>  <span class="c"># labels for sim: &#39;R13_1_plm&#39;, &#39;R13_1_apo&#39;, ...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalization_method</span> <span class="o">=</span> <span class="n">normalization</span>
+
+        <span class="c"># boring data reorganization</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">sim</span><span class="p">,</span><span class="n">hopgraph</span> <span class="ow">in</span> <span class="n">hg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">hopgraph</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prune</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span>  <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">])</span>
+
+        <span class="c"># reference values, tagged with row name</span>
+        <span class="c"># colum offsets are the indices in self.columns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">taggeddata</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">fromarrays</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span><span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalizations</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">normalization</span><span class="p">)</span>  <span class="c"># modifies heatmap and normalizations</span>
+        <span class="c"># set up annotation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">()</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">filename_function</span>
+
+    <span class="n">__normalization_methods</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="s">&quot;maxabs&quot;</span><span class="p">,</span><span class="s">&quot;zscore&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="HeatmapAnalysis.normalize"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.HeatmapAnalysis.normalize">[docs]</a>    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Normalize the data by row.</span>
+
+<span class="sd">        normalize(method=None|&#39;zscore&#39;|&#39;maxabs&#39;)</span>
+
+<span class="sd">        method can be</span>
+<span class="sd">        None         Return the unchanged data array.</span>
+<span class="sd">        &#39;maxabs&#39;     Take the largest absolute value in each row/column and</span>
+<span class="sd">                     divide each entry in the row/column by it. This results</span>
+<span class="sd">                     in values between -1 and +1.</span>
+<span class="sd">        &#39;zscore&#39;     (X-&lt;X&gt;)/sd(X)</span>
+
+<span class="sd">        Sets self.heatmap, self.normalizations, self.normalization_method</span>
+
+<span class="sd">        normalizations only makes sense for &#39;maxabs&#39;; in all other cases it</span>
+<span class="sd">        only contains zeroes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__normalization_methods</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Normalization &#39;</span><span class="si">%s</span><span class="s">&#39; not implemented. Only &quot;</span> <span class="o">%</span> <span class="n">method</span>
+                                      <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__normalization_methods</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; are available.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalization_method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalizations</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="p">))</span>
+            <span class="k">return</span>
+        <span class="c"># normalize each row separately to max|x|</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">normalizations</span> <span class="o">=</span> <span class="p">[]</span>   <span class="c"># holds normalization constant for each row</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="s">&quot;maxabs&quot;</span><span class="p">:</span>
+                <span class="c"># crappy but can&#39;t figure out the numpy way to set the</span>
+                <span class="c"># normalization to the largest absolute value but then</span>
+                <span class="c"># store the actual signed value in normalization</span>
+                <span class="n">rmin</span><span class="p">,</span><span class="n">rmax</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">row</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rmin</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rmax</span><span class="p">):</span>
+                    <span class="n">rmax</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rmin</span><span class="p">)</span>
+                    <span class="n">normalizations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rmin</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">normalizations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rmax</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rmax</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>
+                <span class="n">row</span> <span class="o">/=</span> <span class="n">rmax</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="ow">is</span> <span class="s">&quot;zscore&quot;</span><span class="p">:</span>
+                <span class="n">avg</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="n">normalizations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">std</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>       <span class="c"># avoid div by zero</span>
+                    <span class="n">row</span> <span class="o">*=</span> <span class="mi">0</span>                  <span class="c"># set zscore to 0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">row</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span> <span class="o">-</span> <span class="n">avg</span><span class="p">)</span><span class="o">/</span><span class="n">std</span>  <span class="c"># z-score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalizations</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normalizations</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="HeatmapAnalysis.plot"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.HeatmapAnalysis.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="s">&#39;pdf&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the heatmap and save to an image file.</span>
+
+<span class="sd">          plot()             # display using windowing system</span>
+<span class="sd">          plot(&#39;hm&#39;)         # --&gt; hm.pdf</span>
+<span class="sd">          plot(&#39;hm.png&#39;)     # --&gt; hm.png</span>
+<span class="sd">          plot(&#39;hm&#39;,&#39;png&#39;)   # --&gt; hm.png</span>
+
+<span class="sd">        By default a clustered heat map is constructed using R&#39;s heatmap.2</span>
+<span class="sd">        function. If R cannot be found, an unclustered heat map is</span>
+<span class="sd">        plotted. **kwargs can be used to customize the output.</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        filename       name of the image file; may contain extension</span>
+<span class="sd">                       If empty use the windowing system.</span>
+<span class="sd">        format         eps,pdf,png... whatever matplotlib understands</span>
+
+<span class="sd">        **kwargs for R:</span>
+<span class="sd">        scale          Determines the coloring. Choose between &#39;none&#39; (the</span>
+<span class="sd">                       actual values in the heat map (possibly already normalized)),</span>
+<span class="sd">                       &#39;row&#39; or &#39;column&#39; (z-score across the dimension)</span>
+<span class="sd">        N_colors       Number of color levels; default is 32.</span>
+
+<span class="sd">        **kwargs for matplotlib:</span>
+<span class="sd">           The kwargs are applied to the matplotlib.text() method and</span>
+<span class="sd">           are typically used to set font properties. See the</span>
+<span class="sd">           pylab/matplotlib documentation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">format</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">fileextension</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="n">format</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">rpy</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">rpy2</span> <span class="kn">import</span> <span class="n">rpy_classic</span> <span class="k">as</span> <span class="n">rpy</span>
+                <span class="c"># http://www.mail-archive.com/rpy-list@lists.sourceforge.net/msg01893.html</span>
+                <span class="n">rpy</span><span class="o">.</span><span class="n">set_default_mode</span><span class="p">(</span><span class="n">rpy</span><span class="o">.</span><span class="n">BASIC_CONVERSION</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_heatmap_R</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="n">format</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;rpy package missing: cannot plot clustered heat map, defaulting to &quot;</span>
+                <span class="s">&quot;an unclustered heat map&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_heatmap_matplotlib</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="n">format</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;Wrote image to file </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">format</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">_heatmap_R</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">labels</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="s">&#39;pdf&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot a clustered heat map using R.&quot;&quot;&quot;</span>
+        <span class="c"># Note on coloring: test if data is z-score normalized and if</span>
+        <span class="c">#  true, force scale=&#39;row&#39; for the heat map so that this is</span>
+        <span class="c">#  reflected in the legend (in fact, the z-score is recomputed</span>
+        <span class="c">#  over the data for heatmap.2 coloring but it looks identical</span>
+        <span class="c">#  and in any case, the clustering is done on the original</span>
+        <span class="c">#  data --- which is NOT clear from the heatmap docs)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">rpy</span> <span class="kn">import</span> <span class="n">r</span><span class="p">,</span> <span class="n">RException</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">rpy2.rpy_classic</span> <span class="kn">import</span> <span class="n">r</span><span class="p">,</span> <span class="n">RException</span>
+
+        <span class="n">hm_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                       <span class="n">margins</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span> <span class="c"># space for long labels</span>
+                       <span class="n">N_colors</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+                       <span class="p">)</span>
+        <span class="n">hm_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">N_colors</span> <span class="o">=</span> <span class="n">hm_args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;N_colors&#39;</span><span class="p">)</span>  <span class="c"># N_colors not a true heatmap argument</span>
+        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">interactive</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">def</span> <span class="nf">r_format</span><span class="p">():</span>
+                <span class="n">r</span><span class="p">[</span><span class="n">format</span><span class="p">](</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">r_dev_off</span><span class="p">():</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">dev_off</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">interactive</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">def</span> <span class="nf">r_format</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">r</span><span class="o">.</span><span class="n">X11</span><span class="p">()</span>
+                <span class="k">except</span> <span class="n">RException</span><span class="p">:</span>
+                    <span class="n">r</span><span class="o">.</span><span class="n">quartz</span><span class="p">()</span>
+            <span class="k">def</span> <span class="nf">r_dev_off</span><span class="p">():</span>
+                <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;Interactive R display. Kill with hop.analysis.kill_R()&quot;</span><span class="p">)</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization_method</span> <span class="ow">is</span> <span class="s">&#39;zscore&#39;</span> <span class="ow">and</span> <span class="n">hm_args</span><span class="p">[</span><span class="s">&#39;scale&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s">&#39;row&#39;</span><span class="p">:</span>
+            <span class="n">hm_args</span><span class="p">[</span><span class="s">&#39;scale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;row&#39;</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;Forcing scale=&#39;row&#39; for z-score normalized heat map.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="c"># (This only has the effect to put the label &#39;Row Z-score&#39; in the graph)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">library</span><span class="p">(</span><span class="s">&#39;colorRamps&#39;</span><span class="p">)</span>
+            <span class="n">r_color</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">matlab_like</span><span class="p">(</span><span class="n">N_colors</span><span class="p">)</span> <span class="c"># getting somewhat close to matplotlib &#39;jet&#39;</span>
+        <span class="k">except</span> <span class="n">RException</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;For matplotlib-like colors install the R-package &#39;colorRamps&#39;:</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="s">&quot;&gt;&gt;&gt; import rpy</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="s">&quot;&gt;&gt;&gt; rpy.r.install_packages(&#39;colorRamps&#39;,type=&#39;source&#39;)&quot;</span><span class="p">)</span>
+            <span class="n">r_color</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">topo_colors</span><span class="p">(</span><span class="n">N_colors</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">library</span><span class="p">(</span><span class="s">&#39;gplots&#39;</span><span class="p">)</span>
+            <span class="n">r_heatmap</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">heatmap_2</span>
+            <span class="n">hm_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">TRUE</span><span class="p">,</span> <span class="n">symkey</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">FALSE</span><span class="p">,</span>
+                                <span class="n">density_info</span><span class="o">=</span><span class="s">&#39;histogram&#39;</span><span class="p">,</span> <span class="n">trace</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">RException</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;For heatmap with a legend install the R-package &#39;gplots&#39; via </span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="s">&quot;&gt;&gt;&gt; import rpy</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="s">&quot;&gt;&gt;&gt; rpy.r.install_packages(&#39;gplots&#39;,type=&#39;source&#39;)&quot;</span><span class="p">)</span>
+            <span class="n">r_heatmap</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">heatmap</span>
+
+        <span class="n">r_format</span><span class="p">()</span>
+        <span class="n">r_heatmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="p">,</span>
+                  <span class="n">labRow</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="s">&#39;observables&#39;</span><span class="p">],</span>
+                  <span class="n">labCol</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">],</span>
+                  <span class="n">col</span><span class="o">=</span><span class="n">r_color</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">hm_args</span><span class="p">)</span>
+        <span class="n">r_dev_off</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_heatmap_matplotlib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">labels</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="s">&#39;pdf&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot a un-clustered heat map using matplotlib.&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="p">,</span><span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">&#39;off&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">pad</span><span class="o">=</span><span class="mf">0.075</span><span class="p">)</span>
+        <span class="n">col_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">_add_x_ticklabel</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">label</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="s">&#39;columns&#39;</span><span class="p">])]</span>
+        <span class="n">row_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">_add_y_ticklabel</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">label</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="s">&#39;observables&#39;</span><span class="p">])]</span>
+        <span class="n">norm_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">_add_y_ticklabel</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">label</span><span class="p">,</span>
+                                       <span class="n">offset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">heatmap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="c"># number of colums</span>
+                                       <span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">,</span>
+                                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                       <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="s">&#39;normalizations&#39;</span><span class="p">])]</span>
+        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">format</span><span class="p">,</span><span class="n">set_default</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;Only display, no file written because filename == None.&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns_idict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_idict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observables_idict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_idict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalizations_idict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_idict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalizations</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;columns&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">columns_idict</span><span class="p">,</span>
+                <span class="s">&#39;observables&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">observables_idict</span><span class="p">,</span>
+                <span class="s">&#39;normalizations&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">normalizations_idict</span><span class="p">}</span>
+
+<div class="viewcode-block" id="HeatmapAnalysis.labels"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.HeatmapAnalysis.labels">[docs]</a>    <span class="k">def</span> <span class="nf">labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;labels of the columns (simulations) and rows (observables)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;columns&#39;</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span>
+                    <span class="s">&#39;observables&#39;</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">),</span>
+                    <span class="s">&#39;normalizations&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&quot;</span><span class="si">%g</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">precision</span><span class="p">)</span>
+                                       <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalizations</span><span class="p">]}</span>
+</div>
+    <span class="k">def</span> <span class="nf">print_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#pp = pprint.PrettyPrinter() # use global pp</span>
+        <span class="k">print</span> <span class="s">&quot;column legend (sims) columns_idict&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns_idict</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;row legend (observable) observables_idict&quot;</span>
+        <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observables_idict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_idict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">a</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+</div>
+<span class="k">def</span> <span class="nf">_add_y_ticklabel</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">offset</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">pylab</span>
+    <span class="n">textargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                    <span class="n">verticalalignment</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span><span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">textargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">offset</span>  <span class="c"># -1 == left of axis, in image coords</span>
+    <span class="k">return</span> <span class="n">pylab</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">textargs</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_add_x_ticklabel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">offset</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">pylab</span>
+    <span class="n">textargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                    <span class="n">rotation</span><span class="o">=</span><span class="s">&#39;vertical&#39;</span><span class="p">,</span>
+                    <span class="n">verticalalignment</span><span class="o">=</span><span class="s">&#39;bottom&#39;</span><span class="p">,</span><span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">textargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span>  <span class="c"># -1 == over top of axis, in image coords</span>
+    <span class="k">return</span> <span class="n">pylab</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">textargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="kill_R"><a class="viewcode-back" href="../../hop/analysis.html#hop.analysis.kill_R">[docs]</a><span class="k">def</span> <span class="nf">kill_R</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Manual last resort to kill the R quartz() window.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">rpy</span> <span class="kn">import</span> <span class="n">r</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">dev_off</span><span class="p">()</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

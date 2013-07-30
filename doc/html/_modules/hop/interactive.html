@@ -1,0 +1,623 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hop.interactive &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hop.interactive</h1><div class="highlight"><pre>
+<span class="c"># $Id$</span>
+<span class="c"># Hop --- a framework to analyze solvation dynamics from MD simulations</span>
+<span class="c"># Copyright (c) 2009 Oliver Beckstein &lt;orbeckst@gmail.com&gt;</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Interactive or high-level use of the hop trajectory package</span>
+<span class="sd">===========================================================</span>
+
+<span class="sd">A typical session starts with a trajectory (which should have been</span>
+<span class="sd">RMS-fitted to a reference structure). Any topology and trajectory file</span>
+<span class="sd">suitable for MDAnalysis_ can be used such as PSF+DCD, PDB+XTC or a</span>
+<span class="sd">single PDB. In the following Charmm/NAMD psf and dcd files are used as</span>
+<span class="sd">examples.</span>
+
+<span class="sd">We will use the high-level wrapper functions in :mod:`hop.interactive`:</span>
+
+<span class="sd">&gt;&gt;&gt; from hop.interactive import *</span>
+
+<span class="sd">.. _MDAnalysis:: http://mdanalysis.googlecode.com</span>
+
+<span class="sd">Hydration sites</span>
+<span class="sd">---------------</span>
+
+<span class="sd">Hydration sites are sites of water density higher than the bulk</span>
+<span class="sd">density but one special site is the bulk. The hydration sites and the</span>
+<span class="sd">bulk site are computed in two separate steps.</span>
+
+
+<span class="sd">High density sites</span>
+<span class="sd">..................</span>
+
+<span class="sd">First build the density of the water oxygens.</span>
+
+<span class="sd">&gt;&gt;&gt; density = make_density(psf,dcd,filename,delta=1.0)</span>
+
+<span class="sd">If you have VMD with the VolMap plugin installed *and* your trajectory</span>
+<span class="sd">fits into your computer&#39;s RAM you can also choose the VMD backend to</span>
+<span class="sd">compute the density (which can be marginally faster):</span>
+
+<span class="sd">&gt;&gt;&gt; density = make_density(psf,dcd,filename,delta=1.0,backend=&#39;VMD&#39;)</span>
+
+
+<span class="sd">The density is also saved as a pickled python object so that one can</span>
+<span class="sd">easily reload it. The density is also exported as a dx file for</span>
+<span class="sd">visualization (e.g. use :func:`hop.interactive.visualize_density`,</span>
+<span class="sd">which calls :program:`VMD`).</span>
+
+<span class="sd">From the density one creates the &#39;site map&#39; for a given threshold (by</span>
+<span class="sd">default this is a multiple of the water bulk density):</span>
+
+<span class="sd">&gt;&gt;&gt; density.map_sites(threshold=2.72)</span>
+
+<span class="sd">Experiment with the threshold; :class:`hop.analysis.DensityAnalysis` can help</span>
+<span class="sd">to systematically explore the parameter space, and it is also helpful</span>
+<span class="sd">to load the density into a visualization software such as VMD and</span>
+<span class="sd">interactively explore contour levels. Values between 1.65 and 3 have</span>
+<span class="sd">given decent results in the past but this is system-dependent.)</span>
+
+
+<span class="sd">Bulk site</span>
+<span class="sd">.........</span>
+
+<span class="sd">For a full analysis of hopping events one also needs to define a bulk</span>
+<span class="sd">site. This is currently accomplished by calculating a second &#39;bulk&#39;</span>
+<span class="sd">density (all water not within 3.5 A of the protein) and manually</span>
+<span class="sd">inserting the bulk site into the site map for the first density.</span>
+
+<span class="sd">&gt;&gt;&gt; density_bulk = make_density(psf,dcd,&#39;bulk&#39;,delta=1.0,</span>
+<span class="sd">...         atomselection=&#39;name OH2&#39;,</span>
+<span class="sd">...         soluteselection=&#39;protein and not name H*&#39;,</span>
+<span class="sd">...         cutoff=3.5</span>
+<span class="sd">...         )</span>
+
+<span class="sd">Using VMD&#39;s VolMap can be potentially be faster --- try it if the</span>
+<span class="sd">default seems too slow to you:</span>
+
+<span class="sd">&gt;&gt;&gt; density_bulk = make_density(psf,dcd,&#39;bulk&#39;,delta=1.0,</span>
+<span class="sd">...         atomselection=&#39;name OH2 and not within 3.5 of (protein and name not hydrogen)&#39;,</span>
+<span class="sd">...         backend=&#39;VMD&#39;,load_new=False)</span>
+
+<span class="sd">The bulk density should be a big, well defined volume so we choose a</span>
+<span class="sd">fairly low threshold:</span>
+
+<span class="sd">&gt;&gt;&gt; density_bulk.map_sites(0.6)</span>
+
+<span class="sd">Add the biggest bulk site:</span>
+
+<span class="sd">&gt;&gt;&gt; density.site_insert_bulk(density_bulk)</span>
+<span class="sd">&gt;&gt;&gt; density.save()</span>
+<span class="sd">&gt;&gt;&gt; del density_bulk</span>
+
+<span class="sd">.. Note:: Behind the scenes, the bulk is simply prepended to the list</span>
+<span class="sd">   of all sites (``density.sites``,</span>
+<span class="sd">   :attr:`hop.sitemap.Density.sites`), found so far. By convention the</span>
+<span class="sd">   site at position 1 in the list of all sites is treated specially in</span>
+<span class="sd">   many parts of hop (it has the so-called sitelabel &quot;1&quot;, which is</span>
+<span class="sd">   simply the position in the list of sites) and hence you might</span>
+<span class="sd">   encounter unexpected behaviour later if you do not insert a bulk</span>
+<span class="sd">   site.</span>
+
+<span class="sd">Statistics about the sites can be produced with</span>
+
+<span class="sd">&gt;&gt;&gt; analyze_density(density,figname)</span>
+
+<span class="sd">The results figures will be named `&lt;figname&gt;.pdf`.</span>
+
+
+<span class="sd">Remapping for comparing site maps</span>
+<span class="sd">.................................</span>
+
+<span class="sd">This section is only relevant if you plan on comparing site maps. Then</span>
+<span class="sd">you *must* compare the density to your reference density *now* before</span>
+<span class="sd">proceeding. You will</span>
+
+<span class="sd">   1) remap this density to be defined on the same grid as the reference</span>
+<span class="sd">      density (for this to work, this density must have been generated from</span>
+<span class="sd">      a trajectory that has been RMS-fitted to the same reference structure</span>
+<span class="sd">      as; see hop.trajectory.rms_fit_trj() and</span>
+<span class="sd">      hop.trajectory.fasta2select())</span>
+
+<span class="sd">      &gt;&gt;&gt; ref_density = hop.sitemap.Density(filename=&#39;my_reference_density&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; remapped_density = hop.sitemap.remap_density(density,ref_density)</span>
+
+<span class="sd">   2) find the equivalence sites in the two densities and add those sites</span>
+<span class="sd">      to **both** densities:</span>
+
+<span class="sd">      &gt;&gt;&gt; remapped_density.find_equivalence_sites_with(ref_density,verbosity=3)</span>
+<span class="sd">      &gt;&gt;&gt; remapped_density.save(&lt;filename&gt;)</span>
+<span class="sd">      &gt;&gt;&gt; ref_density.save()</span>
+
+<span class="sd">      (You must also recalculate the reference densities hopping</span>
+<span class="sd">      trajectory (see below) because some sites may have been merged into</span>
+<span class="sd">      &#39;equivalence sites&#39;. See docs for</span>
+<span class="sd">      hop.sitemap.find_equivalence_sites_with() and</span>
+<span class="sd">      hop.graph.CombinedGraph()).</span>
+
+<span class="sd">      From now on, work with the remapped density:</span>
+<span class="sd">      &gt;&gt;&gt; density = remapped_density</span>
+
+
+<span class="sd">Hopping trajectory</span>
+<span class="sd">------------------</span>
+
+<span class="sd">Next we translate the dcd into a &#39;hopping trajectory&#39; (saved in dcd</span>
+<span class="sd">format) in which coordinates for a given water oxygen are replaced by</span>
+<span class="sd">the site it visits at each time step.</span>
+
+<span class="sd">&gt;&gt;&gt; hops = make_hoppingtraj(density,&#39;hop_water+bulk&#39;)</span>
+
+<span class="sd">All further analysis should use this hopping trajectory (from disk) as</span>
+<span class="sd">it is computationally much cheaper to read the trajectory than to</span>
+<span class="sd">re-translate the coordinate trajectory (which is done behind the</span>
+<span class="sd">scences if the hopping trajectory is not available).</span>
+
+
+<span class="sd">Hopping graph</span>
+<span class="sd">-------------</span>
+
+<span class="sd">The final step is to map out the graph of transitions between sites</span>
+<span class="sd">(using the hopping trajectory):</span>
+
+<span class="sd">&gt;&gt;&gt; tn = build_hoppinggraph(hops,density)</span>
+
+<span class="sd">tn.hopgraph holds this graph (tn.graph just contains all jumps</span>
+<span class="sd">including the interstitial and off-sites). The edges of hopgraph are</span>
+<span class="sd">the rate constants k_ji (in 1/ps) for hops i --&gt; j. They are computed</span>
+<span class="sd">from an exponential fit to the site survival function S_ji(t) for</span>
+<span class="sd">particles waiting to hop from i to j.</span>
+
+<span class="sd">The density is provided to attach data to the nodes of the</span>
+<span class="sd">hopgraph. It is required for visualization and analysis (although not</span>
+<span class="sd">strictly necessary for the hopgraph itself).</span>
+
+<span class="sd">Further analysis uses tn.hopgraph:</span>
+
+<span class="sd">&gt;&gt;&gt; h = tn.hopgraph           # main result is the &#39;hopgraph&#39;</span>
+<span class="sd">&gt;&gt;&gt; h.save(&#39;hopgraph&#39;)        # save the hopping graph (necessary for cg part)</span>
+<span class="sd">&gt;&gt;&gt; h.filter(exclude={&#39;outliers&#39;:True, &#39;Nmin&#39;:2, &#39;unconnected&#39;:True})</span>
+<span class="sd">&gt;&gt;&gt; h.show_rates()            # show all calculated rate constants (filtered graph)</span>
+<span class="sd">&gt;&gt;&gt; h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps</span>
+<span class="sd">&gt;&gt;&gt; h.plot_fits()</span>
+<span class="sd">&gt;&gt;&gt; h.export(&#39;water&#39;)         # write dot file to visualize (filtered) graph</span>
+<span class="sd">&gt;&gt;&gt; h.plot_site_occupancy(&#39;siteoccupancy&#39;)  # plot site occupancy from graph ---is NOT working</span>
+<span class="sd">&gt;&gt;&gt; h.plot_residency_times(&#39;residencytimes&#39;)# residency times --- is NOT working</span>
+
+<span class="sd">To compare the water network based on density with another hop graph</span>
+<span class="sd">(based on ref_density), construct the CombinedGraph:</span>
+
+<span class="sd">&gt;&gt;&gt; h_ref = hop.graph.HoppingGraph(filename=&lt;filename&gt;) --- basically repeat steps from</span>
+<span class="sd">###                                                     --- ref_density only with differ labels</span>
+<span class="sd">&gt;&gt;&gt; cg = hop.graph.CombinedGraph(g0=h,g1=h_ref)</span>
+<span class="sd">&gt;&gt;&gt; cg.plot(0,&#39;cg_h&#39;,linewidths=(0.01,))</span>
+<span class="sd">&gt;&gt;&gt; cg.plot(1,&#39;cg_h_ref&#39;,linewidths=(0.01,))</span>
+
+
+<span class="sd">TODO</span>
+<span class="sd">====</span>
+
+<span class="sd">Currently un(der)-documented:</span>
+<span class="sd">* Remapping densities to a reference density (see hop.sitemap.remap_density).</span>
+<span class="sd">* Comparing densities and finding equivalence sites (see</span>
+<span class="sd">  hop.sitemap.find_common_sites() and Density.find_equivalence_sites_with()).</span>
+<span class="sd">* Comparing hopgraphs across different simulations: requires equivalence sites in</span>
+<span class="sd">  both densities; then build the hop.graph.CombinedGraph().</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">hop.sitemap</span><span class="o">,</span> <span class="nn">hop.trajectory</span><span class="o">,</span> <span class="nn">hop.graph</span><span class="o">,</span> <span class="nn">hop.constants</span>
+<span class="kn">import</span> <span class="nn">hop.density</span>
+<span class="kn">import</span> <span class="nn">MDAnalysis</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;MDAnalysis.analysis.hop.interactive&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="generate_densities"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.generate_densities">[docs]</a><span class="k">def</span> <span class="nf">generate_densities</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Analyze the trajectory and generate solvent and bulk density.</span>
+
+<span class="sd">    generate_densities(topol, traj, atomselection=&#39;name OW&#39;) --&gt; densities</span>
+
+<span class="sd">    This function can take a long time because it has to read the whole</span>
+<span class="sd">    trajectory. Progress is printed to the screen. It saves results to pickle</span>
+<span class="sd">    files. These files are :class:`hop.sitemap.Density` objects and can be used</span>
+<span class="sd">    to instantiate such a density object.</span>
+
+<span class="sd">    :Arguments:</span>
+<span class="sd">      filename</span>
+<span class="sd">         name of the solvent density with bulk site</span>
+<span class="sd">      bulkname</span>
+<span class="sd">         bulk density</span>
+<span class="sd">      density_unit</span>
+<span class="sd">         unit of measurement for densities and thresholds</span>
+<span class="sd">         (Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)</span>
+<span class="sd">      solvent_threshold : exp(1) = 2.7182818284590451</span>
+<span class="sd">         hydration sites when density &gt; this threshold</span>
+<span class="sd">      bulk_threshold : exp(-0.5) = 0.60653065971263342</span>
+<span class="sd">         bulk site are regions with density &gt; this threshold</span>
+<span class="sd">         (and water farther away from the protein heavy atoms than *cutoff*)</span>
+<span class="sd">      delta : 1.0</span>
+<span class="sd">         cubic grid size in Angstrom</span>
+<span class="sd">      cutoff</span>
+<span class="sd">         bulk-water is assumed to start at this distance from the</span>
+<span class="sd">         soluteselection</span>
+<span class="sd">      soluteselection : &quot;protein and not name H*&quot;</span>
+<span class="sd">         how to select the solute (for bulk density)</span>
+
+<span class="sd">    :Returns: a dict containing :class:`hop.sitemap.Density` instances for the</span>
+<span class="sd">              the &quot;solvent&quot; and the &quot;bulk&quot; density; the &quot;solvent&quot; has the bulk</span>
+<span class="sd">              site (largest site in &quot;bulk&quot;) inserted as site 1.</span>
+
+<span class="sd">    .. Note::</span>
+
+<span class="sd">       The &quot;solvent&quot; density is going to be used throughout the rest of the</span>
+<span class="sd">       protocol. Should you ever remap the sites (i.e. run</span>
+<span class="sd">       :meth:`~hop.sitemap.Density.map_sites` with a different threshold) then</span>
+<span class="sd">       **you must insert the bulk site again** (because the bulk site is</span>
+<span class="sd">       removed for technical reasons whenever the sites change); use the saved</span>
+<span class="sd">       bulk site and the :meth:`hop.sitemap.Density.site_insert_bulk` method.</span>
+
+<span class="sd">    .. SeeAlso::</span>
+
+<span class="sd">       Keyword arguments are passed on to :class:`hop.density.DensityCreator`</span>
+<span class="sd">       where all possible keywords are documented; the site mapping is done</span>
+<span class="sd">       with :meth:`hop.sitemap.Density.map_sites`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;filename&#39;</span><span class="p">,</span> <span class="s">&#39;water&#39;</span><span class="p">)</span>  <span class="c"># solvent pickle file</span>
+    <span class="n">bulkname</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;bulkname&#39;</span><span class="p">,</span> <span class="s">&#39;bulk&#39;</span><span class="p">)</span>   <span class="c"># bulk solvent pickle file</span>
+    <span class="n">solvent_threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;solvent_threshold&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">bulk_threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;bulk_threshold&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="n">density_unit</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;density_unit&#39;</span><span class="p">,</span> <span class="s">&quot;water&quot;</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;all&quot;</span>
+    <span class="n">DC</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">DensityCreator</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">densities</span> <span class="o">=</span> <span class="n">DC</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+    <span class="c"># save the precious files right away</span>
+    <span class="n">densities</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">bulkname</span><span class="p">)</span>
+    <span class="n">densities</span><span class="p">[</span><span class="s">&#39;solvent&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="c"># modifies densities[&#39;solvent&#39;] (and also returns it)</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">DC</span><span class="o">.</span><span class="n">DensityWithBulk</span><span class="p">(</span><span class="n">density_unit</span><span class="o">=</span><span class="n">density_unit</span><span class="p">,</span>
+                                 <span class="n">solvent_threshold</span><span class="o">=</span><span class="n">solvent_threshold</span><span class="p">,</span>
+                                 <span class="n">bulk_threshold</span><span class="o">=</span><span class="n">bulk_threshold</span><span class="p">)</span>
+    <span class="c"># save again, but now with mapped sites and bulk site include in &quot;solvent&quot;</span>
+    <span class="n">densities</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">bulkname</span><span class="p">)</span>
+    <span class="n">density</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>  <span class="c"># This is solvent but with bulk site added.</span>
+    <span class="c"># finally write dx files for visualization</span>
+    <span class="n">densities</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">export</span><span class="p">()</span>
+    <span class="n">density</span><span class="o">.</span><span class="n">export</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;generate_densities(): saved densities and exported dx files&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">densities</span>
+</div>
+<div class="viewcode-block" id="make_density"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.make_density">[docs]</a><span class="k">def</span> <span class="nf">make_density</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">atomselection</span><span class="o">=</span><span class="s">&#39;name OH2&#39;</span><span class="p">,</span>
+                 <span class="n">backend</span><span class="o">=</span><span class="s">&#39;MDAnalysis&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build the density by histogramming all the water oxygens in a dcd.</span>
+
+<span class="sd">    density = make_density(psf,dcd,filename,delta=1.0)</span>
+
+<span class="sd">    The function builds the density object, writes it to disk, and</span>
+<span class="sd">    also exports it as a dx file for visualization (use</span>
+<span class="sd">    vizualize_density(density)).</span>
+
+<span class="sd">    :Arguments:</span>
+
+<span class="sd">      *psf</span>
+<span class="sd">         topology</span>
+<span class="sd">      *dcd*</span>
+<span class="sd">         trajectory (should be RMS fitted to a reference frame)</span>
+<span class="sd">      *filename*</span>
+<span class="sd">         default filename for the density</span>
+<span class="sd">      *delta*</span>
+<span class="sd">         grid spacing Angstrom</span>
+<span class="sd">      *backend*</span>
+<span class="sd">         &quot;MDAnalysis&quot; or &quot;VMD&quot; to be used for histogramming the density</span>
+<span class="sd">         [&quot;MDAnalysis&quot;]</span>
+
+<span class="sd">      *kwargs* (depend on backend):</span>
+<span class="sd">         only for MDAnalysis:</span>
+<span class="sd">            *padding*</span>
+<span class="sd">               increase box dimensions for 3D histogramming by padding</span>
+<span class="sd">            *soluteselection*</span>
+<span class="sd">            *cutoff*</span>
+<span class="sd">                for bulk density: setting both `soluteselection=&#39;protein and not name H*&#39;`</span>
+<span class="sd">                and `cutoff=3.5` A selects *&#39;&lt;atomsel&gt; NOT WITHIN &lt;cutoff&gt; OF &lt;solutesel&gt;&#39;*</span>
+
+<span class="sd">         only for VMD:</span>
+<span class="sd">            *load_new*</span>
+<span class="sd">                `True`: load psf and dcd from file. `False`: use already loaded</span>
+<span class="sd">                psf and dcd</span>
+
+<span class="sd">    :Returns: *density*, :class:`hop.sitemap.Density` object; the density is</span>
+<span class="sd">              converted to a fraction of the density of bulk TIP3P water</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s">&#39;MDAnalysis&#39;</span><span class="p">:</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">density_from_trajectory</span><span class="p">(</span>
+            <span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span><span class="n">atomselection</span><span class="o">=</span><span class="n">atomselection</span><span class="p">,</span>
+            <span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s">&#39;VMD&#39;</span><span class="p">:</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">density_from_volmap</span><span class="p">(</span>
+            <span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span><span class="n">atomselection</span><span class="o">=</span><span class="n">atomselection</span><span class="p">,</span>
+            <span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="s">&quot;Unknown backend &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span> <span class="n">backend</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+    <span class="n">density</span><span class="o">.</span><span class="n">convert_density</span><span class="p">(</span><span class="s">&#39;TIP3P&#39;</span><span class="p">)</span>
+    <span class="n">density</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">density</span><span class="o">.</span><span class="n">export</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;make_density() completed. Run map_sites(density,...) next&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">density</span>
+</div>
+<div class="viewcode-block" id="make_xstal_density"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.make_xstal_density">[docs]</a><span class="k">def</span> <span class="nf">make_xstal_density</span><span class="p">(</span><span class="n">pdb</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate a density from the crystalwaters in a PDB.</span>
+
+<span class="sd">    For arguments see :func:`make_density`.</span>
+
+<span class="sd">    (These water are typically named HOH.)</span>
+
+<span class="sd">    .. SeeAlso:: Water molecules are counted as point-like</span>
+<span class="sd">       particles. One can also use</span>
+<span class="sd">       :class:`hop.sitemap.BfactorDensityCreator` to broaden water</span>
+<span class="sd">       molecules according to their B-factor.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;atomselection&#39;</span><span class="p">,</span> <span class="s">&quot;resname HOH&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">make_density</span><span class="p">(</span><span class="n">pdb</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="analyze_density"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.analyze_density">[docs]</a><span class="k">def</span> <span class="nf">analyze_density</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="s">&#39;sitestats&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Site statistics based on the density alone.</span>
+
+<span class="sd">    Plots site volumes, average densities and occupancy, and writes it to the</span>
+<span class="sd">    pdf file &lt;figure&gt;.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">pylab</span>
+    <span class="c">#import os</span>
+
+    <span class="c"># convert density to the chosen density unit (typically, relative to bulk water)</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">get_conversion_factor</span><span class="p">(</span><span class="s">&#39;density&#39;</span><span class="p">,</span>
+                                            <span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">],</span><span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="s">&#39;density&#39;</span><span class="p">])</span>
+
+    <span class="n">x</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">DN</span> <span class="o">=</span> <span class="n">density</span><span class="o">.</span><span class="n">site_occupancy</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s">&#39;sites&#39;</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span><span class="n">V</span> <span class="o">=</span> <span class="n">density</span><span class="o">.</span><span class="n">site_volume</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s">&#39;sites&#39;</span><span class="p">)</span>
+
+    <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Site statistics for threshold </span><span class="si">%.2f</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">density</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">],</span><span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]))</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">V</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span><span class="s">&#39;ro&#39;</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">factor</span> <span class="o">*</span> <span class="n">N</span><span class="o">/</span><span class="n">V</span><span class="p">,</span><span class="s">&#39;r.&#39;</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="s">&#39;b.&#39;</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">((</span><span class="s">&#39;V/10 </span><span class="si">%s</span><span class="s">**3&#39;</span> <span class="o">%</span> <span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">],</span>
+                  <span class="s">&#39;density </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="s">&#39;density&#39;</span><span class="p">],</span>
+                  <span class="s">&#39;occupancy&#39;</span><span class="p">))</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">factor</span><span class="o">*</span><span class="n">N</span><span class="o">/</span><span class="n">V</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">factor</span><span class="o">*</span><span class="n">DN</span><span class="o">/</span><span class="n">V</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">DN</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ecolor</span><span class="o">=</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="n">capsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;site label&#39;</span><span class="p">)</span>
+
+    <span class="c">#eps = figure+&#39;.eps&#39;</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="n">figure</span><span class="o">+</span><span class="s">&#39;.pdf&#39;</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="c">#os.system(&#39;epstopdf --outfile=%(pdf)s %(eps)s&#39; % locals())</span>
+    <span class="c">#os.remove(eps)</span>
+</div>
+<div class="viewcode-block" id="visualize_density"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.visualize_density">[docs]</a><span class="k">def</span> <span class="nf">visualize_density</span><span class="p">(</span><span class="n">density</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Visualize the trajectory with the density in VMD.</span>
+
+<span class="sd">       visualize_density(density)</span>
+
+<span class="sd">    :Arguments:</span>
+<span class="sd">       *density*</span>
+<span class="sd">          hop.sitemap.Density object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">density</span><span class="o">.</span><span class="n">filename</span><span class="p">()</span> <span class="o">+</span> <span class="s">&#39;.dx&#39;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;vmd &#39;</span><span class="o">+</span><span class="n">density</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;psf&#39;</span><span class="p">]</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">density</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;dcd&#39;</span><span class="p">]</span><span class="o">+</span><span class="s">&#39; -m &#39;</span><span class="o">+</span><span class="n">dx</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="make_hoppingtraj"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.make_hoppingtraj">[docs]</a><span class="k">def</span> <span class="nf">make_hoppingtraj</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="o">**</span><span class="n">hopargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create the hopping trajectory from a density with a site map.</span>
+
+<span class="sd">       hops = make_hoptraj(density,filename)</span>
+
+<span class="sd">    :Arguments:</span>
+<span class="sd">      *density*</span>
+<span class="sd">         density object with a site map</span>
+<span class="sd">      *filename*</span>
+<span class="sd">         prefix for the hop trajectory files (psf and dcd)</span>
+<span class="sd">      *hopargs*</span>
+<span class="sd">         keyword args to add to :class:`~hop.trajectory.HoppingTrajectory` such</span>
+<span class="sd">         as `fixtrajectory = {&#39;delta&#39;:10.22741474887299}`</span>
+
+<span class="sd">    This function relies on the density&#39;s metadata. In particular it</span>
+<span class="sd">    uses `density.metadata[&#39;psf&#39;]` and `metadata[&#39;dcd&#39;]` to find its input</span>
+<span class="sd">    data and `metadata[&#39;atomselection&#39;]` to define the atoms to track.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">density</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">,</span><span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="s">&#39;The density misses a site map or has only one site.&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="n">density</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;psf&#39;</span><span class="p">],</span><span class="n">density</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;dcd&#39;</span><span class="p">])</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">selectAtoms</span><span class="p">(</span><span class="n">density</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;atomselection&#39;</span><span class="p">])</span>
+    <span class="n">hops</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">HoppingTrajectory</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">trajectory</span><span class="p">,</span><span class="n">group</span><span class="p">,</span><span class="n">density</span><span class="p">,</span><span class="o">**</span><span class="n">hopargs</span><span class="p">)</span>
+    <span class="n">hops</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hops</span>
+</div>
+<div class="viewcode-block" id="build_hoppinggraph"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.build_hoppinggraph">[docs]</a><span class="k">def</span> <span class="nf">build_hoppinggraph</span><span class="p">(</span><span class="n">hoppingtrajectory</span><span class="p">,</span><span class="n">density</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the graph of all site hops and calculate the rate constants.</span>
+
+<span class="sd">    tgraph = build_hoppinggraph(hops,density)</span>
+
+<span class="sd">    :Arguments:</span>
+<span class="sd">    hops</span>
+<span class="sd">           hop.trajectory.HoppingTrajectory object</span>
+<span class="sd">    density</span>
+<span class="sd">           hop.sitemap.Density object</span>
+
+<span class="sd">    :Returns:  tgraph, a :class:`hop.graph.TransportNetwork` object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tgraph</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">TransportNetwork</span><span class="p">(</span><span class="n">hoppingtrajectory</span><span class="p">,</span><span class="n">density</span><span class="p">)</span>
+    <span class="n">tgraph</span><span class="o">.</span><span class="n">compute_residency_times</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">tgraph</span>
+</div>
+<div class="viewcode-block" id="build_hoppinggraph_fromfiles"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.build_hoppinggraph_fromfiles">[docs]</a><span class="k">def</span> <span class="nf">build_hoppinggraph_fromfiles</span><span class="p">(</span><span class="n">hoppingtrajectory_filename</span><span class="p">,</span><span class="n">density_filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the TransportNetwork including HoppingGraph from files.</span>
+
+<span class="sd">    tn = build_hoppinggraph_fromfiles(&#39;hoptraj&#39;,&#39;water_density&#39;)</span>
+
+<span class="sd">    Input:</span>
+<span class="sd">    hoppingtrajectory_filename   filename for HoppingTrajectory psf and dcd</span>
+<span class="sd">    density_filename             filename for pickled Density</span>
+
+<span class="sd">    Output:</span>
+<span class="sd">    tn                           hop.graph.TransportNetwork object (qv)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hoppingtrajectory</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">HoppingTrajectory</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">hoppingtrajectory_filename</span><span class="p">)</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">density_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">build_hoppinggraph</span><span class="p">(</span><span class="n">hoppingtrajectory</span><span class="p">,</span><span class="n">density</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="hopgraph_basic_analysis"><a class="viewcode-back" href="../../hop/interactive.html#hop.interactive.hopgraph_basic_analysis">[docs]</a><span class="k">def</span> <span class="nf">hopgraph_basic_analysis</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Do some simple analysis tasks on the hopgraph.</span>
+
+<span class="sd">    hopgraph_basic_analysis(h, density, filename)</span>
+
+<span class="sd">    :Arguments:</span>
+<span class="sd">       h</span>
+<span class="sd">          hopgraph, a :class:`hop.graph.HoppingGraph`</span>
+<span class="sd">       density</span>
+<span class="sd">          density, a :class:`hop.sitemap.Density`</span>
+<span class="sd">       filename</span>
+<span class="sd">          default filename for generated files; all files and new</span>
+<span class="sd">          directories are written in the directory pointed to by the</span>
+<span class="sd">          path component</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">analysisdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Setting analysisdir = </span><span class="si">%(analysisdir)r</span><span class="s">&quot;</span><span class="p">,</span> <span class="nb">vars</span><span class="p">())</span>
+
+    <span class="n">ratesfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">analysisdir</span><span class="p">,</span> <span class="s">&#39;rates.txt&#39;</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">show_rates</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">ratesfile</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Wrote all rates to </span><span class="si">%(ratesfile)r</span><span class="s">.&quot;</span><span class="p">,</span> <span class="nb">vars</span><span class="p">())</span>
+
+    <span class="n">h</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;outliers&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span> <span class="s">&#39;bulk&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">})</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;XGMML&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Exported hopgraph as </span><span class="si">%(filename)s</span><span class="s">.xgmml&quot;</span><span class="p">,</span> <span class="nb">vars</span><span class="p">())</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Generating 3D graph </span><span class="si">%(filename)s</span><span class="s">.psf/pdb&quot;</span><span class="p">,</span> <span class="nb">vars</span><span class="p">())</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Note: bulk site omitted for clarity.&quot;</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">export3D</span><span class="p">(</span><span class="n">density</span><span class="p">)</span>
+
+    <span class="n">survival_time_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">analysisdir</span><span class="p">,</span> <span class="s">&#39;survival_times&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Generating survival times plots in </span><span class="si">%(survival_time_dir)r</span><span class="s">&quot;</span><span class="p">,</span> <span class="nb">vars</span><span class="p">())</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;This takes a while. Note: transitions to/from bulk are excluded, Nmin=5.&quot;</span><span class="p">)</span>
+
+    <span class="n">h</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;outliers&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span> <span class="s">&#39;bulk&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span> <span class="s">&#39;Nmin&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">})</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">plot_fits</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">survival_time_dir</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
