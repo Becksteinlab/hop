@@ -15,11 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Based on a definition of grid sites, convert a molecular
-dynamics trajectory into a trajectory of site hops.
+"""
+Generating the hopping trajectory --- :mod:`hop.trajectory`
+===========================================================
 
-You will also need the following modules to create the input for HoppingTraj:
-hop.sitemap, MDAnalysis
+Based on a definition of grid sites, convert a molecular dynamics
+trajectory into a trajectory of site hops.
+
+You will also need the following modules to create the input for
+:class:`HoppingTraj`: :mod:`hop.sitemap`.
+
+Classes
+-------
+
 """
 import numpy
 import MDAnalysis

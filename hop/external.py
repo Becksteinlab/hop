@@ -15,11 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__doc__ = """Generate densities with the help of external applications.
+"""
+Generate densities with the help of external applications
+=========================================================
 
-Currently, only VMD is implemented via vmd.control. We launch VMD in
+Currently, only VMD_ is implemented via :func:`vmd.control`. We launch VMD in
 text mode and start a simple server, then send commands to the server
 to run the volmap plugin, and finally pick up the dx file.
+
+.. warning:: Module might be broken.
+
 """
 
 import os,os.path, errno
@@ -29,7 +34,7 @@ class VMD:
     """Launch VMD in text mode and start a simple server, then send
     commands to the server to run the volmap plugin, and finally pick up
     the dx file."""
-    
+
     def __init__(self,**kwargs):
         """Start the VMD server process."""
         self.server = vmd.control.server(**kwargs)  # start server
@@ -39,10 +44,10 @@ class VMD:
                atomselection='name OH2', **sel_args):
         """Calculate the water density around the protein with VMD's VolMap.
 
-        volmap(psf,dcd,dx,delta=1.0,atomselection=<VMD atomselect>,**kwargs)        
+        volmap(psf,dcd,dx,delta=1.0,atomselection=<VMD atomselect>,**kwargs)
 
         Arguments:
-        
+
         psf       psf topology file
         dcd       trajectory that is RMS-fitted on the protein
         dx        output file for the density (OpenDX format), in A^-3.
@@ -61,7 +66,7 @@ class VMD:
            atomselect top {name OH2}
 
         The VolMap checkpoint:*.dx file is automatically removed.
-        
+
         Examples:
 
         * Bulk water density (exclude water near protein)
@@ -72,7 +77,7 @@ class VMD:
 
         # build selection string
         atomselectionstring = atomselection % sel_args
-        
+
         # must convert paths to absolute paths as we don't know where the
         # server's cwd is
         psf,dcd,dx = map(os.path.abspath, [psf,dcd,dx])
@@ -96,7 +101,7 @@ class VMD:
         except os.error,e:
             if e.errno != errno.ENOENT:
                 raise
-        
+
         return c.results()
-        
+
 

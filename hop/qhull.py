@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-qhull
-=====
+Using qhull to define regions for hopping analysis --- :mod:`hop.qhull`
+=======================================================================
 
 Interface to some functions of the `qhull`_ (or rather the `qconvex`_)
 program. `qhull`_ must be installed separately (see links).
@@ -62,9 +62,9 @@ mapped::
 (This maps out sites at the threshold level set in ``b``; change it
 with the :meth:`hop.sitemap.Density.map_sites` method if required.)
 
-Insert a bulk density::  
+Insert a bulk density::
   QD70.site_insert_bulk(b)
-  
+
 """
 
 from __future__ import with_statement
@@ -96,7 +96,7 @@ def points_from_selection(*args, **kwargs):
     u = asUniverse(*args, permissive=kwargs.pop('permissive', None))
     coordinates = u.selectAtoms(kwargs.pop('selection', "name CA")).coordinates()
     write_coordinates(kwargs.pop('filename', "points.dat"), coordinates, scale=kwargs.pop('scale',None))
-    
+
 def write_coordinates(filename, points, scale=None):
     """Write an array of points to a file suitable for qhull."""
 
@@ -105,7 +105,7 @@ def write_coordinates(filename, points, scale=None):
         center = points.mean(axis=0)
         points[:] = scale*points + (1-scale)*center  # scale*(points - center) + center
         print "Scaled coordinates by factor %(scale)g relative to center of geometry %(center)r" % vars()
-        
+
     with open(filename, 'w') as data:
         data.write('%d\n' % points.shape[1])  # dimension
         data.write('%d\n' % points.shape[0])  # number of points
@@ -113,7 +113,7 @@ def write_coordinates(filename, points, scale=None):
         for point in points:
             data.write(fmt % tuple(point))
     print "Wrote points to %(filename)r." % vars()
-    
+
 
 class ConvexHull(object):
     """The convex hull of a set of points.
@@ -129,7 +129,7 @@ class ConvexHull(object):
         :Arguments:
         - coordinates: input suitable for qconvex
         - workdir: store intermediate files in workdir (tmp dir by default)
-        - prefix: filename prefix for intermediate output files        
+        - prefix: filename prefix for intermediate output files
         """
         if workdir is None:
             self.workdir = tempfile.mkdtemp(prefix="tmp", suffix="_ConvexHull")
@@ -168,7 +168,7 @@ class ConvexHull(object):
         return os.path.join(self.workdir, *args)
 
     def qconvex(self, args):
-        with open(self.files['coordinates']) as coord: 
+        with open(self.files['coordinates']) as coord:
             # must use stdin, TI option cannot deal with dots in filenames, eg 'ca.dat'
             Q = Popen(['qconvex']+args, stdin=coord)
             rc = Q.wait()
@@ -210,7 +210,7 @@ class ConvexHull(object):
         if len(a) != npoints:
             raise IOError("Wrong number of datapoints %d, should be %d" % (len(a), npoints))
         return numpy.array(a)
-        
+
 
     def point_inside(self, point):
         """Check if point [x,y,z] is inside the polyhedron defined by planes.
@@ -220,7 +220,7 @@ class ConvexHull(object):
         (i.e. [x,y,z] is under *all* planes and the planes completely define the enclosed space
         """
         # crappy implementation, I am sure one can do this better with broadcasts
-        # or a better algorithm, eg 
+        # or a better algorithm, eg
         # http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
         # 1. shoot semi-inifinite ray. 2. count how many faces F it crosses
         # crosses iff (1) P under plane of F (2) projection of P on plane is inside F (2D problem)
@@ -259,7 +259,7 @@ class ConvexHull(object):
         """
 
         from hop.sitemap import Density
-        
+
         if fillvalue is None:
             fillvalue = 2*density.P['threshold']
 
@@ -267,7 +267,7 @@ class ConvexHull(object):
         # This is S-L-O-W because density.centers is slow (but at least a iterator using ndindex)
         # Reshaping relies on the centers being in correct order (provided by numpy.ndindex())
         mask = self.points_inside(density.centers()).reshape(density.grid.shape)
-        
+
         grid = numpy.zeros_like(density.grid)
         grid[mask] = fillvalue        # fill the inside with high density
         parameters = density.P.copy()
@@ -319,7 +319,7 @@ class VertexPDBWriter(object):
     def TITLE(self,*title):
         """Write TITLE record.
         http://www.wwpdb.org/documentation/format32/sect2.html
-        """        
+        """
         line = " ".join(title)    # should do continuation automatically
         self.pdb.write(self.fmt['TITLE'] % line)
 
@@ -334,7 +334,7 @@ class VertexPDBWriter(object):
     def ATOM(self,serial=None,name=None,altLoc=None,resName=None,chainID=None,
              resSeq=None,iCode=None,x=None,y=None,z=None,occupancy=1.0,tempFactor=0.0,
              element=None,charge=0):
-        """Write ATOM record. 
+        """Write ATOM record.
         http://www.wwpdb.org/documentation/format32/sect9.html
         Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.
 
@@ -363,7 +363,7 @@ class VertexPDBWriter(object):
         iCode = iCode[:1]
         element = element or name.strip()[0]  # could have a proper dict here...
         element = element[:2]
-        self.pdb.write(self.fmt['ATOM'] % vars())        
+        self.pdb.write(self.fmt['ATOM'] % vars())
 
     def __del__(self):
         self.close()

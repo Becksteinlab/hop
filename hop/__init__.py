@@ -30,8 +30,8 @@ sites are the nodes (or vertices) and movements between sites are the
 edges.
 
 Please see the python doc strings and the documentation in the doc/
-directory. The hop.interactive module contains convenience wrapper
-functions primarily for interactive use in ``ipython`` but it also has
+directory. The :mod:`hop.interactive` module contains convenience wrapper
+functions primarily for interactive use in :program:`ipython` but it also has
 extensive documentation and the functions act as examples for how to
 use the module.
 
@@ -55,7 +55,7 @@ class InconsistentDataWarning(Warning):
     """Warns that some input may not be consistent; in some cases it may
     actually be reasonable to supply such input and thus it does not raise an
     exception.
-    
+
     If an exception is desired, use a warning filter, see
     http://docs.python.org/lib/warning-filter.html :
 

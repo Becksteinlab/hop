@@ -15,9 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Random mix of convenience functions that don't fit anywhere
-else. For messages I should probably use python's logger module but
-this is working so far (even though it's pretty crappy)."""
+"""
+Utility functions --- :mod:`hop.utilities`
+==========================================
+
+Random mix of convenience functions that don't fit anywhere else.
+
+For messages I should probably use python's logger module but this is
+working so far (even though it's pretty crappy).
+
+"""
 
 import sys
 import os, errno

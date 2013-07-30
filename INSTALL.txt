@@ -17,31 +17,38 @@ how to improve the package or these instructions.
 Quick instructions
 ==================
 
-If you are familiar with ``easy_install`` from ``setuptools`` then try
+If you are familiar with `pip`_ or `easy_install`_ from setuptools_ then try ::
+
+  pip install Hop-0.3.3.tar.gz
+
+or ::
 
   easy_install Hop-0.3.3.tar.gz
 
-or 
+or ::
 
   cd Hop-0.3.3
   python setup.py install
 
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
 
+.. _pip: http://www.pip-installer.org/en/latest/
+.. _`easy_install`: http://pythonhosted.org/setuptools/easy_install.html
+.. _setuptools: http://pythonhosted.org/setuptools/
 
 Requirements
 ============
 
-If Hop is installed with ``easy_install`` then some dependencies are
-handled automatically; if not you will have to install packages
-manually. This is always true for ``MDAnalysis`` at the
-moment. 
+If Hop is installed with `pip`_ or `easy_install`_ then some
+dependencies are handled automatically; if not you will have to
+install packages manually. This is always true for ``MDAnalysis`` at
+the moment.
 
 The ``GridDataFormats`` package can be obtained from my home page (see
 below) but in most cases the installation should be able to
 automatically download and install it.
 
-Installing ``matplotlib`` (if plotting is desired) tends to be less
+Installing :mod:`matplotlib` (if plotting is desired) tends to be less
 painful if it is done in advance, especially through your system's
 package manager.
 
@@ -52,49 +59,59 @@ System requirements
 Tested with python 2.5, 2.6 (2.3 will not work anymore) on Linux and Mac OS X.
 
 
-Required python modules
------------------------
+Required python packages
+------------------------
 
-::
+.. Table:: Required packages for Hop.
+
+   =============== ===================== ============================================================
+   package         version               url
+   =============== ===================== ============================================================
    MDAnalysis      >= 0.7.5              http://mdanalysis.googlecode.com
    numpy           >=1.0.3               http://numpy.scipy.org/
    NetworkX        >=1.0                 https://networkx.lanl.gov/
    GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
+   =============== ===================== ============================================================
 
-``MDAnalysis`` requires additional modules; see the instructions at
+MDAnalysis_ requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
+http://mdanalysis.googlecode.com/files/ or install it with ::
 
-  http://mdanalysis.googlecode.com/files/
+  pip install MDAnalysis
 
-or install it with ::
-
-  easy_install MDAnalysis
-
-Note that installation of ``MDAnalysis`` can take a while because it
+Note that installation of MDAnalysis_ can take a while because it
 requires a python environment that is fully set up for scientific
 computing. The good news is that once this is done then Hop should be
 easy.
 
+.. _MDAnalysis:: http://mdanalysis.googlecode.com
 
 
-Optional modules
-----------------
+Optional packages
+-----------------
 
-(reduced functionality if not present)::
+The following packages should be installed to make best use of
+Hop, especially for visualization.
 
-   pygraphviz                          https://networkx.lanl.gov/pygraphviz/
-   matplotlib       >=0.91.3           http://matplotlib.sourceforge.net/ 
-   rpy (and R)                         http://rpy.sourceforge.net/
-   biopython                           http://www.biopython.org
+.. Table:: Optional packages for Hop.
+
+   =============== ===================== ============================================================
+   package         version               url
+   =============== ===================== ============================================================
+   pygraphviz                            https://networkx.lanl.gov/pygraphviz/
+   matplotlib       >=0.91.3             http://matplotlib.sourceforge.net/ 
+   rpy (and R)                           http://rpy.sourceforge.net/
+   biopython                             http://www.biopython.org
+   =============== ===================== ============================================================
 
 When these modules are missing the code will raise an :exc:`ImportError` when
 attempting to use them; their absence is not always handled gracefuly
-and it is suggested to install at least ``matplotlib`` (pylab). 
+and it is suggested to install at least :mod:`matplotlib` (pylab). 
 
-``R`` and ``rpy`` are only used for an experimental heatmap analysis
+:program:`R` and :mod:`rpy` are only used for an experimental heatmap analysis
 and can be safely ignored.
 
-``pygraphviz`` also requires ``graphviz``; see its own installation
+:mod:`pygraphviz` also requires :program:`graphviz`; see its own installation
 instructions.
 
 
@@ -140,7 +157,7 @@ The Hop package can be installed with 'EasyInstall' which is part of
 ``setuptools`` (http://peak.telecommunity.com/DevCenter/setuptools).
 
 If you have setuptools already installed you should be able to simply
-install with
+install with ::
 
    easy_install Hop-0.3.3.tar.gz
 
@@ -203,9 +220,10 @@ Visualization
 -------------
 
 VMD
-  In order to visualize densities and water networks one can use VMD_
-  <http://www.ks.uiuc.edu/Research/vmd/>, which reads natively psf and
-  pdb files together with densities in OpenDX format.
+
+  In order to visualize densities and water networks one can use `VMD
+  <http://www.ks.uiuc.edu/Research/vmd/>`_, which reads natively psf
+  and pdb files together with densities in OpenDX format.
 
 
 Network analysis and layout
@@ -218,7 +236,7 @@ graphviz
   files.
 
 Cytoscape
-  `Cytoscape_ <http://www.cytoscape.org/>`_ is a very powerful network
+  `Cytoscape <http://www.cytoscape.org/>`_ is a very powerful network
   visualization platform; it reads *xgmml* files exported from Hop.
 
     

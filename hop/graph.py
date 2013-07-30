@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-:mod:`hop.graph` module
-=======================
+Generating and analyzing a hopping graph --- :mod:`hop.graph`
+=============================================================
 
 Interprete the high density sites as graph ('transport graph'), with
 the sites as vertices and transitions (sampled by the simulation) as
@@ -37,6 +37,9 @@ Typical use of the module::
 
 The basic object is the :class:`hop.graph.HoppingGraph`; see its
 documentation for further analysis methods.
+
+Classes and functions
+---------------------
 """
 
 import hop.constants, hop.trajectory

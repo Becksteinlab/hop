@@ -15,6 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Advanced analysis of site properties --- :mod:`hop.siteanalysis`
+================================================================
+
+The module provides a framework on which to build analysis tasks on a
+per-site basis.
+
+.. warning:: Experimental code.
+
+"""
+
 import numpy
 import hop
 import hop.utilities
@@ -27,11 +38,11 @@ import warnings
 #from IPython.Debugger import Tracer; debug_here = Tracer()
 
 class SiteArray(hop.utilities.Saveable):
-    """Base class to implement containers that hold observables from a trajectory. 
+    """Base class to implement containers that hold observables from a trajectory.
 
     The base class is not useful on its own and must be derived from.
 
-    :API: 
+    :API:
 
     Subclasses should define at least the following so that the plot functions work:
 
@@ -54,8 +65,8 @@ class SiteArray(hop.utilities.Saveable):
     _saved_attributes = 'all'
     default_plotproperties = {'xlabel':"x", 'ylabel':None,
                               'title': "Site-resolved distributions",
-                              'legend_fontsize':6, 
-                              'xticks_indexed':False, 
+                              'legend_fontsize':6,
+                              'xticks_indexed':False,
                               'im_yticks_site':True, 'im_yticks_fontsize':6 # imshow
                               }  # can be changed by subclasses and properties argument
     fixed_plotproperties = {}    # cannot be changed by subclasses
@@ -77,7 +88,7 @@ class SiteArray(hop.utilities.Saveable):
         # we add one additional data row = Nsites into which all data are dumped
         # that are not selected; this allows for more efficient, vectorized array access;
         # see longer comment in SiteHistogramArray.__init__().
-        site2indx = Nsites * numpy.ones(self.maxsites+1, dtype=int)  # initialize to Nsites      
+        site2indx = Nsites * numpy.ones(self.maxsites+1, dtype=int)  # initialize to Nsites
         site2indx[self.sites] = numpy.arange(Nsites)            # set selected sites
         self.site2indx = site2indx    # maps site label to its array row (=indx)
         self.indx2site = self.sites   # <-- without uncollected site array aindx=Nsites
@@ -106,7 +117,7 @@ class SiteArray(hop.utilities.Saveable):
     def plot(self,filename=None,sites=None,normalize=True,format='pdf',with_legend=True,
              use_midpoints=True,step=None,**kwargs):
         """Plot the distribution(s) or histogram(s) for sites.
-        
+
         :Arguments:
         filename      write to file filename; suffix determines type
         sites         site label or list of site labels; if None then all
@@ -148,9 +159,9 @@ class SiteArray(hop.utilities.Saveable):
         step = self.autoset_step(step)
         data = data[:,::step]
 
-        if sites is None: 
-            sites = self.sites            
-        elif not iterable(sites): 
+        if sites is None:
+            sites = self.sites
+        elif not iterable(sites):
             sites = [sites]
         pylab.clf()
         if use_midpoints:
@@ -178,7 +189,7 @@ class SiteArray(hop.utilities.Saveable):
 
     def imshow(self,filename=None,sites=None,normalize=True,format='pdf',step=None,**kwargs):
         """Plot the distribution(s) or histogram(s) for sites as color grid.
-        
+
         :Arguments:
         filename      write to file filename; suffix determines type
         sites         site label or list of site labels; if None then all
@@ -218,9 +229,9 @@ class SiteArray(hop.utilities.Saveable):
         data = data[:,::step]
 
         # sites list: note that sites[row] is the proper label of this row in the image
-        if sites is None: 
+        if sites is None:
             sites = self.sites
-        elif not iterable(sites): 
+        elif not iterable(sites):
             sites = numpy.array([sites])
         else:
             sites = numpy.asarray(sites)
@@ -236,7 +247,7 @@ class SiteArray(hop.utilities.Saveable):
             missing_sites = [s for s in sites if s not in self.sites]
             raise ValueError("No data for sites "+str(missing_sites)+
                              " (probably they need to be included in SiteAnalysis(sites=...) first.")
-        ax = img.get_axes()        
+        ax = img.get_axes()
         if self.properties['xticks_indexed']:
             xintegerLocator = pylab.matplotlib.ticker.IndexLocator(base=1,offset=-0.5*xdelta)
             ax.xaxis.set_major_locator(xintegerLocator)
@@ -290,7 +301,7 @@ class SiteTrajectoryArray(SiteArray):
     """
 
     fixed_plotproperties = {'xlabel':r"time $t$/ps",
-                            'xticks_indexed':False, 
+                            'xticks_indexed':False,
                             }
     _excluded_attributes = ['_next_frame_number']   # hack for Saveable
 
@@ -339,7 +350,7 @@ class SiteTrajectoryArray(SiteArray):
         site_data     numpy array; axis=0 indexes the sites
                       For scalars, site_data.shape == (N,), with N == len(sites)
                       For vectors, site_data.shape == (N,3).
-        sites         numpy array of the site labels that correspond to the slices 
+        sites         numpy array of the site labels that correspond to the slices
                       along axis=0 in site_data
         """
         assert len(sites) == len(site_data), "incompatible sites and site_data"
@@ -348,7 +359,7 @@ class SiteTrajectoryArray(SiteArray):
             self._data[self.site2indx[sites],self._next_frame_number()] = site_data
         except StopIteration:
             raise RuntimeError("Trying to read more frames than specified in numframes=%d. "
-                               "You need to 'reset()' the observable '%s'." 
+                               "You need to 'reset()' the observable '%s'."
                                % (self.numframes,self.name))
         #debug_here()
 
@@ -449,12 +460,12 @@ class SiteHistogramArray(SiteArray):
     distribution   normalized histogram, created with normalize()
     normalization  total number of counts for the sites
     edges          bin edges
-    midpoints      bin centers 
+    midpoints      bin centers
     delta          bin sizes
     site2indx      mapping of site label to an index used in all the arrays
     sites          mapping of index to site label
     """
-        
+
     def __init__(self,name,sites,maxsites,parameters,properties=None,**kwargs):
         """Initialize the SiteHistogramArray.
 
@@ -486,7 +497,7 @@ class SiteHistogramArray(SiteArray):
         # into the 'overflow' histogram idx=Nsites); unfortunatley, because the
         # site label is used as the index into the array, we need to make the
         # array big enough to encompass ALL site labels that could come up in
-        # the trajectory (maxsites). This small memory waste allows us to do fast 
+        # the trajectory (maxsites). This small memory waste allows us to do fast
         # lookup calculations on whole numpy arrays instead of using slow loops on dicts.
 
         # All Nsites histograms have the same bins; have to add an extra edge
@@ -521,13 +532,13 @@ class SiteHistogramArray(SiteArray):
         site_data     numpy array; axis=0 indexes the sites
                       For scalars, site_data.shape == (N,), with N == len(sites)
                       For vectors, site_data.shape == (N,3).
-        sites         numpy array of the site labels that correspond to the slices 
+        sites         numpy array of the site labels that correspond to the slices
                       along axis=0 in site_data
         """
         # For each site in sites, add +1 to the bin corresponding to site_data[site].
         # sites and site_data must have the same shape, i.e. (len(sites),)
         self._histogram[self.site2indx[sites], self.digitize(site_data)] += 1
-    
+
     def normalize(self):
         """Calculate normalization (including outliers) and distribution."""
         self.normalization = numpy.sum(self._histogram[:-1],axis=1) # includes outliers
@@ -541,7 +552,7 @@ class SiteHistogramArray(SiteArray):
         def fset(self,x):
             self._histogram[:-1,1:-1] = x
         return locals()
-    histogram = property(**histogram())        
+    histogram = property(**histogram())
 
     def site_histogram(self,sites):
         """Returns numpy array with N sites on axis 0 and Nbin bins on axis 1; indexed by the site label"""
@@ -566,7 +577,7 @@ class SiteHistogramArray(SiteArray):
         EX = self.mean()
         EXX = numpy.sum(self.distribution * self.bins**2, axis=1)
         return numpy.sqrt(EXX - EX*EX)
-        
+
 
 class SiteAnalysisObservable(object):
     """Base class to implement 'plugin' analysis for site-based trajectory analysis.
@@ -581,7 +592,7 @@ class SiteAnalysisObservable(object):
     collection            hop.siteanalysis.Collection to which the observable belongs
                           (uses many attributes for setup)
     histogram_parameters  defines bins and range of histograms
-    trajectory            True: also collect time series of the observable, resolved 
+    trajectory            True: also collect time series of the observable, resolved
                                 by site i: observable_i(t)
                           False: only compute the histograms (default)
     **kwargs              additional data (subclasses pick what they need)
@@ -601,7 +612,7 @@ class SiteAnalysisObservable(object):
     sites        selection of site labels; only on these sites histograms are built
     max_site     the highest site label that occurs in the trajectory
     idcd2ihop    translation between dcd indices to hop indices
-                 sites[self.idcd2ihop[[2,3,5]] -> sites of dcd 2,3,5 
+                 sites[self.idcd2ihop[[2,3,5]] -> sites of dcd 2,3,5
     data_indices == MDAnalysis.selectAtoms(...).indices() (atom indices of selected atoms)
     data_ts      (pointer to) the data trajectory time step instance
     hop_ts       (pointer to) the hop trajectory time step instance
@@ -610,23 +621,23 @@ class SiteAnalysisObservable(object):
     histogram_parameters = {'Nbin': <number of bins in histogram>, 'lo_bin':<>, 'hi_bin':<>}
     plot_properties      = {'xlabel': <>, 'title': <>, ...}
     """
-    
+
     defaultbinwidth = 0.5    # set default bindwidth for each subclass
     name = None              # name used in ObservablesRegistry
-    
+
     def __init__(self,collection,histogram_parameters,plot_properties=None,trajectory=False,**kwargs):
         """Set up an observable (a class describing how a histogrammed site property is computed).
 
         o = SiteAnalysisObservable(collection,histogram_parameters,plot_properties)
 
         :Arguments:
-        collection            hop.siteanalysis.Collection instance            
-        histogram_parameters  {'Nbin': <number of bins in histogram>, 'lo_bin':<float>, 
+        collection            hop.siteanalysis.Collection instance
+        histogram_parameters  {'Nbin': <number of bins in histogram>, 'lo_bin':<float>,
                                'hi_bin':<float>}
         trajectory            False: do not set up SiteTrajectoryArray (i.e. do not store the
                               whole site trajectory) or True (allocate enough space to hold
                               the _whole_ trajectory!)
-        plot_properties       {'xlabel': <string>, 'title': <string>, ...}        
+        plot_properties       {'xlabel': <string>, 'title': <string>, ...}
         """
         super(SiteAnalysisObservable,self).__init__()  # necessary for classes with super()
         self.collection = collection
@@ -680,7 +691,7 @@ class SiteAnalysisObservable(object):
         """Override this method. It must silently ignore any keyword args that it does not use."""
         raise NotImplementedError("Internal Error: The build_trajectorie() method of class %r was not implemented." %
                                   self.__class__)
-    
+
     def reset(self):
         """Clear all computed data."""
         self.reset_histograms()
@@ -696,7 +707,7 @@ class SiteAnalysisObservable(object):
 
     # utility methods:
     # Try to avoid reallocating numpy arrays: use assignments to buffer arrays
-    # self._NAME (which are allocated in 'try: ... except AttributeError: ...' constructs) 
+    # self._NAME (which are allocated in 'try: ... except AttributeError: ...' constructs)
 
     def _get_sites(self,hop_pos):
         """Make selected site labels of the time step available in self._sites[]. They
@@ -740,7 +751,7 @@ class Distance(SiteAnalysisObservable):
 
         pos          sites from the hopping trajectory
 
-        Uses self.site_centers centers of all sites (i.e. site_properties.center)) 
+        Uses self.site_centers centers of all sites (i.e. site_properties.center))
         which must be initialized with _init_site_centers(density).
         """
         # allocate arrays when needed (but only once so that we can use fast assignment)
@@ -761,7 +772,7 @@ class Distance(SiteAnalysisObservable):
         self.histograms.add(self._dist,self._sites)           # accumulate in histograms for each site
 
     def _init_site_centers(self,density):
-        # site centers: reformat array: 
+        # site centers: reformat array:
         # (1) 2D array, (2) [NaN,NaN,NaN] instead of None
         site_centers = density.site_properties.center.copy()
         site_centers[SITELABEL['interstitial']] = numpy.array(3*[numpy.NaN])
@@ -772,7 +783,7 @@ class Orbit(Distance):
 
     o = Orbit(Collection,histogram_parameters,site_centers=site_centers)
 
-    (A particle orbits a site if it has been on the site at a previous time step but has 
+    (A particle orbits a site if it has been on the site at a previous time step but has
     not entered another site since.)
     """
 
@@ -822,7 +833,7 @@ class Occupancy(SiteAnalysisObservable):
     def _compute_occupancy(self,hop_pos,**kwargs):
         self._get_sites(hop_pos)   # --> self._sites
         # X(s) where s: selected site, X: number of particles on site
-        self._histo[:] = self._occupancy_histogram(self._sites)        
+        self._histo[:] = self._occupancy_histogram(self._sites)
         self.histograms.add(self._histo, self.histogrammed_sites)    # accumulate in histograms for each site
 
     def build_histograms(self,**kwargs):
@@ -844,11 +855,11 @@ class OrbitOccupancy(Occupancy):
 
     def build_histograms(self,**kwargs):
         self._compute_occupancy(self.hop_ts._y)  # x: occ, y: orbit_occup
-    
+
 
 # dict of SiteAnalysisObservable classes
-ObservablesRegistry = {'distance':Distance, 
-                       'orbit':Orbit, 
+ObservablesRegistry = {'distance':Distance,
+                       'orbit':Orbit,
                        'occupancy':Occupancy,
                        'orbitoccupancy':OrbitOccupancy,
                        }
@@ -906,7 +917,7 @@ class Collection(hop.utilities.Saveable):
                  include_sites='default',exclude_sites=['default','bulk'],
                  filename=None, verbosity=None):
         """Set up analysis on a per-site basis.
-        
+
         C = Collection(selection=universe.selectAtoms('name OH2'),
                   hoptraj=HoppingTrajectory(filename='hoptraj'),
                   density=Density(filename='water.pickle'),
@@ -917,7 +928,7 @@ class Collection(hop.utilities.Saveable):
         selection          MDAnalysis.selectAtoms selection (from psf+dcd)
         hoptraj            hop.trajectory.HoppingTrajectory instance (from psf+dcd)
         density            hop.sitemap.Density instance with a sitemap defined
-        include_sites      any valid argument to 
+        include_sites      any valid argument to
         exclude_sites      Density.site_labels(include=include_sites,exclude=exclude_sites)
                            The default accumulates data for all the sites in the trajectory
                            except for the bulk site.
@@ -942,7 +953,7 @@ class Collection(hop.utilities.Saveable):
             self.site_labels_cache = {'all_sites': density.site_labels('default'),
                                       'subsites': density.site_labels('subsites'),
                                       }
-            # indices in ts._pos of the selected atoms (used for 'ts._pos[data_indices]' which is 
+            # indices in ts._pos of the selected atoms (used for 'ts._pos[data_indices]' which is
             # slightly faster than 'self.selection.coordinates()' because it avoids a copy)
             self.data_indices = self.selection.indices()  # needed for Observables compute()
             self.SiteHistograms = {} #IntrospectiveDict()     # will hold the results after compute()
@@ -1023,7 +1034,7 @@ class Collection(hop.utilities.Saveable):
         """Reset observable histograms to initial empty values; None means 'all'."""
         msg(5,'Resetting all observables so that we can accumulate new data.\n')
         for o in self._observables(names):
-            o.reset()            
+            o.reset()
 
     def _observables(self,names=None):
         try:
@@ -1046,7 +1057,7 @@ class Collection(hop.utilities.Saveable):
         stop          1...numframes
         step          1
         progress_interval   10 (print progress every <interval> steps)
-          
+
         :Attributes:
         The method populates the dict SiteHistograms with the results.
 
@@ -1088,10 +1099,10 @@ class Collection(hop.utilities.Saveable):
         for o in _observables:
             o.histograms.normalize()
         # only keep SiteHistogramArrays and SiteTrajectoryArrays
-        self.SiteHistograms.update(dict([(o.name,o.histograms) for o in _observables]))        
-        self.SiteTrajectories.update(dict([(o.name,o.trajectories) for o in _observables 
+        self.SiteHistograms.update(dict([(o.name,o.histograms) for o in _observables]))
+        self.SiteTrajectories.update(dict([(o.name,o.trajectories) for o in _observables
                                            if o.has_trajectories]))
-                                    
+
 
     def plot(self,observable, *args,**kwargs):
         """Plot all histograms or trajectories (or a selection of sites).
@@ -1141,7 +1152,7 @@ class Collection(hop.utilities.Saveable):
         except:
             try:  filename = kwargs['filename']
             except: # no filename in argument list: use our default
-                kwargs['filename'] = self.filename()        
+                kwargs['filename'] = self.filename()
 
         plotfunctions[methodname](*args,**kwargs)
 
@@ -1208,7 +1219,7 @@ class test:
         print "plot results: T.A.plot(T.A.sites)"
         print "ATTENTION: is the density really correct? Should be 'remapped' for holo"\
             " density name = %(density)s" % locals()
-        
+
         # self.A.compute()
         # self.A.plot(self.A.sites)
 

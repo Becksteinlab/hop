@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-:mod:`hop.density` --- Generating densities from trajectories
+Generating densities from trajectories --- :mod:`hop.density`
 =============================================================
 
 As an input a trajectory is required that
@@ -27,6 +27,8 @@ As an input a trajectory is required that
    solute (this is important when using funky unit cells such as
    dodechedra or truncated octahedra).
 
+Classes and functions
+---------------------
 """
 import MDAnalysis
 import hop

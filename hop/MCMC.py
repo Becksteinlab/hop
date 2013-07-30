@@ -15,19 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Markov Chain Monte Carlo on hopping graph.
+"""
+Markov Chain Monte Carlo on hopping graph --- :mod:`hop.MCMC`
+=============================================================
 
-The hop.MCMC module uses the information encoded in a hopping graph to set up a
-Markov Chain Monte Carlo sampling procedure that allows one to rapidly generate
-site occupancy distributions that are distributed in the same way as the one
-sampled from MD.
+The :mod:`hop.MCMC` module uses the information encoded in a hopping
+graph to set up a Markov Chain Monte Carlo sampling procedure that
+allows one to rapidly generate site occupancy distributions that are
+distributed in the same way as the one sampled from MD.
 
-The most convenient entry point is the  function
+The most convenient entry point is the :func:`hop.MCMC.run`  function ::
 
   M = MCMC.run(filename='hopgraph.pickle',Ntotal=<int>)
 
-It takes as input a stored hopgraph and immediately runs an MCMC run of Ntotal
-steps. The output is a MCMCsampler object. It contains the 'trajectory' and
+It takes as input a stored hopgraph and immediately runs an MCMC run of *Ntotal*
+steps. The output is a :class:`MCMCsampler` object. It contains the 'trajectory' and
 useful analysis functions. (Use interactive introspection in ipython to explore
 the possibilities of the object.)
 
@@ -46,6 +48,8 @@ Notes on the algorithm:
 * I am currently using time-forward (out-of) and time-backward (into)
   site moves (the latter inspired by coupling from the past).
 
+Classes and functions
+---------------------
 
 """
 
@@ -74,7 +78,7 @@ class MCMCsampler(hop.utilities.Saveable):
             # standard init: setup everything from hopgraph
             import copy
             # 1) compute transition probabilities between all nodes.
-            #    represent T_ji (j-->i) as a sparse matrix in dict of dict format        
+            #    represent T_ji (j-->i) as a sparse matrix in dict of dict format
             h.filter(exclude={'Nmin':min_hops_observed})
             self.graph = h.select_graph(use_filtered_graph=True)
             self.site_properties = h.site_properties
@@ -82,10 +86,10 @@ class MCMCsampler(hop.utilities.Saveable):
             Nsites = numpy.max(self.graph.nodes())+1
             self.T = numpy.zeros((Nsites,Nsites))   # exit probabilities  T[j,i] = P(i -> j|i)
             self.R = numpy.zeros((Nsites,Nsites))   # entry probabilities R[i,j] = P(j -> i|i?) (?)
-            # may look into sparse matrices... 
+            # may look into sparse matrices...
 
             # fast lookup of neighbours
-            self.out_neighbors = dict( [ (i,numpy.sort([e[1] for e in self.graph.out_edges(i)])) 
+            self.out_neighbors = dict( [ (i,numpy.sort([e[1] for e in self.graph.out_edges(i)]))
                                          for i in self.graph.nodes()] )
             self.in_neighbors  = dict( [ (i,numpy.sort([e[0] for e in self.graph.in_edges(i)]))
                                          for i in self.graph.nodes()] )
@@ -113,9 +117,9 @@ class MCMCsampler(hop.utilities.Saveable):
             # cumulative prob. distrib. of exit nodes (could sort by decreasing
             # probability to optimize for more probable hits but then must sort
             # nodes as well)
-            self.exit_cdf = dict( [(i,numpy.cumsum(self.T[self.out_neighbors[i],i])) 
+            self.exit_cdf = dict( [(i,numpy.cumsum(self.T[self.out_neighbors[i],i]))
                                    for i in self.graph.nodes() if len(self.out_neighbors[i])>0 ] )
-            self.entry_cdf = dict( [(i,numpy.cumsum(self.R[i,self.in_neighbors[i]])) 
+            self.entry_cdf = dict( [(i,numpy.cumsum(self.R[i,self.in_neighbors[i]]))
                                    for i in self.graph.nodes() if len(self.in_neighbors[i])>0 ] )
 
             self.init_state()
@@ -133,7 +137,7 @@ class MCMCsampler(hop.utilities.Saveable):
             # p(i) = P(nu_i >= 1) = 1 - P(nu_i = 0)
             # For max nu_i = 1: p(i) = <nu_i>/max nu_i
             # For max nu_i > 1: worry about it later...
-            self.siteprobability = dict( [(i,self.site_properties.occupancy_avg[i]/self.maxstate[i]) 
+            self.siteprobability = dict( [(i,self.site_properties.occupancy_avg[i]/self.maxstate[i])
                                           for i in self.graph] )
             # Set bulk to a random value such as 1/2; it is not being used.
             self.siteprobability[SITELABEL['bulk']] = 0.5
@@ -153,7 +157,7 @@ class MCMCsampler(hop.utilities.Saveable):
         self.iteration = 0                               # number of iterations up to/incl states[-1]
 
     def sample(self,max_iter=10000,record_iterations=True):
-        """Run <max_iter> Monte Carlo site moves. 
+        """Run <max_iter> Monte Carlo site moves.
 
         sample(max_iter=10000)
 
@@ -206,7 +210,7 @@ class MCMCsampler(hop.utilities.Saveable):
             if self.state[i] >= self.maxstate[i]: # only transfer if there's space on node
                 return False
             jnodes = self.in_neighbors[i]       # all entry nodes
-            if len(jnodes) == 0:                 # isolated node  
+            if len(jnodes) == 0:                 # isolated node
                 return False
             x = numpy.random.uniform(0,1)        # random number for deciding exit channel
             j = jnodes[ x <= self.entry_cdf[i] ][0]  # j for which p(j-1) < x <= p(j) ('=' necessary to catch x==1)
@@ -220,7 +224,7 @@ class MCMCsampler(hop.utilities.Saveable):
             if self.state[i] == 0:
                 return False                     # no water to move
             jnodes = self.out_neighbors[i]      # all exit nodes
-            if len(jnodes) == 0:                 # isolated node  
+            if len(jnodes) == 0:                 # isolated node
                 return False
             x = numpy.random.uniform(0,1)        # random number for deciding exit channel
             j = jnodes[ x <= self.exit_cdf[i] ][0]  # first jnode for which x > prob ('=' necessary to catch x==1)
@@ -252,7 +256,7 @@ class MCMCsampler(hop.utilities.Saveable):
             return self.node2index[SITELABEL['bulk']]+1
         return locals()
     firstsiteindex = property(**firstsiteindex())
-    
+
     def statevector():
         doc =  """State as a numpy array; the corresponding nodes are state.keys()"""
         def fget(self):
@@ -307,7 +311,7 @@ class MCMCsampler(hop.utilities.Saveable):
         # pylab.clf()
         img = pylab.imshow(site_states[::plot_step].transpose(),
                            interpolation='nearest',cmap=pylab.cm.hot)
-        img.axes.set_aspect('auto')        
+        img.axes.set_aspect('auto')
         pylab.colorbar(ticks=range(maxsite+1),shrink=0.75)
 
         pylab.title('Number of water molecules per site')
@@ -368,7 +372,7 @@ class MCMCsampler(hop.utilities.Saveable):
         """Calculates the correlation coefficient between simulation and MCMC occupancy fluctuations."""
         corr = numpy.corrcoef(*self._occupancies_std())
         return corr[0,1]
-    
+
     def plot_correl(self,legend=True,**kwargs):
         """Plot the occupancy from the MD simulation vs the MCMC one."""
         import pylab
@@ -390,7 +394,7 @@ class MCMCsampler(hop.utilities.Saveable):
             pylab.legend(loc='best',numpoints=1,
                          prop=pylab.matplotlib.font_manager.FontProperties(size='smaller'))
         if not legend:
-            return (lines[0],labelstring)        
+            return (lines[0],labelstring)
         return None
 
     def _occupancies_mean(self):
@@ -461,7 +465,7 @@ class Pscan(object):
 
     def __init__(self,parameter,pvalues=None,filename='hopgraph.pickle',
                  Ntotal=1e6,**kwargs):
-        """Sample on hopping graph for different values of <parameter> = p. 
+        """Sample on hopping graph for different values of <parameter> = p.
 
         P = Pscan(parameter=<string>,pvalues=<sequence>,filename=<filename>,**kwargs)
 
@@ -471,7 +475,7 @@ class Pscan(object):
 
         kwargs: all other kwargs are directly passed on to MCMC.run().
         """
-        
+
         self.parameter = parameter
         self.pvalues = list(pvalues)
         self.Ntotal = Ntotal
@@ -489,8 +493,8 @@ class Pscan(object):
     def occupancy_mean_correl(self):
         """Returns X=pvalues, Y=occupancy_mean_correlations."""
         self.pvalues.sort()
-        return (numpy.array(self.pvalues), 
-                numpy.array([self.MCMCsamplers[v].occupancy_mean_correl() 
+        return (numpy.array(self.pvalues),
+                numpy.array([self.MCMCsamplers[v].occupancy_mean_correl()
                              for v in self.pvalues]))
 
     def plot_occupancy_mean_correl(self,linestyle='ko-',**kwargs):
@@ -531,7 +535,7 @@ class Pscan(object):
 
     def plot_occupancy(self,**kwargs):
         """Plot <n_i> (site occupancy from MCMC) for all parameter values.
-        
+
         (See _plotter())"""
         self._plotter('plot_occupancy',fmt='o',**kwargs)
 
@@ -563,7 +567,7 @@ class Pscan(object):
         else:
             p_dict = dict( [(p,n) for n,p in enumerate(self.pvalues)] )
 
-        _scalings = {'linear': lambda x:x, 
+        _scalings = {'linear': lambda x:x,
                      'log': lambda x:numpy.log(x)}
         try:
             scale = _scalings[colorscale]
@@ -610,7 +614,7 @@ class Pscan(object):
 class MultiPscan(hop.utilities.Saveable):
     """Run Pscan(**pscanargs) <repeat> times and collect all Pscan objects in list.
     """
-    
+
     _saved_attributes = 'all'
 
     def __init__(self,repeat=10,**pscanargs):
@@ -626,13 +630,13 @@ def multi_plot(plist,plottype='whisker',Nequil=Nequil_default,funcname='occupanc
     """Display a collection of functions.
 
     multi_plot(plist,plottype='whisker',Nequil=10000,funcname='occupancy_mean_correl',**kwargs)
-    
+
     The function is obtained from a method call on the objects in plist. The
     assumption is that these are functions of Ntotal (if not, set Nequil=0; Nequil is
     added to x). Each object is a different realization, e.g. multiple MCMC runs.
 
     plottype       'whisker' (whisker plot), 'standard' (average and standard deviations)
-    Nequil         correction, added to x    
+    Nequil         correction, added to x
     funcname       string; a method of the objects in plist that does EXACTLY the following:
                    x,y = obj.funcname()
                    where x and y are numpy arrays of equal length
@@ -670,14 +674,14 @@ def multi_plot(plist,plottype='whisker',Nequil=Nequil_default,funcname='occupanc
     ax = pylab.axes(frameon=False)
     if plottype == 'standard':
         lines = pylab.errorbar(x,ymean,yerr=yerr,fmt='o',linestyle='-',**kwargs)
-    
+
         for p in plist:
             px,py = xy_from(p)
             px += Nequil
             components = pylab.semilogx(px,py,'o',color=kwargs['color'],ms=3)
     elif plottype == 'whisker':
         # widths that look the same in a log plot
-        def logwidth(x,delta):            
+        def logwidth(x,delta):
             """Return linear widths at x that, logarithmically scaled, appear to be delta wide."""
             q = numpy.exp(delta)
             return x * (1 - q)/(1 + q)
@@ -698,7 +702,7 @@ def multi_plot(plist,plottype='whisker',Nequil=Nequil_default,funcname='occupanc
             l.set_color(kwargs['color'])
             l.set_linestyle('-')
         for l in components['caps']:
-            l.set_color(kwargs['color'])            
+            l.set_color(kwargs['color'])
         for l in components['medians']:
             l.set_color(kwargs['mediancolor'])
             l.set_linewidth(3.0)
@@ -710,5 +714,5 @@ def multi_plot(plist,plottype='whisker',Nequil=Nequil_default,funcname='occupanc
     pylab.xlabel('total MCMC steps')
     pylab.ylabel('correlation coefficient with MD')
     pylab.title('convergence of occupancy correlation with MD')
-    
+
     #return x,ymean,yerr

@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Interactive or high-level use of the hop trajectory package
-===========================================================
+Quickstart: using the hop package --- :mod:`hop.interactive`
+============================================================
 
 A typical session starts with a trajectory (which should have been
 RMS-fitted to a reference structure). Any topology and trajectory file
@@ -206,8 +206,7 @@ To compare the water network based on density with another hop graph
 >>> cg.plot(1,'cg_h_ref',linewidths=(0.01,))
 
 
-TODO
-====
+.. rubric:: TODO
 
 Currently un(der)-documented:
 * Remapping densities to a reference density (see hop.sitemap.remap_density).
@@ -215,6 +214,10 @@ Currently un(der)-documented:
   hop.sitemap.find_common_sites() and Density.find_equivalence_sites_with()).
 * Comparing hopgraphs across different simulations: requires equivalence sites in
   both densities; then build the hop.graph.CombinedGraph().
+
+Functions
+---------
+
 """
 
 import hop.sitemap, hop.trajectory, hop.graph, hop.constants

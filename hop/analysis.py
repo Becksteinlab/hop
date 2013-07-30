@@ -15,8 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A collection of functions and classes to extract statistics and plot
+"""
+Extracting information from densities and hop graphs --- hop.analysis
+=====================================================================
+
+A collection of functions and classes to extract statistics and plot
 histograms. Use this as examples how to write your own.
+
+Classes and functions
+---------------------
+
 """
 
 import hop.graph, hop.sitemap, hop.utilities
