@@ -1434,7 +1434,7 @@ class HoppingGraph(object):
                  }
         xml = open(filename,'w')
         xml.write("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n"""
-                  """<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/~puninj/XGMML/xgmml.dtd">\n"""
+                  """<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/research/groups/pb/punin/public_html/XGMML/GML_XGMML/xgmml.dtd">\n"""
                   """<graph label="%(label)s" directed="1" id="%(id)s" """
                   """xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" """
                   """xmlns:dc="http://purl.org/dc/elements/1.1/" """
