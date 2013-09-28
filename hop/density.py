@@ -300,7 +300,7 @@ class DensityCreator(object):
         # should save precious files!!!
         return self.densities
 
-    def DensityWithBulk(self, density_unit='water', solvent_threshold=2.72, bulk_threshold=0.6):
+    def DensityWithBulk(self, density_unit='water', solvent_threshold=numpy.e, bulk_threshold=0.6):
         """Return a solvent density with bulk site inserted.
 
         DensityWithBulk(self, solvent_threshold=2.72, bulk_threshold=0.6) --> Density
@@ -337,6 +337,8 @@ class DensityCreator(object):
             errmsg = "Need a 'solvent' and a 'bulk' density in %s.densities" % self.__class__.__name__
             logger.fatal(errmsg)
             raise hop.MissingDataError(errmsg)
+	logger.debug("DensityWithBulk: solvent_threshold = %r", solvent_threshold)
+        logger.debug("DensityWithBulk: bulk_threshold = %r", bulk_threshold)
         solvent.convert_density(density_unit)
         solvent.map_sites(solvent_threshold)
         bulk.convert_density(density_unit)
