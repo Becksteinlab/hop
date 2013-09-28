@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Markov Chain Monte Carlo on hopping graph — hop.MCMC &mdash; Hop 0.3.3 documentation</title>
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Interactive or high-level use of the hop trajectory package" href="interactive.html" />
-    <link rel="prev" title="Generating and analyzing a hopping graph — hop.graph" href="graph.html" /> 
+    <link rel="up" title="Markov Chain Monte Carlo sampling on a hop graph" href="../MCMC.html" />
+    <link rel="next" title="Auxiliary modules" href="../auxiliary.html" />
+    <link rel="prev" title="Markov Chain Monte Carlo sampling on a hop graph" href="../MCMC.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="interactive.html" title="Interactive or high-level use of the hop trajectory package"
+          <a href="../auxiliary.html" title="Auxiliary modules"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="graph.html" title="Generating and analyzing a hopping graph — hop.graph"
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../MCMC.html" accesskey="U">Markov Chain Monte Carlo sampling on a hop graph</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,17 +58,16 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.MCMC"></span><div class="section" id="markov-chain-monte-carlo-on-hopping-graph-hop-mcmc">
-<h1>Markov Chain Monte Carlo on hopping graph &#8212; <a class="reference internal" href="#module-hop.MCMC" title="hop.MCMC"><tt class="xref py py-mod docutils literal"><span class="pre">hop.MCMC</span></tt></a><a class="headerlink" href="#markov-chain-monte-carlo-on-hopping-graph-hop-mcmc" title="Permalink to this headline">¶</a></h1>
-<p>The <a class="reference internal" href="#module-hop.MCMC" title="hop.MCMC"><tt class="xref py py-mod docutils literal"><span class="pre">hop.MCMC</span></tt></a> module uses the information encoded in a hopping
-graph to set up a Markov Chain Monte Carlo sampling procedure that
-allows one to rapidly generate site occupancy distributions that are
-distributed in the same way as the one sampled from MD.</p>
-<p>The most convenient entry point is the <a class="reference internal" href="#hop.MCMC.run" title="hop.MCMC.run"><tt class="xref py py-func docutils literal"><span class="pre">hop.MCMC.run()</span></tt></a>  function</p>
-<div class="highlight-python"><pre>M = MCMC.run(filename='hopgraph.pickle',Ntotal=&lt;int&gt;)</pre>
-</div>
-<p>It takes as input a stored hopgraph and immediately runs an MCMC run of <em>Ntotal</em>
-steps. The output is a <a class="reference internal" href="#hop.MCMC.MCMCsampler" title="hop.MCMC.MCMCsampler"><tt class="xref py py-class docutils literal"><span class="pre">MCMCsampler</span></tt></a> object. It contains the &#8216;trajectory&#8217; and
+  <span class="target" id="module-hop.MCMC"></span><p>Markov Chain Monte Carlo on hopping graph.</p>
+<p>The hop.MCMC module uses the information encoded in a hopping graph to set up a
+Markov Chain Monte Carlo sampling procedure that allows one to rapidly generate
+site occupancy distributions that are distributed in the same way as the one
+sampled from MD.</p>
+<p>The most convenient entry point is the  function</p>
+<blockquote>
+<div>M = MCMC.run(filename=&#8217;hopgraph.pickle&#8217;,Ntotal=&lt;int&gt;)</div></blockquote>
+<p>It takes as input a stored hopgraph and immediately runs an MCMC run of Ntotal
+steps. The output is a MCMCsampler object. It contains the &#8216;trajectory&#8217; and
 useful analysis functions. (Use interactive introspection in ipython to explore
 the possibilities of the object.)</p>
 <p>Notes on the algorithm:</p>
@@ -85,8 +85,6 @@ by an acceptance probability == s_i(n)</p>
 site moves (the latter inspired by coupling from the past).</p>
 </li>
 </ul>
-<div class="section" id="classes-and-functions">
-<h2>Classes and functions<a class="headerlink" href="#classes-and-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="hop.MCMC.MCMCsampler">
 <em class="property">class </em><tt class="descclassname">hop.MCMC.</tt><tt class="descname">MCMCsampler</tt><big>(</big><em>h=None</em>, <em>min_hops_observed=1</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler" title="Permalink to this definition">¶</a></dt>
@@ -299,7 +297,7 @@ myPscan = cPickle.load(open(&#8216;pscan.pickle&#8217;))</div></blockquote>
 assumption is that these are functions of Ntotal (if not, set Nequil=0; Nequil is
 added to x). Each object is a different realization, e.g. multiple MCMC runs.</p>
 <p>plottype       &#8216;whisker&#8217; (whisker plot), &#8216;standard&#8217; (average and standard deviations)
-Nequil         correction, added to x
+Nequil         correction, added to x    
 funcname       string; a method of the objects in plist that does EXACTLY the following:</p>
 <blockquote>
 <div>x,y = obj.funcname()
@@ -313,8 +311,6 @@ where x and y are numpy arrays of equal length</div></blockquote>
 <dd><p>Perform Markov Chain Monte Carlo on a model derived from the hopping graph.</p>
 </dd></dl>
 
-</div>
-</div>
 
 
           </div>
@@ -322,20 +318,12 @@ where x and y are numpy arrays of equal length</div></blockquote>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Markov Chain Monte Carlo on hopping graph &#8212; <tt class="docutils literal"><span class="pre">hop.MCMC</span></tt></a><ul>
-<li><a class="reference internal" href="#classes-and-functions">Classes and functions</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
-  <p class="topless"><a href="graph.html"
-                        title="previous chapter">Generating and analyzing a hopping graph &#8212; <tt class="docutils literal"><span class="pre">hop.graph</span></tt></a></p>
+  <p class="topless"><a href="../MCMC.html"
+                        title="previous chapter">Markov Chain Monte Carlo sampling on a hop graph</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="interactive.html"
-                        title="next chapter">Interactive or high-level use of the hop trajectory package</a></p>
+  <p class="topless"><a href="../auxiliary.html"
+                        title="next chapter">Auxiliary modules</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/MCMC.txt"
@@ -368,13 +356,14 @@ where x and y are numpy arrays of equal length</div></blockquote>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="interactive.html" title="Interactive or high-level use of the hop trajectory package"
+          <a href="../auxiliary.html" title="Auxiliary modules"
              >next</a> |</li>
         <li class="right" >
-          <a href="graph.html" title="Generating and analyzing a hopping graph — hop.graph"
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../MCMC.html" >Markov Chain Monte Carlo sampling on a hop graph</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

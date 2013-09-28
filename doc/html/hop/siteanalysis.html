@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Advanced analysis of site properties — hop.siteanalysis &mdash; Hop 0.3.3 documentation</title>
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Using qhull to define regions for hopping analysis — hop.qhull" href="qhull.html" />
-    <link rel="prev" title="Generating densities from trajectories — hop.density" href="density.html" /> 
+    <link rel="up" title="Analyzing hopping graphs and densities" href="../analysis.html" />
+    <link rel="next" title="Markov Chain Monte Carlo sampling on a hop graph" href="../MCMC.html" />
+    <link rel="prev" title="hop.density — Generating densities from trajectories" href="density.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="qhull.html" title="Using qhull to define regions for hopping analysis — hop.qhull"
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="density.html" title="Generating densities from trajectories — hop.density"
+          <a href="density.html" title="hop.density — Generating densities from trajectories"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../analysis.html" accesskey="U">Analyzing hopping graphs and densities</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,15 +58,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.siteanalysis"></span><div class="section" id="advanced-analysis-of-site-properties-hop-siteanalysis">
-<h1>Advanced analysis of site properties &#8212; <a class="reference internal" href="#module-hop.siteanalysis" title="hop.siteanalysis"><tt class="xref py py-mod docutils literal"><span class="pre">hop.siteanalysis</span></tt></a><a class="headerlink" href="#advanced-analysis-of-site-properties-hop-siteanalysis" title="Permalink to this headline">¶</a></h1>
-<p>The module provides a framework on which to build analysis tasks on a
-per-site basis.</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Experimental code.</p>
-</div>
-<dl class="class">
+  <span class="target" id="module-hop.siteanalysis"></span><dl class="class">
 <dt id="hop.siteanalysis.Collection">
 <em class="property">class </em><tt class="descclassname">hop.siteanalysis.</tt><tt class="descname">Collection</tt><big>(</big><em>selection=None, hoptraj=None, density=None, include_sites='default', exclude_sites=['default', 'bulk'], filename=None, verbosity=None</em><big>)</big><a class="reference internal" href="../_modules/hop/siteanalysis.html#Collection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.siteanalysis.Collection" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Collection of observables to be calculated for a hopping trajectory.
@@ -270,7 +263,7 @@ trajectory              True: also extract the site occupancy as a function of</
 <em class="property">class </em><tt class="descclassname">hop.siteanalysis.</tt><tt class="descname">Orbit</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/siteanalysis.html#Orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.siteanalysis.Orbit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Observable: distance of atom from the centre of the site while orbiting the site.</p>
 <p>o = Orbit(Collection,histogram_parameters,site_centers=site_centers)</p>
-<p>(A particle orbits a site if it has been on the site at a previous time step but has
+<p>(A particle orbits a site if it has been on the site at a previous time step but has 
 not entered another site since.)</p>
 </dd></dl>
 
@@ -525,7 +518,7 @@ histogram[SiteAnalysis.site2indx[s]]</dd>
 <p>distribution   normalized histogram, created with normalize()
 normalization  total number of counts for the sites
 edges          bin edges
-midpoints      bin centers
+midpoints      bin centers 
 delta          bin sizes
 site2indx      mapping of site label to an index used in all the arrays
 sites          mapping of index to site label</p>
@@ -537,7 +530,7 @@ sites          mapping of index to site label</p>
 <dt>site_data     numpy array; axis=0 indexes the sites</dt>
 <dd>For scalars, site_data.shape == (N,), with N == len(sites)
 For vectors, site_data.shape == (N,3).</dd>
-<dt>sites         numpy array of the site labels that correspond to the slices</dt>
+<dt>sites         numpy array of the site labels that correspond to the slices </dt>
 <dd>along axis=0 in site_data</dd>
 </dl>
 </dd></dl>
@@ -620,7 +613,7 @@ selected then the machine may crash due to insufficient memory.</p>
 <dt>site_data     numpy array; axis=0 indexes the sites</dt>
 <dd>For scalars, site_data.shape == (N,), with N == len(sites)
 For vectors, site_data.shape == (N,3).</dd>
-<dt>sites         numpy array of the site labels that correspond to the slices</dt>
+<dt>sites         numpy array of the site labels that correspond to the slices </dt>
 <dd>along axis=0 in site_data</dd>
 </dl>
 </dd></dl>
@@ -707,7 +700,6 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
 
 </dd></dl>
 
-</div>
 
 
           </div>
@@ -717,10 +709,10 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="density.html"
-                        title="previous chapter">Generating densities from trajectories &#8212; <tt class="docutils literal docutils literal docutils literal"><span class="pre">hop.density</span></tt></a></p>
+                        title="previous chapter"><tt class="docutils literal docutils literal docutils literal"><span class="pre">hop.density</span></tt> &#8212; Generating densities from trajectories</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="qhull.html"
-                        title="next chapter">Using qhull to define regions for hopping analysis &#8212; <tt class="docutils literal docutils literal docutils literal"><span class="pre">hop.qhull</span></tt></a></p>
+  <p class="topless"><a href="../MCMC.html"
+                        title="next chapter">Markov Chain Monte Carlo sampling on a hop graph</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/siteanalysis.txt"
@@ -753,13 +745,14 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="qhull.html" title="Using qhull to define regions for hopping analysis — hop.qhull"
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
              >next</a> |</li>
         <li class="right" >
-          <a href="density.html" title="Generating densities from trajectories — hop.density"
+          <a href="density.html" title="hop.density — Generating densities from trajectories"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../analysis.html" >Analyzing hopping graphs and densities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

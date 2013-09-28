@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Defining solvation sites — hop.sitemap &mdash; Hop 0.3.3 documentation</title>
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Generating the hopping trajectory — hop.trajectory" href="trajectory.html" />
-    <link rel="prev" title="Hop — a framework to analyze solvation dynamics from MD simulations" href="init.html" /> 
+    <link rel="up" title="Generating a hopping graph" href="../generate.html" />
+    <link rel="next" title="qhull" href="qhull.html" />
+    <link rel="prev" title="Generating a hopping graph" href="../generate.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+          <a href="qhull.html" title="qhull"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="init.html" title="Hop — a framework to analyze solvation dynamics from MD simulations"
+          <a href="../generate.html" title="Generating a hopping graph"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" accesskey="U">Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,9 +58,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.sitemap"></span><div class="section" id="defining-solvation-sites-hop-sitemap">
-<h1>Defining solvation sites &#8212; <a class="reference internal" href="#module-hop.sitemap" title="hop.sitemap"><tt class="xref py py-mod docutils literal"><span class="pre">hop.sitemap</span></tt></a><a class="headerlink" href="#defining-solvation-sites-hop-sitemap" title="Permalink to this headline">¶</a></h1>
-<p>Histogram positions of particles from a MD trajectory on a
+  <span class="target" id="module-hop.sitemap"></span><p>Histogram positions of particles from a MD trajectory on a
 grid. Calculate the density, change units (both of the grid and of the
 density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.</p>
@@ -158,7 +157,7 @@ P             (default) values of parameters</p>
 value is stored with the object as the default. The default
 can be explicitly set as P[&#8216;threshold&#8217;]</dd>
 </dl>
-<p>save(filename)  save object.pickle
+<p>save(filename)  save object.pickle 
 load(filename)  restore object.pickle (or use d=Density(filename=&lt;filename&gt;))
 export()        write density to a file for visualization
 export_map()    write individual sites</p>
@@ -179,7 +178,7 @@ export_map()    write individual sites</p>
 </tbody>
 </table>
 <dl class="docutils">
-<dt>filename     prefix for output files:</dt>
+<dt>filename     prefix for output files: </dt>
 <dd>&lt;filename&gt;.psf, &lt;filename&gt;.pdb, and &lt;filename&gt;.vmd</dd>
 </dl>
 <p>site_labels  selects sites (See site_labels())</p>
@@ -201,7 +200,7 @@ sites because they do not have a well defined center.</p>
 <p>export_map(<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
 <dl class="docutils">
 <dt>labels=&#8217;default&#8217;  Select the sites that should be exported. Can be</dt>
-<dd>a list of numbers (site labels) or one of the keywords
+<dd>a list of numbers (site labels) or one of the keywords 
 recognized by site_labels() (qv). The interstitial is
 always excluded.</dd>
 <dt>combined=False     True: write one file. False: write one file for each</dt>
@@ -259,8 +258,8 @@ False: don&#8217;t change the reference</dd>
 <dt>use_ref_equivalencesites</dt>
 <dd>True: use sites + equivalence sites from the reference density
 False*: remove all equivalence sites als from the ref density</dd>
-<dt>verbosity   For verbosity &gt;= 3 output some statistics; verbosity &gt;=5 also</dt>
-<dd>returns the equivalence graph for analysis; verbosity &gt;= 7
+<dt>verbosity   For verbosity &gt;= 3 output some statistics; verbosity &gt;=5 also </dt>
+<dd>returns the equivalence graph for analysis; verbosity &gt;= 7 
 displays the graph (and saves to equivalence_graph.png).</dd>
 </dl>
 <p>An &#8216;equivalence site&#8217; is a site that contains all sites that
@@ -408,7 +407,7 @@ trajectory.</p>
 <dl class="docutils">
 <dt>&lt;inclusions&gt;</dt>
 <dd><dl class="first docutils">
-<dt>&#8216;all&#8217;       all mapped sites, including bulk and subsites of</dt>
+<dt>&#8216;all&#8217;       all mapped sites, including bulk and subsites of </dt>
 <dd>equivalent sites (but read the NOTE below: set exclude=None)</dd>
 <dt>&#8216;default&#8217;   all mapped sites, including bulk but excluding subsites</dt>
 <dd>and interstitial</dd>
@@ -424,7 +423,7 @@ exclusions)</dd>
 </dd>
 <dt>&lt;exclusions&gt;</dt>
 <dd><dl class="first docutils">
-<dt>&#8216;default&#8217;    equivalent to [&#8216;interstitial&#8217;,&#8217;subsites&#8217;]; always applied unless</dt>
+<dt>&#8216;default&#8217;    equivalent to [&#8216;interstitial&#8217;,&#8217;subsites&#8217;]; always applied unless </dt>
 <dd>exludsions=None is set!</dd>
 </dl>
 <p>None         do not apply any exclusions
@@ -694,7 +693,7 @@ P             (default) values of parameters</p>
 value is stored with the object as the default. The default
 can be explicitly set as P[&#8216;threshold&#8217;]</dd>
 </dl>
-<p>save(filename)  save object.pickle
+<p>save(filename)  save object.pickle 
 load(filename)  restore object.pickle (or use d=Density(filename=&lt;filename&gt;))
 export()        write density to a file for visualization
 export_map()    write individual sites</p>
@@ -825,24 +824,24 @@ of delta.) [1.0]</p>
 <dt>metadata</dt>
 <dd><p class="first last">dictionary of additional data to be saved with the object</p>
 </dd>
-<dt>padding</dt>
+<dt>padding </dt>
 <dd><p class="first last">increase histogram dimensions by padding (on top of initial box size)
 in Angstroem [2.0]</p>
 </dd>
 <dt>soluteselection</dt>
 <dd><p class="first last">MDAnalysis selection for the solute, e.g. &#8220;protein&#8221; [<tt class="docutils literal"><span class="pre">None</span></tt>]</p>
 </dd>
-<dt>cutoff</dt>
+<dt>cutoff  </dt>
 <dd><p class="first last">With <em>cutoff</em>, select &#8216;&lt;atomsel&gt; NOT WITHIN &lt;cutoff&gt; OF &lt;soluteselection&gt;&#8217;
 (Special routines that are faster than the standard AROUND selection) [0]</p>
 </dd>
-<dt>verbosity: int</dt>
+<dt>verbosity: int  </dt>
 <dd><p class="first last">level of chattiness; 0 is silent, 3 is verbose [3]</p>
 </dd>
-<dt>parameters</dt>
+<dt>parameters  </dt>
 <dd><p class="first last">dict with some special parameters for <a class="reference internal" href="#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">Density</span></tt></a> (see doc)</p>
 </dd>
-<dt>kwargs</dt>
+<dt>kwargs  </dt>
 <dd><p class="first last">metadata, parameters are modified and passed on to <a class="reference internal" href="#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">Density</span></tt></a></p>
 </dd>
 </dl>
@@ -869,7 +868,7 @@ in Angstroem [2.0]</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first docutils">
-<dt>psf/pdb/gro</dt>
+<dt>psf/pdb/gro     </dt>
 <dd><p class="first last">topology file</p>
 </dd>
 <dt>dcd/xtc/trr/pdb</dt>
@@ -892,18 +891,18 @@ of delta.) [1.0]</p>
 <dt>metadata</dt>
 <dd><p class="first last">dictionary of additional data to be saved with the object</p>
 </dd>
-<dt>padding</dt>
+<dt>padding </dt>
 <dd><p class="first last">increase histogram dimensions by padding (on top of initial box size)
 in Angstroem [2.0]</p>
 </dd>
 <dt>soluteselection</dt>
 <dd><p class="first last">MDAnalysis selection for the solute, e.g. &#8220;protein&#8221; [<tt class="docutils literal"><span class="pre">None</span></tt>]</p>
 </dd>
-<dt>cutoff</dt>
+<dt>cutoff  </dt>
 <dd><p class="first last">With <em>cutoff</em>, select &#8216;&lt;atomsel&gt; NOT WITHIN &lt;cutoff&gt; OF &lt;soluteselection&gt;&#8217;
 (Special routines that are faster than the standard AROUND selection) [0]</p>
 </dd>
-<dt>verbosity: int</dt>
+<dt>verbosity: int  </dt>
 <dd><p class="first last">level of chattiness; 0 is silent, 3 is verbose [3]</p>
 </dd>
 </dl>
@@ -968,7 +967,7 @@ of delta.)</dd>
 <div><p>Density args:
 metadata       dictionary of additional data to be saved with the object
 parameters     dict of special Density parameters (see Density() doc)</p>
-<p>VolMap args:
+<p>VolMap args: 
 load_new       True: load psf and dcd into VMD. False: use psf and dcd already</p>
 <blockquote>
 <div>loaded into VMD (default is True)</div></blockquote>
@@ -1151,7 +1150,6 @@ coordinate systems and the exact same delta.</li>
 <dd><p>Sort a list of tuples and remove all values None</p>
 </dd></dl>
 
-</div>
 
 
           </div>
@@ -1160,11 +1158,11 @@ coordinate systems and the exact same delta.</li>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="init.html"
-                        title="previous chapter">Hop &#8212; a framework to analyze solvation dynamics from MD simulations</a></p>
+  <p class="topless"><a href="../generate.html"
+                        title="previous chapter">Generating a hopping graph</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="trajectory.html"
-                        title="next chapter">Generating the hopping trajectory &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop.trajectory</span></tt></a></p>
+  <p class="topless"><a href="qhull.html"
+                        title="next chapter">qhull</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/sitemap.txt"
@@ -1197,13 +1195,14 @@ coordinate systems and the exact same delta.</li>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+          <a href="qhull.html" title="qhull"
              >next</a> |</li>
         <li class="right" >
-          <a href="init.html" title="Hop — a framework to analyze solvation dynamics from MD simulations"
+          <a href="../generate.html" title="Generating a hopping graph"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" >Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

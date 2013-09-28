@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Generating the hopping trajectory — hop.trajectory &mdash; Hop 0.3.3 documentation</title>
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Generating and analyzing a hopping graph — hop.graph" href="graph.html" />
-    <link rel="prev" title="Defining solvation sites — hop.sitemap" href="sitemap.html" /> 
+    <link rel="up" title="Generating a hopping graph" href="../generate.html" />
+    <link rel="next" title="hop.graph module" href="graph.html" />
+    <link rel="prev" title="qhull" href="qhull.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="graph.html" title="Generating and analyzing a hopping graph — hop.graph"
+          <a href="graph.html" title="hop.graph module"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="sitemap.html" title="Defining solvation sites — hop.sitemap"
+          <a href="qhull.html" title="qhull"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" accesskey="U">Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,14 +58,10 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.trajectory"></span><div class="section" id="generating-the-hopping-trajectory-hop-trajectory">
-<h1>Generating the hopping trajectory &#8212; <a class="reference internal" href="#module-hop.trajectory" title="hop.trajectory"><tt class="xref py py-mod docutils literal"><span class="pre">hop.trajectory</span></tt></a><a class="headerlink" href="#generating-the-hopping-trajectory-hop-trajectory" title="Permalink to this headline">¶</a></h1>
-<p>Based on a definition of grid sites, convert a molecular dynamics
-trajectory into a trajectory of site hops.</p>
-<p>You will also need the following modules to create the input for
-<tt class="xref py py-class docutils literal"><span class="pre">HoppingTraj</span></tt>: <a class="reference internal" href="sitemap.html#module-hop.sitemap" title="hop.sitemap"><tt class="xref py py-mod docutils literal"><span class="pre">hop.sitemap</span></tt></a>.</p>
-<div class="section" id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+  <span class="target" id="module-hop.trajectory"></span><p>Based on a definition of grid sites, convert a molecular
+dynamics trajectory into a trajectory of site hops.</p>
+<p>You will also need the following modules to create the input for HoppingTraj:
+hop.sitemap, MDAnalysis</p>
 <dl class="class">
 <dt id="hop.trajectory.HoppingTrajectory">
 <em class="property">class </em><tt class="descclassname">hop.trajectory.</tt><tt class="descname">HoppingTrajectory</tt><big>(</big><em>trajectory=None</em>, <em>group=None</em>, <em>density=None</em>, <em>filename=None</em>, <em>hopdcd=None</em>, <em>hoppsf=None</em>, <em>fixtrajectory=None</em>, <em>verbosity=3</em><big>)</big><a class="reference internal" href="../_modules/hop/trajectory.html#HoppingTrajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.trajectory.HoppingTrajectory" title="Permalink to this definition">¶</a></dt>
@@ -399,8 +396,6 @@ for trajectories.</p>
 <dd><p>Returns the total trajectory time from the DCDReader object.</p>
 </dd></dl>
 
-</div>
-</div>
 
 
           </div>
@@ -408,20 +403,12 @@ for trajectories.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Generating the hopping trajectory &#8212; <tt class="docutils literal"><span class="pre">hop.trajectory</span></tt></a><ul>
-<li><a class="reference internal" href="#classes">Classes</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
-  <p class="topless"><a href="sitemap.html"
-                        title="previous chapter">Defining solvation sites &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop.sitemap</span></tt></a></p>
+  <p class="topless"><a href="qhull.html"
+                        title="previous chapter">qhull</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="graph.html"
-                        title="next chapter">Generating and analyzing a hopping graph &#8212; <tt class="docutils literal docutils literal docutils literal"><span class="pre">hop.graph</span></tt></a></p>
+                        title="next chapter"><tt class="docutils literal docutils literal"><span class="pre">hop.graph</span></tt> module</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/trajectory.txt"
@@ -454,13 +441,14 @@ for trajectories.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="graph.html" title="Generating and analyzing a hopping graph — hop.graph"
+          <a href="graph.html" title="hop.graph module"
              >next</a> |</li>
         <li class="right" >
-          <a href="sitemap.html" title="Defining solvation sites — hop.sitemap"
+          <a href="qhull.html" title="qhull"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" >Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

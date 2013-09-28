@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quickstart: using the hop package — hop.interactive &mdash; Hop 0.3.3 documentation</title>
+    <title>Interactive or high-level use of the hop trajectory package &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -28,7 +28,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
     <link rel="up" title="Analyzing hopping graphs and densities" href="../analysis.html" />
-    <link rel="next" title="Extracting information from densities and hop graphs — hop.analysis" href="analysis.html" />
+    <link rel="next" title="&lt;no title&gt;" href="analysis.html" />
     <link rel="prev" title="Analyzing hopping graphs and densities" href="../analysis.html" /> 
   </head>
   <body>
@@ -42,13 +42,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="analysis.html" title="Extracting information from densities and hop graphs — hop.analysis"
+          <a href="analysis.html" title="&lt;no title&gt;"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../analysis.html" title="Analyzing hopping graphs and densities"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
           <li><a href="../analysis.html" accesskey="U">Analyzing hopping graphs and densities</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,8 +58,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.interactive"></span><div class="section" id="quickstart-using-the-hop-package-hop-interactive">
-<h1>Quickstart: using the hop package &#8212; <a class="reference internal" href="#module-hop.interactive" title="hop.interactive"><tt class="xref py py-mod docutils literal"><span class="pre">hop.interactive</span></tt></a><a class="headerlink" href="#quickstart-using-the-hop-package-hop-interactive" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-hop.interactive"></span><div class="section" id="interactive-or-high-level-use-of-the-hop-trajectory-package">
+<h1>Interactive or high-level use of the hop trajectory package<a class="headerlink" href="#interactive-or-high-level-use-of-the-hop-trajectory-package" title="Permalink to this headline">¶</a></h1>
 <p>A typical session starts with a trajectory (which should have been
 RMS-fitted to a reference structure). Any topology and trajectory file
 suitable for <a href="#id3"><span class="problematic" id="id4">MDAnalysis_</span></a> can be used such as PSF+DCD, PDB+XTC or a
@@ -131,17 +131,6 @@ fairly low threshold:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">density</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">density_bulk</span>
 </pre></div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Behind the scenes, the bulk is simply prepended to the list
-of all sites (<tt class="docutils literal"><span class="pre">density.sites</span></tt>,
-<tt class="xref py py-attr docutils literal"><span class="pre">hop.sitemap.Density.sites</span></tt>), found so far. By convention the
-site at position 1 in the list of all sites is treated specially in
-many parts of hop (it has the so-called sitelabel &#8220;1&#8221;, which is
-simply the position in the list of sites) and hence you might
-encounter unexpected behaviour later if you do not insert a bulk
-site.</p>
 </div>
 <p>Statistics about the sites can be produced with</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">analyze_density</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">figname</span><span class="p">)</span>
@@ -234,7 +223,10 @@ strictly necessary for the hopgraph itself).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cg</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;cg_h_ref&#39;</span><span class="p">,</span><span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,))</span>
 </pre></div>
 </div>
-<p class="rubric">TODO</p>
+</div>
+</div>
+<div class="section" id="todo">
+<h1>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h1>
 <p>Currently un(der)-documented:
 * Remapping densities to a reference density (see hop.sitemap.remap_density).
 * Comparing densities and finding equivalence sites (see</p>
@@ -244,9 +236,6 @@ strictly necessary for the hopgraph itself).</p>
 <li>Comparing hopgraphs across different simulations: requires equivalence sites in
 both densities; then build the hop.graph.CombinedGraph().</li>
 </ul>
-</div>
-<div class="section" id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="hop.interactive.analyze_density">
 <tt class="descclassname">hop.interactive.</tt><tt class="descname">analyze_density</tt><big>(</big><em>density</em>, <em>figure='sitestats'</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#analyze_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.analyze_density" title="Permalink to this definition">¶</a></dt>
@@ -525,7 +514,6 @@ molecules according to their B-factor.</p>
 </dd></dl>
 
 </div>
-</div>
 
 
           </div>
@@ -535,7 +523,7 @@ molecules according to their B-factor.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Quickstart: using the hop package &#8212; <tt class="docutils literal"><span class="pre">hop.interactive</span></tt></a><ul>
+<li><a class="reference internal" href="#">Interactive or high-level use of the hop trajectory package</a><ul>
 <li><a class="reference internal" href="#hydration-sites">Hydration sites</a><ul>
 <li><a class="reference internal" href="#high-density-sites">High density sites</a></li>
 <li><a class="reference internal" href="#bulk-site">Bulk site</a></li>
@@ -544,9 +532,9 @@ molecules according to their B-factor.</p>
 </li>
 <li><a class="reference internal" href="#hopping-trajectory">Hopping trajectory</a></li>
 <li><a class="reference internal" href="#hopping-graph">Hopping graph</a></li>
-<li><a class="reference internal" href="#functions">Functions</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#todo">TODO</a></li>
 </ul>
 
   <h4>Previous topic</h4>
@@ -554,7 +542,7 @@ molecules according to their B-factor.</p>
                         title="previous chapter">Analyzing hopping graphs and densities</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="analysis.html"
-                        title="next chapter">Extracting information from densities and hop graphs &#8212; hop.analysis</a></p>
+                        title="next chapter">&lt;no title&gt;</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/interactive.txt"
@@ -587,13 +575,13 @@ molecules according to their B-factor.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="analysis.html" title="Extracting information from densities and hop graphs — hop.analysis"
+          <a href="analysis.html" title="&lt;no title&gt;"
              >next</a> |</li>
         <li class="right" >
           <a href="../analysis.html" title="Analyzing hopping graphs and densities"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
           <li><a href="../analysis.html" >Analyzing hopping graphs and densities</a> &raquo;</li> 
       </ul>
     </div>

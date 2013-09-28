@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using qhull to define regions for hopping analysis — hop.qhull &mdash; Hop 0.3.3 documentation</title>
+    <title>qhull &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Generate densities with the help of external applications" href="external.html" />
-    <link rel="prev" title="Advanced analysis of site properties — hop.siteanalysis" href="siteanalysis.html" /> 
+    <link rel="up" title="Generating a hopping graph" href="../generate.html" />
+    <link rel="next" title="&lt;no title&gt;" href="trajectory.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="sitemap.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="external.html" title="Generate densities with the help of external applications"
+          <a href="trajectory.html" title="&lt;no title&gt;"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="siteanalysis.html" title="Advanced analysis of site properties — hop.siteanalysis"
+          <a href="sitemap.html" title="&lt;no title&gt;"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" accesskey="U">Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,10 +58,10 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.qhull"></span><div class="section" id="using-qhull-to-define-regions-for-hopping-analysis-hop-qhull">
-<h1>Using qhull to define regions for hopping analysis &#8212; <a class="reference internal" href="#module-hop.qhull" title="hop.qhull"><tt class="xref py py-mod docutils literal"><span class="pre">hop.qhull</span></tt></a><a class="headerlink" href="#using-qhull-to-define-regions-for-hopping-analysis-hop-qhull" title="Permalink to this headline">¶</a></h1>
-<p>Interface to some functions of the <a href="#id2"><span class="problematic" id="id3">`qhull`_</span></a> (or rather the <a class="reference external" href="http://www.qhull.org/html/qconvex.htm">qconvex</a>)
-program. <a href="#id4"><span class="problematic" id="id5">`qhull`_</span></a> must be installed separately (see links).</p>
+  <span class="target" id="module-hop.qhull"></span><div class="section" id="qhull">
+<h1>qhull<a class="headerlink" href="#qhull" title="Permalink to this headline">¶</a></h1>
+<p>Interface to some functions of the <a href="#id3"><span class="problematic" id="id4">`qhull`_</span></a> (or rather the <a class="reference external" href="http://www.qhull.org/html/qconvex.htm">qconvex</a>)
+program. <a href="#id5"><span class="problematic" id="id6">`qhull`_</span></a> must be installed separately (see links).</p>
 <p>The main functionality is to define a region in space within the convex hull of
 a protein. The hull is typically defined by a selection of atoms and written as
 a &#8220;density&#8221; file for use in <a class="reference internal" href="init.html#module-hop" title="hop"><tt class="xref py py-mod docutils literal"><span class="pre">hop</span></tt></a>.</p>
@@ -95,14 +96,14 @@ mapped:</p>
 <p>(This maps out sites at the threshold level set in <tt class="docutils literal"><span class="pre">b</span></tt>; change it
 with the <a class="reference internal" href="sitemap.html#hop.sitemap.Density.map_sites" title="hop.sitemap.Density.map_sites"><tt class="xref py py-meth docutils literal"><span class="pre">hop.sitemap.Density.map_sites()</span></tt></a> method if required.)</p>
 <dl class="docutils">
-<dt>Insert a bulk density::</dt>
+<dt>Insert a bulk density::  </dt>
 <dd>QD70.site_insert_bulk(b)</dd>
 </dl>
 <dl class="class">
 <dt id="hop.qhull.ConvexHull">
 <em class="property">class </em><tt class="descclassname">hop.qhull.</tt><tt class="descname">ConvexHull</tt><big>(</big><em>coordinates</em>, <em>workdir=None</em>, <em>prefix=None</em><big>)</big><a class="reference internal" href="../_modules/hop/qhull.html#ConvexHull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.qhull.ConvexHull" title="Permalink to this definition">¶</a></dt>
 <dd><p>The convex hull of a set of points.</p>
-<p>The convex hull is calculated with the <a href="#id6"><span class="problematic" id="id7">`qhull`_</span></a> program.</p>
+<p>The convex hull is calculated with the <a href="#id7"><span class="problematic" id="id8">`qhull`_</span></a> program.</p>
 <dl class="method">
 <dt id="hop.qhull.ConvexHull.Density">
 <tt class="descname">Density</tt><big>(</big><em>density</em>, <em>fillvalue=None</em><big>)</big><a class="reference internal" href="../_modules/hop/qhull.html#ConvexHull.Density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.qhull.ConvexHull.Density" title="Permalink to this definition">¶</a></dt>
@@ -188,7 +189,7 @@ False: outside</p>
 <dl class="method">
 <dt id="hop.qhull.VertexPDBWriter.ATOM">
 <tt class="descname">ATOM</tt><big>(</big><em>serial=None</em>, <em>name=None</em>, <em>altLoc=None</em>, <em>resName=None</em>, <em>chainID=None</em>, <em>resSeq=None</em>, <em>iCode=None</em>, <em>x=None</em>, <em>y=None</em>, <em>z=None</em>, <em>occupancy=1.0</em>, <em>tempFactor=0.0</em>, <em>element=None</em>, <em>charge=0</em><big>)</big><a class="reference internal" href="../_modules/hop/qhull.html#VertexPDBWriter.ATOM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.qhull.VertexPDBWriter.ATOM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write ATOM record.
+<dd><p>Write ATOM record. 
 <a class="reference external" href="http://www.wwpdb.org/documentation/format32/sect9.html">http://www.wwpdb.org/documentation/format32/sect9.html</a>
 Only some keword args are optional (altLoc, iCode, chainID), for some defaults are set.</p>
 <p>All inputs are cut to the maximum allowed length. For integer
@@ -261,18 +262,18 @@ the convex hull is inside the protein; default is to not to scale, i.e. scale = 
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Using qhull to define regions for hopping analysis &#8212; <tt class="docutils literal"><span class="pre">hop.qhull</span></tt></a><ul>
+<li><a class="reference internal" href="#">qhull</a><ul>
 <li><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="siteanalysis.html"
-                        title="previous chapter">Advanced analysis of site properties &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop.siteanalysis</span></tt></a></p>
+  <p class="topless"><a href="sitemap.html"
+                        title="previous chapter">&lt;no title&gt;</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="external.html"
-                        title="next chapter">Generate densities with the help of external applications</a></p>
+  <p class="topless"><a href="trajectory.html"
+                        title="next chapter">&lt;no title&gt;</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/qhull.txt"
@@ -305,13 +306,14 @@ the convex hull is inside the protein; default is to not to scale, i.e. scale = 
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="external.html" title="Generate densities with the help of external applications"
+          <a href="trajectory.html" title="&lt;no title&gt;"
              >next</a> |</li>
         <li class="right" >
-          <a href="siteanalysis.html" title="Advanced analysis of site properties — hop.siteanalysis"
+          <a href="sitemap.html" title="&lt;no title&gt;"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" >Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Constants — hop.constants &mdash; Hop 0.3.3 documentation</title>
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -28,7 +28,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
     <link rel="up" title="Auxiliary modules" href="../auxiliary.html" />
-    <link rel="next" title="Generate densities with the help of external applications" href="external.html" />
+    <link rel="next" title="&lt;no title&gt;" href="external.html" />
     <link rel="prev" title="Auxiliary modules" href="../auxiliary.html" /> 
   </head>
   <body>
@@ -42,13 +42,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="external.html" title="Generate densities with the help of external applications"
+          <a href="external.html" title="&lt;no title&gt;"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../auxiliary.html" title="Auxiliary modules"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
           <li><a href="../auxiliary.html" accesskey="U">Auxiliary modules</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,55 +58,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.constants"></span><div class="section" id="constants-hop-constants">
-<h1>Constants &#8212; <a class="reference internal" href="#module-hop.constants" title="hop.constants"><tt class="xref py py-mod docutils literal"><span class="pre">hop.constants</span></tt></a><a class="headerlink" href="#constants-hop-constants" title="Permalink to this headline">¶</a></h1>
-<p>Constants that are being used throughout the hop module.</p>
-<p class="rubric">Conversions:</p>
-<p>The conversion factor f to a unit b&#8217; for a quantity X (whose numeric
-value relative to the base unit b is stored in the program) is a
-quantity with unit b&#8217;/b. In the dictionaries below only the numeric
-value f(b-&gt;b&#8217;) is stored:</p>
-<div class="highlight-python"><pre>X/b' = f(b-&gt;b') * X/b</pre>
-</div>
-<div class="section" id="constants-and-functions">
-<h2>Constants and functions<a class="headerlink" href="#constants-and-functions" title="Permalink to this headline">¶</a></h2>
-<dl class="data">
-<dt id="hop.constants.N_Avogadro">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">N_Avogadro</tt><em class="property"> = 6.02214179e+23</em><a class="headerlink" href="#hop.constants.N_Avogadro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Avogradro&#8217;s number in  mol**-1 from   <a class="reference external" href="http://physics.nist.gov/cgi-bin/cuu/Value?na">http://physics.nist.gov/cgi-bin/cuu/Value?na</a></p>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.SITELABEL">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">SITELABEL</tt><em class="property"> = {'bulk': 1, 'interstitial': 0, 'outlier': -1}</em><a class="headerlink" href="#hop.constants.SITELABEL" title="Permalink to this definition">¶</a></dt>
-<dd><p>pre-defined integer labels for sites &#8212; DO NOT CHANGE THIS.
-In particular, the order must be preserved and it is assumed that &#8216;proper&#8217; sites
-start after the bulk. The labels are also directly used as indices into arrays and
-probably quite some code still implicitly assumes the definition below.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.conversion_factor">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">conversion_factor</tt><em class="property"> = {'threshold': {'Molar': 1660.5387831627258, 'nm': 1000.0, 'TIP3P': 29.856553610239185, 'water': 30.006285574182215, 'Angstrom': 1.0, 'SPC': 30.37184438320779, 'nanometer': 1000.0, 'TIP4P': 29.88638033712255}, 'length': {'nanometer': 0.1, 'nm': 0.1, 'Angstrom': 1.0}, 'time': {'ps': 1.0, 'AKMA': 20.45482949774598, 'ns': 0.001, 'second': 1e-12}, 'density': {'Molar': 1660.5387831627258, 'nm': 1000.0, 'TIP3P': 29.856553610239185, 'water': 30.006285574182215, 'Angstrom': 1.0, 'SPC': 30.37184438320779, 'nanometer': 1000.0, 'TIP4P': 29.88638033712255}}</em><a class="headerlink" href="#hop.constants.conversion_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>conversion_factor used by <a class="reference internal" href="#hop.constants.get_conversion_factor" title="hop.constants.get_conversion_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_conversion_factor()</span></tt></a> (type, unit1, unit2):</p>
-<dl class="docutils">
-<dt>Note: any observable with a unit (i.e. one with an entry in</dt>
-<dd>Grid.unit) needs an entry in conversion_factor[] because</dd>
-</dl>
-<p>_check_set_unit() tests for type/value in this
-dictionary. Derived classes can add to
-conversion_factor, too, when they add new observable, eg threshold:
-Another quantity with a unit (it is a density so it gets the
-density unit factors)</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.densityUnit_factor">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">densityUnit_factor</tt><em class="property"> = {'Molar': 1660.5387831627258, 'nm': 1000.0, 'TIP3P': 29.856553610239185, 'water': 30.006285574182215, 'Angstrom': 1.0, 'SPC': 30.37184438320779, 'nanometer': 1000.0, 'TIP4P': 29.88638033712255}</em><a class="headerlink" href="#hop.constants.densityUnit_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>for water densities, this is the volume per water molecule in A**3</p>
-</dd></dl>
-
-<dl class="function">
+  <span class="target" id="module-hop.constants"></span><dl class="function">
 <dt id="hop.constants.get_conversion_factor">
 <tt class="descclassname">hop.constants.</tt><tt class="descname">get_conversion_factor</tt><big>(</big><em>unit_type</em>, <em>u1</em>, <em>u2</em><big>)</big><a class="reference internal" href="../_modules/hop/constants.html#get_conversion_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.constants.get_conversion_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>generate the conversion factor u1 -&gt; u2 by using the base
@@ -118,64 +70,6 @@ unit as an intermediate</p>
 <div>X&#8217; = conversion_factor * X</div></blockquote>
 </dd></dl>
 
-<dl class="data">
-<dt id="hop.constants.lengthUnit_factor">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">lengthUnit_factor</tt><em class="property"> = {'nanometer': 0.1, 'nm': 0.1, 'Angstrom': 1.0}</em><a class="headerlink" href="#hop.constants.lengthUnit_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>conversion factors between the base unit (Angstrom) and other lengthUnits x:
-L/x = L/A * lengthUnit_factor[x]</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.r_water">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">r_water</tt><em class="property"> = 1.4</em><a class="headerlink" href="#hop.constants.r_water" title="Permalink to this definition">¶</a></dt>
-<dd><p>Angstrom; conventional water van der Waals radius</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.timeUnit_factor">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">timeUnit_factor</tt><em class="property"> = {'ps': 1.0, 'AKMA': 20.45482949774598, 'ns': 0.001, 'second': 1e-12}</em><a class="headerlink" href="#hop.constants.timeUnit_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>basic time unit is ps;
-1 AKMA time unit = 4.888821E-14 sec</p>
-<blockquote>
-<div><blockquote>
-<div><a class="reference external" href="http://brooks.scripps.edu/charmm_docs/c28docs/c28b2/html/usage.html#AKMA">http://brooks.scripps.edu/charmm_docs/c28docs/c28b2/html/usage.html#AKMA</a></div></blockquote>
-<p>1200ps/ps * f = 1.2 ns/ns  ==&gt; f = 1/1000</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="data">
-<dt id="hop.constants.water">
-<tt class="descclassname">hop.constants.</tt><tt class="descname">water</tt><em class="property"> = {'MolarMass': 18.016, 'SPC': 0.985, 'TIP4P': 1.001, 'exp': 0.997, 'TIP3P': 1.002}</em><a class="headerlink" href="#hop.constants.water" title="Permalink to this definition">¶</a></dt>
-<dd><p>water density at T=298K, P=1atm</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="45%" />
-<col width="55%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">model</th>
-<th class="head">g/cm^3</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td>SPC</td>
-<td>0.985(1)</td>
-</tr>
-<tr class="row-odd"><td>TIP3P</td>
-<td>1.002(1)</td>
-</tr>
-<tr class="row-even"><td>TIP4P</td>
-<td>1.001(1)</td>
-</tr>
-<tr class="row-odd"><td>exp</td>
-<td>0.997</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</div>
-</div>
 
 
           </div>
@@ -183,20 +77,12 @@ L/x = L/A * lengthUnit_factor[x]</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Constants &#8212; <tt class="docutils literal"><span class="pre">hop.constants</span></tt></a><ul>
-<li><a class="reference internal" href="#constants-and-functions">Constants and functions</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="../auxiliary.html"
                         title="previous chapter">Auxiliary modules</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="external.html"
-                        title="next chapter">Generate densities with the help of external applications</a></p>
+                        title="next chapter">&lt;no title&gt;</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/constants.txt"
@@ -229,13 +115,13 @@ L/x = L/A * lengthUnit_factor[x]</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="external.html" title="Generate densities with the help of external applications"
+          <a href="external.html" title="&lt;no title&gt;"
              >next</a> |</li>
         <li class="right" >
           <a href="../auxiliary.html" title="Auxiliary modules"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
           <li><a href="../auxiliary.html" >Auxiliary modules</a> &raquo;</li> 
       </ul>
     </div>

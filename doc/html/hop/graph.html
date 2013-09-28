@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Generating and analyzing a hopping graph — hop.graph &mdash; Hop 0.3.3 documentation</title>
+    <title>hop.graph module &mdash; Hop 0.3.3 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,9 +27,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
-    <link rel="up" title="Hop package — hop" href="../hop.html" />
-    <link rel="next" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC" href="MCMC.html" />
-    <link rel="prev" title="Generating the hopping trajectory — hop.trajectory" href="trajectory.html" /> 
+    <link rel="up" title="Generating a hopping graph" href="../generate.html" />
+    <link rel="next" title="Interactive or high-level use of the hop trajectory package" href="interactive.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="trajectory.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,13 +42,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="MCMC.html" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC"
+          <a href="interactive.html" title="Interactive or high-level use of the hop trajectory package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+          <a href="trajectory.html" title="&lt;no title&gt;"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" accesskey="U">Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" accesskey="U">Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,8 +58,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-hop.graph"></span><div class="section" id="generating-and-analyzing-a-hopping-graph-hop-graph">
-<h1>Generating and analyzing a hopping graph &#8212; <a class="reference internal" href="#module-hop.graph" title="hop.graph"><tt class="xref py py-mod docutils literal"><span class="pre">hop.graph</span></tt></a><a class="headerlink" href="#generating-and-analyzing-a-hopping-graph-hop-graph" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-hop.graph"></span><div class="section" id="hop-graph-module">
+<h1><a class="reference internal" href="#module-hop.graph" title="hop.graph"><tt class="xref py py-mod docutils literal"><span class="pre">hop.graph</span></tt></a> module<a class="headerlink" href="#hop-graph-module" title="Permalink to this headline">¶</a></h1>
 <p>Interprete the high density sites as graph (&#8216;transport graph&#8217;), with
 the sites as vertices and transitions (sampled by the simulation) as
 edges. The graph is directed.</p>
@@ -74,8 +75,6 @@ represents the fitted function to the survival times.</p>
 </div>
 <p>The basic object is the <a class="reference internal" href="#hop.graph.HoppingGraph" title="hop.graph.HoppingGraph"><tt class="xref py py-class docutils literal"><span class="pre">hop.graph.HoppingGraph</span></tt></a>; see its
 documentation for further analysis methods.</p>
-<div class="section" id="classes-and-functions">
-<h2>Classes and functions<a class="headerlink" href="#classes-and-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="hop.graph.CombinedGraph">
 <em class="property">class </em><tt class="descclassname">hop.graph.</tt><tt class="descname">CombinedGraph</tt><big>(</big><em>g0=None</em>, <em>g1=None</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/graph.html#CombinedGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.graph.CombinedGraph" title="Permalink to this definition">¶</a></dt>
@@ -959,7 +958,6 @@ the code crashes with <a href="#id7"><span class="problematic" id="id8">:Excepti
 </dd></dl>
 
 </div>
-</div>
 
 
           </div>
@@ -967,20 +965,12 @@ the code crashes with <a href="#id7"><span class="problematic" id="id8">:Excepti
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Generating and analyzing a hopping graph &#8212; <tt class="docutils literal"><span class="pre">hop.graph</span></tt></a><ul>
-<li><a class="reference internal" href="#classes-and-functions">Classes and functions</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="trajectory.html"
-                        title="previous chapter">Generating the hopping trajectory &#8212; <tt class="docutils literal"><span class="pre">hop.trajectory</span></tt></a></p>
+                        title="previous chapter">&lt;no title&gt;</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="MCMC.html"
-                        title="next chapter">Markov Chain Monte Carlo on hopping graph &#8212; <tt class="docutils literal docutils literal"><span class="pre">hop.MCMC</span></tt></a></p>
+  <p class="topless"><a href="interactive.html"
+                        title="next chapter">Interactive or high-level use of the hop trajectory package</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/hop/graph.txt"
@@ -1013,13 +1003,14 @@ the code crashes with <a href="#id7"><span class="problematic" id="id8">:Excepti
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="MCMC.html" title="Markov Chain Monte Carlo on hopping graph — hop.MCMC"
+          <a href="interactive.html" title="Interactive or high-level use of the hop trajectory package"
              >next</a> |</li>
         <li class="right" >
-          <a href="trajectory.html" title="Generating the hopping trajectory — hop.trajectory"
+          <a href="trajectory.html" title="&lt;no title&gt;"
              >previous</a> |</li>
         <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
-          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li> 
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../generate.html" >Generating a hopping graph</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

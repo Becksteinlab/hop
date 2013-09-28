@@ -67,30 +67,10 @@
 <span class="c"># You should have received a copy of the GNU General Public License</span>
 <span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Constants --- :mod:`hop.constants`</span>
-<span class="sd">==================================</span>
-
-<span class="sd">Constants that are being used throughout the hop module.</span>
-
-<span class="sd">.. rubric:: Conversions:</span>
-
-<span class="sd">The conversion factor f to a unit b&#39; for a quantity X (whose numeric</span>
-<span class="sd">value relative to the base unit b is stored in the program) is a</span>
-<span class="sd">quantity with unit b&#39;/b. In the dictionaries below only the numeric</span>
-<span class="sd">value f(b-&gt;b&#39;) is stored::</span>
-
-<span class="sd">  X/b&#39; = f(b-&gt;b&#39;) * X/b</span>
+<span class="n">__docs__</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;Constants that are being used throughout the hop module.&quot;&quot;&quot;</span>
 
 
-<span class="sd">Constants and functions</span>
-<span class="sd">-----------------------</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-
-
-<span class="c">#: Angstrom; conventional water van der Waals radius</span>
-<span class="n">r_water</span> <span class="o">=</span> <span class="mf">1.4</span>
+<span class="n">r_water</span> <span class="o">=</span> <span class="mf">1.4</span>   <span class="c"># Angstrom; conventional water van der Waals radius</span>
 
 <span class="c"># all conversions: the conversion factor f to a unit b&#39; for a</span>
 <span class="c"># quantity X (whose numeric value relative to the base unit b is</span>
@@ -99,8 +79,8 @@
 <span class="c">#</span>
 <span class="c">#  X/b&#39; = f(b-&gt;b&#39;) * X/b</span>
 
-<span class="c">#: conversion factors between the base unit (Angstrom) and other lengthUnits x:</span>
-<span class="c">#: L/x = L/A * lengthUnit_factor[x]</span>
+<span class="c"># conversion factors between the base unit (Angstrom) and other lengthUnits x:</span>
+<span class="c"># L/x = L/A * lengthUnit_factor[x]</span>
 <span class="n">lengthUnit_factor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Angstrom</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">nm</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">nanometer</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span>
 
 <span class="c"># density conversion factor. Base unit is A**-3</span>
@@ -112,8 +92,7 @@
 <span class="c"># Molar:</span>
 <span class="c">#   factor = 1 A**-3 / (N_Avogadro * (10**-9 dm)**-3)</span>
 
-<span class="c">#: Avogradro&#39;s number in  mol**-1 from   http://physics.nist.gov/cgi-bin/cuu/Value?na</span>
-<span class="n">N_Avogadro</span> <span class="o">=</span> <span class="mf">6.02214179e+23</span>
+<span class="n">N_Avogadro</span> <span class="o">=</span> <span class="mf">6.02214179e+23</span>  <span class="c"># mol**-1   http://physics.nist.gov/cgi-bin/cuu/Value?na</span>
 
 <span class="c"># relative to a density rho0 in g/cm^3:</span>
 <span class="c">#   M(H2O) = 18 g/mol   Molar mass of water</span>
@@ -121,22 +100,15 @@
 <span class="c">#   factor = 1/(1e-24 * N_Avogadro / M(H2O))</span>
 <span class="c">#     from rho/rho0 = n/(N_A * M**-1) / rho0  where [n] = 1/Volume, [rho] = mass/Volume</span>
 
-<span class="c">#: water density at T=298K, P=1atm</span>
-<span class="c">#:</span>
-<span class="c">#: .. Table: Water density from Jorgensen &amp; Jenson, JCompChem 19 (1998), 1179</span>
-<span class="c">#:</span>
-<span class="c">#: ========= ===========</span>
-<span class="c">#:  model     g/cm^3</span>
-<span class="c">#: ========= ===========</span>
-<span class="c">#:   SPC     0.985(1)</span>
-<span class="c">#:   TIP3P   1.002(1)</span>
-<span class="c">#:   TIP4P   1.001(1)</span>
-<span class="c">#:   exp     0.997</span>
-<span class="c">#: ========= ===========</span>
+<span class="c"># water density: Jorgensen &amp; Jenson, JCompChem 19 (1998), 1179: T=298K, P=1atm</span>
+<span class="c">#   SPC     0.985(1)</span>
+<span class="c">#   TIP3P   1.002(1)</span>
+<span class="c">#   TIP4P   1.001(1)</span>
+<span class="c">#   exp     0.997</span>
 <span class="n">water</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="mf">0.997</span><span class="p">,</span> <span class="n">SPC</span><span class="o">=</span><span class="mf">0.985</span><span class="p">,</span> <span class="n">TIP3P</span><span class="o">=</span><span class="mf">1.002</span><span class="p">,</span> <span class="n">TIP4P</span><span class="o">=</span><span class="mf">1.001</span><span class="p">)</span>  <span class="c"># in g cm**-3</span>
 <span class="n">water</span><span class="p">[</span><span class="s">&#39;MolarMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">18.016</span>                                   <span class="c"># in g mol**-1</span>
 
-<span class="c">#: for water densities, this is the volume per water molecule in A**3</span>
+<span class="c"># for water densities, this is the volume per water molecule in A**3</span>
 <span class="n">densityUnit_factor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">Angstrom</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">nm</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">nanometer</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1e-3</span><span class="p">,</span>
@@ -148,10 +120,10 @@
     <span class="p">)</span>
 
 
-<span class="c">#: basic time unit is ps;</span>
-<span class="c">#: 1 AKMA time unit = 4.888821E-14 sec</span>
-<span class="c">#:    http://brooks.scripps.edu/charmm_docs/c28docs/c28b2/html/usage.html#AKMA</span>
-<span class="c">#:  1200ps/ps * f = 1.2 ns/ns  ==&gt; f = 1/1000</span>
+<span class="c"># basic unit is ps</span>
+<span class="c"># 1 AKMA time unit = 4.888821E-14 sec</span>
+<span class="c">#    http://brooks.scripps.edu/charmm_docs/c28docs/c28b2/html/usage.html#AKMA</span>
+<span class="c">#  1200ps/ps * f = 1.2 ns/ns  ==&gt; f = 1/1000</span>
 <span class="n">timeUnit_factor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">ps</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">ns</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1e3</span><span class="p">,</span>
@@ -159,15 +131,16 @@
     <span class="n">AKMA</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">4.888821e-2</span><span class="p">,</span>
     <span class="p">)</span>
 
-<span class="c">#: conversion_factor used by :func:`get_conversion_factor` (type, unit1, unit2):</span>
-<span class="c">#:</span>
-<span class="c">#: Note: any observable with a unit (i.e. one with an entry in</span>
-<span class="c">#:  Grid.unit) needs an entry in conversion_factor[] because</span>
-<span class="c">#: _check_set_unit() tests for type/value in this</span>
-<span class="c">#: dictionary. Derived classes can add to</span>
-<span class="c">#: conversion_factor, too, when they add new observable, eg threshold:</span>
-<span class="c">#: Another quantity with a unit (it is a density so it gets the</span>
-<span class="c">#: density unit factors)</span>
+<span class="c"># conversion_factor used by get_conversion_factor(type, unit1, unit2):</span>
+<span class="c">#</span>
+<span class="c"># Note: any observable with a unit (i.e. one with an entry in</span>
+<span class="c"># Grid.unit) needs an entry in conversion_factor[] because</span>
+<span class="c"># _check_set_unit() tests for type/value in this</span>
+<span class="c"># dictionary. Derived classes can add to</span>
+<span class="c"># conversion_factor, too, when they add new observable, eg threshold:</span>
+<span class="c">#   Another quantity with a unit (it is a density so it gets the</span>
+<span class="c">#   density unit factors)</span>
+
 <span class="n">conversion_factor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">lengthUnit_factor</span><span class="p">,</span>
                          <span class="n">density</span><span class="o">=</span><span class="n">densityUnit_factor</span><span class="p">,</span>
                          <span class="n">threshold</span> <span class="o">=</span> <span class="n">densityUnit_factor</span><span class="p">,</span>
@@ -175,10 +148,10 @@
                          <span class="p">)</span>
 
 
-<span class="c">#: pre-defined integer labels for sites --- DO NOT CHANGE THIS.</span>
-<span class="c">#: In particular, the order must be preserved and it is assumed that &#39;proper&#39; sites</span>
-<span class="c">#: start after the bulk. The labels are also directly used as indices into arrays and</span>
-<span class="c">#: probably quite some code still implicitly assumes the definition below.</span>
+<span class="c"># pre-defined integer labels for sites --- DO NOT CHANGE THIS.</span>
+<span class="c"># In particular, the order must be preserved and it is assumed that &#39;proper&#39; sites</span>
+<span class="c"># start after the bulk. The labels are also directly used as indices into arrays and</span>
+<span class="c"># probably quite some code still implicitly assumes the definition below.</span>
 <span class="n">SITELABEL</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">outlier</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">interstitial</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">bulk</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="get_conversion_factor"><a class="viewcode-back" href="../../hop/constants.html#hop.constants.get_conversion_factor">[docs]</a><span class="k">def</span> <span class="nf">get_conversion_factor</span><span class="p">(</span><span class="n">unit_type</span><span class="p">,</span><span class="n">u1</span><span class="p">,</span><span class="n">u2</span><span class="p">):</span>
