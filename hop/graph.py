@@ -1464,7 +1464,7 @@ class HoppingGraph(object):
                      'occupancy_avg':self.site_properties.occupancy_avg[site],
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
-                     'rates':site:self.rates(site),
+                     'rates':self.rates(site),
 			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
