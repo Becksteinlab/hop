@@ -1474,7 +1474,9 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
-            ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
+            
+            xml.write("""\t\t<att type="real" name="rates" value="%(rates)d"/>\n""" % xattr)
+	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
             xml.write("""\t</node>\n""")
         for e in G.edges(data=True):
             u,v = self.from_site(e), self.to_site(e)   # === u,v = e[:2]
