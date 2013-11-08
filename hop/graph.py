@@ -1227,8 +1227,9 @@ class HoppingGraph(object):
         N_in  = numpy.sum( [ self.number_of_hops(e) for e in G.in_edges(n, data=True)] )
         N_out = numpy.sum( [-self.number_of_hops(e) for e in G.out_edges(n, data=True)] )
         N_tot = N_in + N_out
-        return {'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
+        ratedict={'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
                 'N_tot':N_tot,'N_in':N_in,'N_out':N_out}
+	return  ratedict
 
     def show_site(self,sites,use_filtered_graph=True):
         """Display data about sites (list of site labels or single site)."""
@@ -1464,7 +1465,7 @@ class HoppingGraph(object):
                      'occupancy_avg':self.site_properties.occupancy_avg[site],
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
-                     'rates':self.rates(site),
+                     'rates':self.rates(site)['N_tot'],
 			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
@@ -1475,7 +1476,7 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
             
-            xml.write("""\t\t<att type="real" name="rates" value="%(rates)d"/>\n""" % xattr)
+            xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
 	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
             xml.write("""\t</node>\n""")
         for e in G.edges(data=True):
