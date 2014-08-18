@@ -614,10 +614,9 @@ class HoppingGraph(object):
             a,k1,k2 = f.parameters
             ## select rate that contributes more:
             ##if a*k1 > (1-a)*k2:
-            if a > 0.5:
-                k = k1
-            else:
-                k = k2
+            #Above is old; take a weighted average instead
+            k = a*k1 + (1-a)*k2
+            
         else:
             raise ValueError('Unknown waitingtime fit, '+str(f))
         return 1000 * k   # 1/ps --> 1/ns
@@ -1466,6 +1465,8 @@ class HoppingGraph(object):
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
                      'rates':self.rates(site)['N_tot'],
+                    # 'z_pos':self.pos[node]['z'],
+                     
 			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
@@ -1475,6 +1476,7 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
+          #  xml.write("""\t\t<att type="real" name="z_pos" value="%(z_pos)g"/>\n""" % xattr)
             
             xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
 	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
@@ -1633,7 +1635,7 @@ class HoppingGraph(object):
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
-        if (n+1) % 4 != 0: psf.write('\n')
+            if (n+1) % 4 != 0: psf.write('\n')
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()
