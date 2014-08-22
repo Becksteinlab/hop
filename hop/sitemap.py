@@ -101,7 +101,7 @@ class Grid(hop.utilities.Saveable):
 
         If the input histogram consists of counts per cell then the
         make_density() method converts the grid to a physical
-        density. For a probability density, divide it by grid.sum(0 or
+        density. For a probability density, divide it by grid.sum() or
         use normed=True right away in histogramdd().
 
         If grid, edges, AND filename are given then the
@@ -251,7 +251,7 @@ class Grid(hop.utilities.Saveable):
         There may be some undesirable cross-interactions with convert_length...
         """
         if not self.P['isDensity']:
-            raise RuntimeError('The grid is not a density so converty_density(0 makes no sense.')
+            raise RuntimeError('The grid is not a density so convert_density() makes no sense.')
         if unit == self.unit['density']:
             return
         self.grid *= hop.constants.get_conversion_factor('density',self.unit['density'],unit)
