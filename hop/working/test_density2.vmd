@@ -1,0 +1,28 @@
+mol new test_density2.psf type psf first 0 last -1 step 1 filebonds 1 autobonds 0 waitfor all
+mol addfile test_density2.pdb type pdb first 0 last -1 step 1 filebonds 0 autobonds 0 waitfor all
+proc labelsites {} {
+	lappend sitelabels [draw text {  46.500   46.500   47.140} "1"]
+	lappend sitelabels [draw text {  46.500   46.500   91.140} "2"]
+}
+proc delsitelabels {} {
+	foreach id $sitelabels {
+		draw delete $id
+	}
+}
+
+mol delrep 0 top
+mol representation CPK 1.000000 0.300000 8.000000 6.000000
+mol color Name
+mol selection {all}
+mol material Opaque
+mol addrep top
+
+display projection orthographic
+axes location off
+color Display Background white
+
+# draw labels
+label textsize 1.0
+draw color black
+labelsites
+puts "Labels can be deleted with 'delsitelabels'."

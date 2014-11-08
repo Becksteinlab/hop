@@ -1,0 +1,10 @@
+PSF
+
+      2 !NTITLE
+* Sites written by
+* $Id$
+
+     3 !NATOM
+       1 SITE 2     SIT S      OH 0.000000      1.0000               0
+       2 SITE 3     SIT S      OH 0.000000      1.0000               0
+       3 SITE 4     SIT S      OH 0.000000      1.0000               0

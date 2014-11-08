@@ -1,0 +1,2 @@
+2014-11-07 11:56:53,070 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-07 11:56:53,071 MDAnalysis.app CRITICAL Hopping topology '/nfs/homes/ianw/Source/Hop/hop/flux/hoptraj.psf' not found; (use --topology)
