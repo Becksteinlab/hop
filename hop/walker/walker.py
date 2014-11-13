@@ -57,4 +57,23 @@ def analysis(graph,nodes,init,N):
             #print(len(taus))
             continue
     tau_avg=sum(taus)/len(taus)
-    return tau_avg 
+    return tau_avg
+
+def path_filter(graph,nodes,init,mid,N):
+    out=init_walker(graph,nodes,init,N)
+    taus=[]
+    for i in out:
+        tau=0
+        for j in i:
+            if j==mid:
+                
+                try:
+                    for k in i:
+                        tau+=float(1/graph[k][i[i.index(k)+1]]['k'])
+       #                print(tau)
+                except:
+                    taus.append(tau)
+                    #print(len(taus))
+                break
+    tau_avg=sum(taus)/len(taus)
+    return tau_avg

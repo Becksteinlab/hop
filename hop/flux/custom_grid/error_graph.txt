@@ -1,0 +1,23 @@
+  File "/nfs/homes/ianw/.local/bin/hop-generate-hopgraph.py", line 7, in <module>
+    execfile(__file__)
+  File "/nfs/homes/ianw/Source/Hop/scripts/hop-generate-hopgraph.py", line 113, in <module>
+    localcopy=opts.localcopy)
+  File "/nfs/homes/ianw/Source/Hop/scripts/hop-generate-hopgraph.py", line 37, in generate_hopgraph
+    tgraph = _generate_hopgraph(trajectory)
+  File "/nfs/homes/ianw/Source/Hop/scripts/hop-generate-hopgraph.py", line 22, in _generate_hopgraph
+    tgraph = hop.interactive.build_hoppinggraph(hoptraj,density)
+  File "/nfs/homes/ianw/Source/Hop/hop/interactive.py", line 477, in build_hoppinggraph
+    tgraph.compute_residency_times()
+  File "/nfs/homes/ianw/Source/Hop/hop/graph.py", line 138, in compute_residency_times
+    site_properties=site_properties)
+  File "/nfs/homes/ianw/Source/Hop/hop/graph.py", line 595, in __init__
+    ebunch = [(e[0],e[1],self._rate(properties[e]['tau'])) for e in graph.edges_iter()]
+  File "/nfs/homes/ianw/Source/Hop/hop/graph.py", line 1714, in _rate
+    fit = fitExp2(x,S(x))                # a*exp(-k1*x) + (1-a)*exp(-k2*x)
+  File "/nfs/homes/ianw/Source/Hop/hop/graph.py", line 2460, in S_lowmem
+    values += numpy.sum([Unitstep(t0,tmp_t) for t0 in waitingtimes[i:i+block_w]],axis=0)
+  File "/nfs/homes/ianw/.local/lib/python2.7/site-packages/numpy-1.8.2-py2.7-linux-x86_64.egg/numpy/core/fromnumeric.py", line 1709, in sum
+    out=out, keepdims=keepdims)
+  File "/nfs/homes/ianw/.local/lib/python2.7/site-packages/numpy-1.8.2-py2.7-linux-x86_64.egg/numpy/core/_methods.py", line 25, in _sum
+    out=out, keepdims=keepdims)
+

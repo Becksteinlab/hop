@@ -1589,6 +1589,19 @@ class HoppingGraph(object):
         pdbfile = self.filename(filename,'pdb')
         io.save(pdbfile)
 
+    def write_tcl(self,graph,props,filename=None):
+        
+        out=open(filename+".tcl","w")
+        for node in graph:
+            pos = props[node].center
+            vol = props[node].volume
+            occ = props[node].occupancy_avg
+            degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+            commonlabel = props.equivalence_name[node].strip()
+            out.write("graphics sphere {pos[0], pos[1], pos[2]} 1 1\n")
+        out.close()
+
+
     def write_psf(self,graph,props,filename=None):
         """Pseudo psf with nodes as atoms and edges as bonds"""
         # Standard no CHEQ format for a Charmm PSF file:
@@ -2486,16 +2499,3 @@ def Unitstep(x,x0):
                                        / 1    if x >= x0
     Unitstep(x,x0) == Theta(x - x0) = {  0.5  if x == x0
                                        \ 0    if x <  x0
-
-    This is a numpy ufunc.
-
-    :CAVEAT:    If both x and x0 are arrays of length > 1 then weird things are
-                going to happen because of broadcasting.
-                Using nD arrays can also lead to surprising results.
-
-    :See also:  http://mathworld.wolfram.com/HeavisideStepFunction.html
-    """
-    _x = numpy.asarray(x)
-    _x0 = numpy.asarray(x0)
-    return 0.5*(1 + numpy.sign(_x - _x0))
-

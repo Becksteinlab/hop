@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/research/groups/pb/punin/public_html/XGMML/GML_XGMML/xgmml.dtd">
+<graph label="Transitions between sites, bulk site omitted" directed="1" id="HoppingGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.cs.rpi.edu/XGMML" Vendor="hop.graph.HoppingGraph._export_xgmml">
+	<att name="documentVersion" value="1.0"/>
+	<att name="softwareVersion" value="$Id$"/>
+	<att name="description" value="=Transitions between sites, bulk site omitted"/>
+	<node id="2" label="2">
+		<att type="real" name="volume" value="454776"/>
+		<att type="real" name="occupancy" value="1.84897e+06"/>
+		<att type="real" name="distance" value="20.6223"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="506"/>
+	</node>
+	<node id="3" label="3">
+		<att type="real" name="volume" value="6698"/>
+		<att type="real" name="occupancy" value="6698"/>
+		<att type="real" name="distance" value="20.6223"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="-117"/>
+	</node>
+	<node id="-1" label="-1">
+		<att type="real" name="volume" value="6698"/>
+		<att type="real" name="occupancy" value="6698"/>
+		<att type="real" name="distance" value="20.6223"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="-389.0"/>
+	</node>
+	<edge source="2" target="3" label="2 -> 3">
+		<att type="string" name="EDGE_TYPE" value="DirectedEdge"/>
+		<att type="string" name="interaction" value="DirectedEdge"/>
+		<att type="integer" name="N" value="1159"/>
+		<att type="real" name="rate" value="75.707079"/>
+	</edge>
+	<edge source="3" target="2" label="3 -> 2">
+		<att type="string" name="EDGE_TYPE" value="DirectedEdge"/>
+		<att type="string" name="interaction" value="DirectedEdge"/>
+		<att type="integer" name="N" value="1276"/>
+		<att type="real" name="rate" value="66.004906"/>
+	</edge>
+	<edge source="-1" target="2" label="-1 -> 2">
+		<att type="string" name="EDGE_TYPE" value="DirectedEdge"/>
+		<att type="string" name="interaction" value="DirectedEdge"/>
+		<att type="integer" name="N" value="389"/>
+		<att type="real" name="rate" value="637.129598"/>
+	</edge>
+</graph>

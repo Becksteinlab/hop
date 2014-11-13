@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/research/groups/pb/punin/public_html/XGMML/GML_XGMML/xgmml.dtd">
+<graph label="Transitions between sites, bulk site omitted" directed="1" id="HoppingGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.cs.rpi.edu/XGMML" Vendor="hop.graph.HoppingGraph._export_xgmml">
+	<att name="documentVersion" value="1.0"/>
+	<att name="softwareVersion" value="$Id$"/>
+	<att name="description" value="=Transitions between sites, bulk site omitted"/>
+	<node id="2" label="2">
+		<att type="real" name="volume" value="209320"/>
+		<att type="real" name="occupancy" value="621686"/>
+		<att type="real" name="distance" value="44.8196"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="67"/>
+	</node>
+	<node id="3" label="3">
+		<att type="real" name="volume" value="110032"/>
+		<att type="real" name="occupancy" value="440128"/>
+		<att type="real" name="distance" value="30.7258"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="246"/>
+	</node>
+	<node id="4" label="4">
+		<att type="real" name="volume" value="6698"/>
+		<att type="real" name="occupancy" value="6698"/>
+		<att type="real" name="distance" value="16.9141"/>
+		<att type="integer" name="has_bulkconnection" value="1"/>
+		<att type="real" name="rates" value="121"/>
+	</node>
+

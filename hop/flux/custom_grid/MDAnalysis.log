@@ -50,3 +50,72 @@
 2014-11-07 11:57:28,313 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd'
 2014-11-07 11:57:31,562 MDAnalysis.topology.PSF DEBUG    PSF file '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf': format 'EXTENDED'
 2014-11-07 11:57:33,253 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd...
+2014-11-07 17:34:44,653 MDAnalysis.analysis.hop.graph INFO     Building hopping graph with rate constants k1, k2 or k.
+2014-11-07 17:34:44,658 MDAnalysis.analysis.hop.graph INFO     (Ignore 'Warning: ... maxfev = 800': then a single k is chosen automatically.)
+2014-11-10 12:14:44,155 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-10 12:14:44,156 MDAnalysis.app INFO     Generating hopping graph from trajectory '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'/'/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd' ...
+2014-11-10 12:14:44,157 MDAnalysis.app DEBUG    density    = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/test_density_customGrid.pickle'
+2014-11-10 12:14:44,157 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'
+2014-11-10 12:14:44,157 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd'
+2014-11-10 12:14:46,034 MDAnalysis.topology.PSF DEBUG    PSF file '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf': format 'EXTENDED'
+2014-11-10 12:14:46,909 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd...
+2014-11-10 12:15:31,946 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-10 12:15:31,946 MDAnalysis.app INFO     Generating hopping graph from trajectory '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'/'/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd' ...
+2014-11-10 12:15:31,947 MDAnalysis.app DEBUG    density    = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/test_density_customGrid.pickle'
+2014-11-10 12:15:31,947 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'
+2014-11-10 12:15:31,947 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd'
+2014-11-10 12:15:33,672 MDAnalysis.topology.PSF DEBUG    PSF file '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf': format 'EXTENDED'
+2014-11-10 12:15:34,534 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd...
+2014-11-10 15:43:46,764 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-10 15:43:46,765 MDAnalysis.app CRITICAL Density '/nfs/homes/ianw/Source/Hop/hop/flux/analysis/water.pickle' not found
+2014-11-11 11:32:14,222 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 11:32:14,223 MDAnalysis.app CRITICAL A pickled density with bulk site is required. See --help.
+2014-11-11 11:32:24,120 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 11:32:27,312 MDAnalysis.app INFO     Generating hopping trajectory for density 'test_density_customGrid.pickle'
+2014-11-11 11:32:27,313 MDAnalysis.app DEBUG    density    = 'test_density_customGrid.pickle'
+2014-11-11 11:32:27,313 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/Hop/hop/flux/coord/md.pdb'
+2014-11-11 11:32:27,313 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Projects/Mhp1/out_open/traj_fit/md_100ns.xtc'
+2014-11-11 11:32:27,313 MDAnalysis.app DEBUG    selection  = 'resname SOL'
+2014-11-11 11:32:32,856 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Projects/Mhp1/out_open/traj_fit/md_100ns.xtc...
+2014-11-11 11:34:59,429 MDAnalysis.analysis.hop.trajectory INFO     HoppingTrajectory.write(): wrote hoptraj 'hoptraj.dcd'.
+2014-11-11 11:35:00,198 MDAnalysis.analysis.hop.trajectory INFO     HoppingTrajectory.write(): wrote hoppsf 'hoptraj.psf'.
+2014-11-11 11:35:00,200 MDAnalysis.topology.PSF DEBUG    PSF file 'hoptraj.psf': format 'EXTENDED'
+2014-11-11 11:35:02,124 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading hoptraj.dcd...
+2014-11-11 11:35:02,462 MDAnalysis.app INFO     Created hopping trajectory hoptraj.dcd with hoptraj.psf
+2014-11-11 11:35:02,462 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2014-11-11 11:35:15,867 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 11:35:15,867 MDAnalysis.app CRITICAL Density '/nfs/homes/ianw/Source/Hop/hop/flux/analysis/water.pickle' not found
+2014-11-11 11:35:24,457 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 11:35:24,458 MDAnalysis.app INFO     Generating hopping graph from trajectory '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'/'/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd' ...
+2014-11-11 11:35:24,458 MDAnalysis.app DEBUG    density    = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/test_density_customGrid.pickle'
+2014-11-11 11:35:24,458 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf'
+2014-11-11 11:35:24,458 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd'
+2014-11-11 11:35:27,551 MDAnalysis.topology.PSF DEBUG    PSF file '/nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.psf': format 'EXTENDED'
+2014-11-11 11:35:29,164 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/Hop/hop/flux/custom_grid/hoptraj.dcd...
+2014-11-11 11:37:17,238 MDAnalysis.analysis.hop.graph INFO     Building hopping graph with rate constants k1, k2 or k.
+2014-11-11 11:37:17,239 MDAnalysis.analysis.hop.graph INFO     (Ignore 'Warning: ... maxfev = 800': then a single k is chosen automatically.)
+2014-11-11 11:37:26,119 MDAnalysis.app INFO     Saved hopgraph as hopgraph.pickle
+2014-11-11 11:37:26,119 MDAnalysis.analysis.hop.interactive WARNING  Setting analysisdir = ''
+2014-11-11 11:37:26,130 MDAnalysis.analysis.hop.interactive INFO     Wrote all rates to 'rates.txt'.
+2014-11-11 11:37:26,151 MDAnalysis.analysis.hop.interactive INFO     Exported hopgraph as hopgraph.xgmml
+2014-11-11 11:37:26,152 MDAnalysis.analysis.hop.interactive INFO     Generating 3D graph hopgraph.psf/pdb
+2014-11-11 11:37:26,152 MDAnalysis.analysis.hop.interactive INFO     Note: bulk site omitted for clarity.
+2014-11-11 11:37:26,203 MDAnalysis.analysis.hop.interactive INFO     Generating survival times plots in 'survival_times'
+2014-11-11 11:37:26,203 MDAnalysis.analysis.hop.interactive INFO     This takes a while. Note: transitions to/from bulk are excluded, Nmin=5.
+2014-11-11 11:53:28,893 MDAnalysis.analysis.hop.graph INFO     Exported S(t) plot page 1 to file survival_times/S_01_log.png.
+2014-11-11 11:53:29,021 MDAnalysis.app INFO     Created hopping graph hopgraph.pickle and other files
+2014-11-11 11:53:29,022 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2014-11-11 14:02:05,653 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 14:02:05,654 MDAnalysis.app INFO     hopgraph file 'hopgraph.pickle' already exists; only doing analysis
+2014-11-11 14:02:05,895 MDAnalysis.analysis.hop.interactive WARNING  Setting analysisdir = ''
+2014-11-11 14:02:05,955 MDAnalysis.analysis.hop.interactive INFO     Wrote all rates to 'rates.txt'.
+2014-11-11 14:02:05,962 MDAnalysis.analysis.hop.interactive INFO     Exported hopgraph as hopgraph.xgmml
+2014-11-11 14:02:05,963 MDAnalysis.analysis.hop.interactive INFO     Generating 3D graph hopgraph.psf/pdb
+2014-11-11 14:02:05,963 MDAnalysis.analysis.hop.interactive INFO     Note: bulk site omitted for clarity.
+2014-11-11 14:02:43,604 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 14:04:09,481 MDAnalysis   INFO     MDAnalysis 0.8.1 STARTED logging to 'MDAnalysis.log'
+2014-11-11 14:04:09,609 MDAnalysis.app INFO     Generating hopping trajectory for density 'test_density2.pickle'
+2014-11-11 14:04:09,609 MDAnalysis.app DEBUG    density    = 'test_density2.pickle'
+2014-11-11 14:04:09,609 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/Hop/hop/flux/coord/md.pdb'
+2014-11-11 14:04:09,609 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Projects/Mhp1/out_open/traj_fit/md_100ns.xtc'
+2014-11-11 14:04:09,609 MDAnalysis.app DEBUG    selection  = 'resname SOL'
