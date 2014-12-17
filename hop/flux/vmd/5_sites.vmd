@@ -1,0 +1,29 @@
+mol new 5_sites.psf type psf first 0 last -1 step 1 filebonds 1 autobonds 0 waitfor all
+mol addfile 5_sites.pdb type pdb first 0 last -1 step 1 filebonds 0 autobonds 0 waitfor all
+proc labelsites {} {
+	lappend sitelabels [draw text {  32.700   21.035    1.825} "2"]
+	lappend sitelabels [draw text {  32.700   21.035    5.825} "3"]
+	lappend sitelabels [draw text {  45.700   43.535   28.825} "4"]
+}
+proc delsitelabels {} {
+	foreach id $sitelabels {
+		draw delete $id
+	}
+}
+
+mol delrep 0 top
+mol representation CPK 1.000000 0.300000 8.000000 6.000000
+mol color Name
+mol selection {all}
+mol material Opaque
+mol addrep top
+
+display projection orthographic
+axes location off
+color Display Background white
+
+# draw labels
+label textsize 1.0
+draw color black
+labelsites
+puts "Labels can be deleted with 'delsitelabels'."

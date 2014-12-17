@@ -1,0 +1,1 @@
+ draw sphere {36.6229982376 26.8030004501 49.7224990427} radius 1 resolution 16
