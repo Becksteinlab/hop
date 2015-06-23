@@ -2,6 +2,9 @@
  README
 ========
 
+|zenodo|
+
+
 **DEVELOPMENT VERSION of hop**: Please note that this is a beta
 version of the package. It is still in heavy development. Feedback is
 very welcome (see below).
@@ -66,6 +69,7 @@ Thanks!
 
 Citing
 ======
+|zenodo|
 
 If you use Hop in published work please cite (for the time being) the
 old abstract and the MDAnalysis paper (because Hop is built on top of
@@ -91,5 +95,8 @@ Contact
 Please do not hesitate to contact Oliver Beckstein
 <orbeckst@gmail.com> if problems occur or if you have suggestions how
 to improve the package or these instructions.
+
+.. |zenodo| image:: https://zenodo.org/badge/doi/10.5281/zenodo.18864.svg   
+            :target: http://dx.doi.org/10.5281/zenodo.18864
 
 
