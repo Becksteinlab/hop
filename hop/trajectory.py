@@ -15,17 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Based on a definition of grid sites, convert a molecular
-dynamics trajectory into a trajectory of site hops.
+"""
+Generating the hopping trajectory --- :mod:`hop.trajectory`
+===========================================================
 
-You will also need the following modules to create the input for HoppingTraj:
-hop.sitemap, MDAnalysis
+Based on a definition of grid sites, convert a molecular dynamics
+trajectory into a trajectory of site hops.
+
+You will also need the following modules to create the input for
+:class:`HoppingTraj`: :mod:`hop.sitemap`.
+
+Classes
+-------
+
 """
 import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
 from MDAnalysis.core.log import ProgressMeter
-
 # used to be here, migrated to MDAnalysis
 import warnings
 try:
@@ -276,7 +283,7 @@ class HoppingTrajectory(object):
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
             pm.echo(ts.frame)
-        dcdwriter.close()
+	dcdwriter.close()
         logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
@@ -393,8 +400,8 @@ class HoppingTrajectory(object):
 
         self._init_coord2hop()
         #for traj_ts in self.traj[start:stop]:
-        for traj_ts in self.traj:              # no slicing for big trajectories
-            yield self._coord2hop(traj_ts)
+	for traj_ts in self.traj:              # no slicing for big trajectories
+        	yield self._coord2hop(traj_ts)
 
     def _init_coord2hop(self):
         """Allocate helper arrays for _coord2hop()"""
@@ -402,7 +409,7 @@ class HoppingTrajectory(object):
         # and makes sure that we don't keep spurious sites from 1st frame around
         self._sites_last = SITELABEL['interstitial'] * numpy.ones(self.tgroup.numberOfAtoms())
         self._offsites = numpy.empty(self.tgroup.numberOfAtoms(),dtype=bool)
-
+    
     def _coord2hop(self,ts):
         """Translate a single trajectory coordinate frame into a hopping
         trajectory frame and updates the hopping trajectory frame.
@@ -457,9 +464,9 @@ class HoppingTrajectory(object):
         #
         # pos[:,0] = site(t), pos[:,1] = orbit site, pos[:,2] = 0 (unused)
         pos = self.ts._pos     # assign slices to avoid loop (thanks to Naveen)
-        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]] \
+        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]]\
                     for iatom in xrange(N)]
-        s = pos[:,0]
+	s = pos[:,0]
         self._offsites[:] = (s == SITELABEL['interstitial']) | (s == SITELABEL['outlier'])
         pos[:,1] = s      # particles in interstital and outliers are assigned their previous site
         pos[self._offsites,1] = self._sites_last[self._offsites]
@@ -468,8 +475,8 @@ class HoppingTrajectory(object):
         # _sites_last[] was initialized to 'interstitial': this ensures proper accounting
         # for all later steps (because 'interstitial' is thrown away at the analysis stage)
         self._sites_last[:] = pos[:,1]  # save orbit sites for next step
-        return self.ts
-
+	return self.ts
+    
     def iterator(self):
         return self.__iter__()
 
@@ -636,7 +643,7 @@ class TAPtrajectory(object):
             nextTS = self._read_next_timestep
         else:
             nextTS = self._map_next_timestep
-        return nextTS()
+	return nextTS()
 
     def rewind(self):
         if self.TAPtraj:

@@ -1,0 +1,2 @@
+.. automodule:: hop.utilities
+   :members:

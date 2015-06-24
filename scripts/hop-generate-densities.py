@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_option("-D", "--analysisdir", dest="analysisdir",
                       metavar="DIRNAME",
                       help="results will be stored under DIRNAME/(basename DIR)  [%default]")
-    parser.add_option("--threshold", dest="solvent_threshold",
+    parser.add_option("--threshold", type='float',dest="solvent_threshold",
                       metavar="CUTOFF",
                       help="hydration sites are considered regions of density greater than CUTOFF; "
                       "CUTOFF is measured in units of the water density at standard confitions; "

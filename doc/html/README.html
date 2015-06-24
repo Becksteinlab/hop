@@ -1,0 +1,191 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>README &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="index.html" />
+    <link rel="up" title="Obtaining and installing the package" href="installation.html" />
+    <link rel="next" title="INSTALL" href="INSTALL.html" />
+    <link rel="prev" title="Obtaining and installing the package" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="INSTALL.html" title="INSTALL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Obtaining and installing the package"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="installation.html" accesskey="U">Obtaining and installing the package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="readme">
+<h1>README<a class="headerlink" href="#readme" title="Permalink to this headline">¶</a></h1>
+<p>This is a collection of python modules to analyze (primarily) water
+behaviour in MD simulations. The idea is to find regions with a
+density above a given threshold (hydration sites) and catalogue those
+sites. Once this is done, one can analyze water movement in terms of
+hops between those sites. The complicated solvation dynamics is thus
+represented as a graph in which hydration sites are the nodes (or
+vertices) and movements between sites are the edges.</p>
+<p>Of course, it is also possible to look at the movement of other
+particles such as ions or small molecules &#8212; one simply selects a
+different species.</p>
+<p>The package is called &#8216;Hop&#8217; (no clever acronym, just quick to type,
+and reflecting the fact that a &#8220;hopping analysis&#8221; is performed).</p>
+<p>Hop requires <a class="reference external" href="http://mdanalysis.googlecode.com/">MDAnalysis</a>.</p>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>Please see the contents of the <tt class="docutils literal"><span class="pre">doc/</span></tt> directory, in particular
+<tt class="docutils literal"><span class="pre">doc/overview.txt</span></tt>, and the python doc strings.</p>
+</div>
+<div class="section" id="bug-reporting">
+<h2>Bug reporting<a class="headerlink" href="#bug-reporting" title="Permalink to this headline">¶</a></h2>
+<p>Almost invariably, things will not work right away or it will be
+unclear how to accomplish a certain task. In order to keep track of
+feedback I ask you to use the Issue tracker at</p>
+<blockquote>
+<div><a class="reference external" href="http://github.com/orbeckst/hop/issues">http://github.com/orbeckst/hop/issues</a></div></blockquote>
+<p>It helps tremendously to have everything in one place. Of course, feel
+free to also additionally email me directly.</p>
+<p>Thanks!</p>
+</div>
+<div class="section" id="citing">
+<h2>Citing<a class="headerlink" href="#citing" title="Permalink to this headline">¶</a></h2>
+<p>If you use Hop in published work please cite (for the time being) the abstract
+<a class="reference internal" href="#hop2009">[Hop2009]</a> and the MDAnalysis paper (because Hop is built on top of MDAnalysis)
+<a class="reference internal" href="#mdanalysis2011">[MDAnalysis2011]</a>. Thanks!</p>
+<table class="docutils citation" frame="void" id="hop2009" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Hop2009]</a></td><td>Oliver Beckstein, Naveen Michaud-Agrawal and Thomas B.
+Woolf. Quantitative Analysis of Water Dynamics in and near
+Proteins. Biophysical Journal 96 (2009), 601a.
+doi:10.1016/j.bpj.2008.12.3147</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="mdanalysis2011" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[MDAnalysis2011]</a></td><td>N. Michaud-Agrawal, E. J. Denning, T. B. Woolf, and O. Beckstein.
+MDAnalysis: A Toolkit for the Analysis of Molecular Dynamics
+Simulations. J. Comput. Chem. 32 (2011), 2319&#8211;2327, doi:10.1002/jcc.21787</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline">¶</a></h2>
+<p>Please do not hesitate to contact Oliver Beckstein &lt;<a class="reference external" href="mailto:orbeckst&#37;&#52;&#48;gmail&#46;com">orbeckst<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt; if
+problems occur or if you have suggestions how to improve the package or these
+instructions.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">README</a><ul>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#bug-reporting">Bug reporting</a></li>
+<li><a class="reference internal" href="#citing">Citing</a></li>
+<li><a class="reference internal" href="#contact">Contact</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">Obtaining and installing the package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="INSTALL.html"
+                        title="next chapter">INSTALL</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/README.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="INSTALL.html" title="INSTALL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Obtaining and installing the package"
+             >previous</a> |</li>
+        <li><a href="index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="installation.html" >Obtaining and installing the package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Histogram positions of particles from a MD trajectory on a
+"""
+Defining solvation sites --- :mod:`hop.sitemap`
+===============================================
+
+Histogram positions of particles from a MD trajectory on a
 grid. Calculate the density, change units (both of the grid and of the
 density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.
@@ -31,7 +35,7 @@ import os,os.path,errno
 import cPickle
 import warnings
 
-from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats 
+from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats
 import networkx as NX          # https://networkx.lanl.gov/
 
 # set() for older versions of python (<2.4)
@@ -74,7 +78,7 @@ class Grid(hop.utilities.Saveable):
           g = Grid(dxfile=<dxfile>)
 
         Arguments:
-        
+
         grid       histogram or density and ...
         edges      list of arrays, the lower and upper bin edges along the axes
                    (both are output by numpy.histogramdd())
@@ -85,7 +89,7 @@ class Grid(hop.utilities.Saveable):
                    isDensity  False: grid is a histogram with counts,
                               True: a density.
                               Applying Grid.make_density() sets it to True.
-        unit       dict(length='Angstrom', density=None) 
+        unit       dict(length='Angstrom', density=None)
                    length:  physical unit of grid edges (Angstrom or nm)
                    density: unit of the density if isDensity == True or None
         metadata   a user defined dictionary of arbitrary values
@@ -97,14 +101,14 @@ class Grid(hop.utilities.Saveable):
 
         If the input histogram consists of counts per cell then the
         make_density() method converts the grid to a physical
-        density. For a probability density, divide it by grid.sum(0 or
+        density. For a probability density, divide it by grid.sum() or
         use normed=True right away in histogramdd().
 
         If grid, edges, AND filename are given then the
         extension-stripped filename is stored as the default filename.
 
         NOTE:
-        
+
         * It is suggested to construct the Grid object from a
           histogram, to supply the appropriate length unit, and to use
           make_density() to obtain a density. This ensures that the
@@ -112,13 +116,13 @@ class Grid(hop.utilities.Saveable):
 
         TODO:
         * arg list is still messy
-        * probability density not supported as a unit        
+        * probability density not supported as a unit
         """
 
         parameters = DefaultDict(self.parameters_default,parameters)
-        unit = DefaultDict(self.unit_default,unit)        
+        unit = DefaultDict(self.unit_default,unit)
         metadata = DefaultDict({},metadata)
-        
+
         # First set attributes that may be overriden by reading from a file
         # using load().
         self._dxfile = dxfile
@@ -196,7 +200,7 @@ class Grid(hop.utilities.Saveable):
         # (from numpy.histogramdd, which is for general n-D grids)
         if self.P['isDensity']:
             raise RuntimeError("Grid is already a density.")
-        
+
         dedges = map(numpy.diff,self.edges)
         D = len(self.edges)
         for i in xrange(D):
@@ -205,7 +209,7 @@ class Grid(hop.utilities.Saveable):
             self.grid /= dedges[i].reshape(shape)
         self.P['isDensity'] = True
         self.unit['density'] = self.unit['length']
-        
+
     def convert_length(self,unit='Angstrom'):
         """Convert Grid object to the new unit:
         Grid.convert_length(<unit>)
@@ -247,12 +251,12 @@ class Grid(hop.utilities.Saveable):
         There may be some undesirable cross-interactions with convert_length...
         """
         if not self.P['isDensity']:
-            raise RuntimeError('The grid is not a density so converty_density(0 makes no sense.')
+            raise RuntimeError('The grid is not a density so convert_density() makes no sense.')
         if unit == self.unit['density']:
             return
         self.grid *= hop.constants.get_conversion_factor('density',self.unit['density'],unit)
         self.unit['density'] = unit
-      
+
     def centers(self):
         """Returns the coordinates of the centers of all grid cells as an iterator."""
         # crappy
@@ -261,16 +265,16 @@ class Grid(hop.utilities.Saveable):
             # NOTE: origin is center of (0,0,0) (and already has index offset by 0.5)
             yield numpy.sum(self.delta * numpy.asarray(idx), axis=0) + self.origin
 
-              
+
     def importdx(self,dxfile):
         """Initializes Grid from a OpenDX file."""
-        
+
         dx = OpenDX.field(0)
         dx.read(dxfile)
         grid,edges = dx.histogramdd()
         self.__init__(grid=grid,edges=edges,parameters=self.P,unit=self.unit,
                       metadata=self.metadata,dxfile=dxfile)
-    
+
     def export(self,filename=None,format="dx"):
         """export density to file using the given format; use 'dx' for visualization.
 
@@ -282,7 +286,7 @@ class Grid(hop.utilities.Saveable):
         correct one will be added by the method.
 
         The default format for export() is 'dx'.
-        
+
         Only implemented formats:
 
         dx        OpenDX (WRITE ONLY)
@@ -344,7 +348,7 @@ class Grid(hop.utilities.Saveable):
         except ValueError:
             fn = ''
         return '<hop.sitemap.Grid '+grid_type+' with '+str(self.grid.shape)+' bins '+fn+'>'
-    
+
 
 class Density(Grid):
     """Class with an annotated density, i.e. additional information
@@ -389,12 +393,12 @@ class Density(Grid):
                         label all sites, defined by the threshold. The threshold
                         value is stored with the object as the default. The default
                         can be explicitly set as P['threshold']
-        save(filename)  save object.pickle 
+        save(filename)  save object.pickle
         load(filename)  restore object.pickle (or use d=Density(filename=<filename>))
         export()        write density to a file for visualization
         export_map()    write individual sites
     """
-    
+
     # will probably break under multiple inheritance but I haven't figured out how to use super here
     _saved_attributes = Grid._saved_attributes + \
         ['map','sites','site_properties','equivalent_sites_index']
@@ -441,14 +445,14 @@ class Density(Grid):
         if parameters['MINsite'] < 1:
             raise ValueError('MINsite must be > 0 (site must contain at least one cell)')
         if parameters['MINsite'] > 2:
-            raise NotImplementedError("Currently only MINsite == 1 or 2 is supported.")        
-        unit = DefaultDict(self.unit_default,unit)        
+            raise NotImplementedError("Currently only MINsite == 1 or 2 is supported.")
+        unit = DefaultDict(self.unit_default,unit)
         metadata = DefaultDict({},metadata)
-        
+
         # not necessary to initialize
         #self.graph = NX.Graph()      # nodes are indices (x,y,z) in isSite/grid
         #self.graph.name = 'density'  # graph.info() ...
-        
+
         # All initialisations MUST come before calling Grid.__init__() because
         # of the crappy way that loading from a file is set up. (Otherwise I would overwrite
         # the loaded values.)
@@ -456,7 +460,7 @@ class Density(Grid):
         self.sites = None
         self.site_properties = None
         self.equivalent_sites_index = None
-        
+
         Grid.__init__(self,grid=grid,edges=edges,filename=filename,dxfile=dxfile,
                       parameters=parameters,unit=unit,metadata=metadata)
 
@@ -482,7 +486,7 @@ class Density(Grid):
         if threshold:
             self.P['threshold'] = threshold
         else:
-            try:    
+            try:
                 threshold =  self.P['threshold']
                 if threshold is None:
                     raise ValueError
@@ -509,7 +513,7 @@ class Density(Grid):
 
     def map_hilo(self, lomin=0.0, lomax=0.5, himin=2.72):
         """**Experimental** mapping of low density sites together with high density ones.
-        
+
         :Keywords:
           *lomin*
               low-density sites must have a density > *lomin* [0.0]
@@ -567,7 +571,7 @@ class Density(Grid):
         labels = self.site_labels(**labelargs)
         props = self.site_properties.take(labels)
         return labels, props.occupancy_avg, props.occupancy_std
-        
+
     def site_volume(self,**labelargs):
         """Returns the label(s) and volume(s) of the selected sites.
 
@@ -635,7 +639,7 @@ class Density(Grid):
         Set verbosity to 10 in order to see the parsed selection.
 
         <inclusions>
-          'all'       all mapped sites, including bulk and subsites of 
+          'all'       all mapped sites, including bulk and subsites of
                       equivalent sites (but read the NOTE below: set exclude=None)
           'default'   all mapped sites, including bulk but excluding subsites
                       and interstitial
@@ -643,12 +647,12 @@ class Density(Grid):
                       (removes 'subsites' and 'equivalencesites' from
                       exclusions)
           'subsites'  all sites that have been renamed or aggreated into equivalence sites
-          'equivalencesites' 
+          'equivalencesites'
                       only the equivalence sites
           int, list   site label(s)
 
         <exclusions>
-          'default'    equivalent to ['interstitial','subsites']; always applied unless 
+          'default'    equivalent to ['interstitial','subsites']; always applied unless
                        exludsions=None is set!
           None         do not apply any exclusions
           'interstitial'
@@ -668,18 +672,18 @@ class Density(Grid):
         NOTE that by default the standard exclusions are already being applied
         to any 'include'; if one really wants all sites one has to set
         exclude=None.
-        
+
         Exclusions are applied _after_ inclusions.
 
         'site' discards the bulk site, self.P['bulk_site']; this parameter is
         automatically set when adding the bulk site with site_insert_bulk().
 
         See find_equivalence_sites_with() for more on equivalence sites and
-        subsites. 
+        subsites.
         """
         all_args = {'inclusions':
                         {None:['default'], 'default':['default'],
-                         'all':['all'], 'sites':['sites'], 
+                         'all':['all'], 'sites':['sites'],
                          'subsites':['subsites'],
                          'equivalencesites':['equivalencesites']},
                     'exclusions':
@@ -707,7 +711,7 @@ class Density(Grid):
                 except ValueError:
                     pass
             return _args
-        
+
         inclusions = process('inclusions',include)
         exclusions = process('exclusions',exclude)
 
@@ -720,7 +724,7 @@ class Density(Grid):
                 except ValueError:
                     pass
             return l
-            
+
         ## TODO
         ## organize labels as set and make an sorted array at the end
         ##... site_labels = set(range(len(self.sites)))    # 'all'
@@ -757,7 +761,7 @@ class Density(Grid):
                 if inclusion not in all_site_labels:
                     raise ValueError('site label %d does not exist' % inclusion)
                 site_labels.append(inclusion)  # site label
-        
+
         inclusions = numpy.unique(inclusions)  # only for diagnostics
         exclusions = numpy.unique(exclusions)  # for the loop
         for exclusion in exclusions:
@@ -814,7 +818,7 @@ class Density(Grid):
         * equivlabel == 0 is silently filtered (it is used as a merker for NO equivalence
           site)
         * empty equivalence sites show up as empty entries in the output dict; typically
-          this means that one gave the wrong input or kind        
+          this means that one gave the wrong input or kind
         """
         _transform = {'sitelabel': self._sitelabel2equivlabel,
                       'equivlabel': asiterable,
@@ -842,25 +846,25 @@ class Density(Grid):
         """Returns the equivalence name strings for the equivalence labels."""
         return self.site_properties[[self.equivalent_sites_index[l] for l in
                                     asiterable(equivlabels)]].equivalence_name
-    
+
     def _sitelabel2equivlabel(self,sitelabels):
         """Return equivalence labels corresponding to the internal sitelabels."""
         s = self.site_properties[asiterable(sitelabels)]
         return s[s.equivalence_label != 0].equivalence_label  # filter sites that are not equivsites
 
-    def _equivname2sitelabel(self,equivnames):        
+    def _equivname2sitelabel(self,equivnames):
         """Return internal sitelabel (169,170,..) corresponding to equivname ('2*', '3*')."""
-        # XXX: not needed at the moment/untested        
+        # XXX: not needed at the moment/untested
         SP = self.site_properties
         return numpy.ravel([SP[SP.equivalence_name == str(n)].label for n in asiterable(equivnames)])
-        
+
     def _equivname2equivlabel(self,equivnames):
-        """Return equivalence labels (2.3,..) corresponding to equivname ('2*', '3*')."""        
+        """Return equivalence labels (2.3,..) corresponding to equivname ('2*', '3*')."""
         SP = self.site_properties
         return  numpy.ravel(
             [SP[SP.equivalence_name == str(n)].equivalence_label for n in asiterable(equivnames)])
-        
-            
+
+
     def site_insert_bulk(self,bulkdensity,bulklabel=SITELABEL['bulk'],force=False):
         """Insert a bulk site from a different density map as bulk site into this density.
 
@@ -925,7 +929,7 @@ class Density(Grid):
                 self.map = numpy.empty_like(dens.map)
                 self.unit = dens.unit
                 self.P = {'threshold': None}
-                # minimum empty sites 'list'                
+                # minimum empty sites 'list'
                 self.sites = {SITELABEL['bulk']: ()}  # normally a list but use a dict :-)
         self.site_insert_bulk(Nobulk(self))
 
@@ -950,7 +954,7 @@ class Density(Grid):
         Results:
 
         Returns numpy array of same shape as input with non-site cells zeroed.
-        """        
+        """
         self._check_map()             # minimum sanity checks
         d = numpy.asarray(density)
         if not d.shape == self.map.shape:
@@ -962,7 +966,7 @@ class Density(Grid):
         # logical OR all site maps and return corresponding entries in d
         return d * numpy.logical_or.reduce([self.map == label for label in site_labels])
 
-        
+
     def export_map(self,labels='default',format='dx',directory=None,
                    value='density',combined=False,verbosity=3):
         """Write sites as a density file for visualization.
@@ -970,7 +974,7 @@ class Density(Grid):
         export_map(**kwargs)
 
         labels='default'  Select the sites that should be exported. Can be
-                           a list of numbers (site labels) or one of the keywords 
+                           a list of numbers (site labels) or one of the keywords
                            recognized by site_labels() (qv). The interstitial is
                            always excluded.
         combined=False     True: write one file. False: write one file for each
@@ -1025,7 +1029,7 @@ class Density(Grid):
                 raise ValueError("value must be a number or 'threshold' or 'density'.")
             def sitemap(label,value=value):
                 return numpy.where(self.map == label,value,0.0)
-            
+
         def export_site_dx(g,filename,label,comments):
             components = dict(
                 positions = OpenDX.gridpositions(1,g.shape,self.origin,self.delta),
@@ -1043,7 +1047,7 @@ class Density(Grid):
             g = sitemap(site_labels[0])      # first sitemap as basis (with its interstitial)
             for label in site_labels[1:]:
                 smap = sitemap(label)        # set any values that are not interstitial in smap
-                sites =  smap != SITELABEL['interstitial']                         
+                sites =  smap != SITELABEL['interstitial']
                 g[sites] = smap[sites]       # 'paint over' previous values at sites
             comments = [
                 'OpenDX density file written by export_map(combined=True),',
@@ -1077,7 +1081,7 @@ class Density(Grid):
         ref         a Density object defined on the same grid
         fmt         python format string used for the equivalent_name, which should
                     contain %d for the reference label number (max 10 chars)
-                    (but see below for magical use of xray water names)        
+                    (but see below for magical use of xray water names)
         update_reference
                     True (default): Also update the site_properties in the
                     *reference* so that one can make graphs that highlight the
@@ -1086,8 +1090,8 @@ class Density(Grid):
         use_ref_equivalencesites
                     True: use sites + equivalence sites from the reference density
                     False*: remove all equivalence sites als from the ref density
-        verbosity   For verbosity >= 3 output some statistics; verbosity >=5 also 
-                    returns the equivalence graph for analysis; verbosity >= 7 
+        verbosity   For verbosity >= 3 output some statistics; verbosity >=5 also
+                    returns the equivalence graph for analysis; verbosity >= 7
                     displays the graph (and saves to equivalence_graph.png).
 
         An 'equivalence site' is a site that contains all sites that
@@ -1129,10 +1133,10 @@ class Density(Grid):
 
         # Find sites in density 0 and 1 that overlap in space:
         # 1) get mapping
-        # 2) interprete mapping as a graph with nodes the sites in each 
+        # 2) interprete mapping as a graph with nodes the sites in each
         #    density; a node is a tuple (density,site), eg (0,23) or (1,117).
         # 3) mapping induces edges: the connected subgraphs constitute the common sites
-        # 4) list connected subgraphs consecutively and use its ordinal as the common 
+        # 4) list connected subgraphs consecutively and use its ordinal as the common
         #    site label
         densities = [self, reference]                         # 0 = self, 1 = reference
         SELF,REF = 0,1
@@ -1158,22 +1162,22 @@ class Density(Grid):
 
         msg(5,"equivalence sites: finding mapping and analysing equivalence graph\n")
         m = find_common_sites(densities[SELF],densities[REF]) # mapping site_i(0) <--> site_k(1)
-	edges = numpy.zeros((len(m),2,2),dtype=numpy.int16)   # (0,site_i(0)) <---> (1,site_k(1))
+        edges = numpy.zeros((len(m),2,2),dtype=numpy.int16)   # (0,site_i(0)) <---> (1,site_k(1))
         edges[...,0] = [SELF,REF]       # identifier for density 0 and density 1
         edges[...,1] = m                # fill second field with corresponding node/site label
-	ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
+        ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
         g = NX.Graph()
         g.add_edges_from(ebunch)
         commonsites = NX.connected_components(g)  # each item: collection of equivalent sites
 
-	# liz overlap
-	overlap = find_overlap_coeff(densities[SELF],densities[REF])
+        # liz overlap
+        overlap = find_overlap_coeff(densities[SELF],densities[REF])
 
         if update_reference:
             densities_to_update = {SELF:densities[SELF],REF:densities[REF]}
         else:
             densities_to_update = {SELF:densities[SELF]}
-	
+
         # Book keeping: site_properties is the central and messy data
         # structure; see _annotate_sites()
         #
@@ -1189,7 +1193,7 @@ class Density(Grid):
         #       in site and site_propeties) but only the equivalence site label
         #       which, however, is identical across the densities. So add extra dict:
         for density in densities_to_update.values():
-            density.equivalent_sites_index = dict()  # equiv. label --> index in sites 
+            density.equivalent_sites_index = dict()  # equiv. label --> index in sites
 
         # 1)
         msg(5,"equivalence sites: creating equivalence sites\n")
@@ -1230,13 +1234,13 @@ class Density(Grid):
                 c = numpy.array(commonsite)           # array of sites [[0,23],[1,17],[0,2],...]
                 sitelabels = c[c[:,0] == idensity][:,1] # [23,2,...] for idensity == SELF==0
                 density.site_properties.equivalence_site[sitelabels] = label
-                            
+
         # statistics and liz's stupid hack for probability overlap of equivalent sites
         if msg(3):
             msg(3,"equivalence sites: statistics for %d equivalent sites\n" \
                     % len(commonsites))
-	    msg(3,"self density sites are now labelled according to the remapped density: thus density.sites[n] will"
-	          " NOT be equal to 'n' in 'sites' (0,n)")
+            msg(3,"self density sites are now labelled according to the remapped density: thus density.sites[n] will"
+                  " NOT be equal to 'n' in 'sites' (0,n)")
             msg(3,"[%5s]  %5s  %5s %5s  |   %s   | %s | %s\n" % ('label','total','self','ref','sites','overlap coeff','total_overlap'))
             for isite,commonsite in enumerate(commonsites):
                 label = SITELABEL['bulk'] + isite + 1    # labels start after 'bulk'
@@ -1246,10 +1250,10 @@ class Density(Grid):
                 for idensity in [SELF,REF]:
                     sitelabels = c[c[:,0] == idensity][:,1]
                     nsites[idensity] = len(sitelabels)
-		# liz getting the probability overlap
-		oc = overlap[isite]
-		print oc
-                msg(3,"[%5s]  %5d  %5d %5d  |   %s   | %s | %s\n" % 
+                # liz getting the probability overlap
+                oc = overlap[isite]
+                print oc
+                msg(3,"[%5s]  %5d  %5d %5d  |   %s   | %s | %s\n" %
                     (labelstr,len(commonsite),nsites[SELF],nsites[REF],str(sorted(commonsite)),str(oc),str(sum(overlap))))
         if msg(7):
             msg(7,"Plotting the equivalent sites graph; blue in this density, red in reference density\n")
@@ -1293,9 +1297,9 @@ class Density(Grid):
 
         """
         if (not hasattr(self,'site_properties') or self.site_properties is None):
-            raise AttributeError('Stats require site_properties annotation.')        
+            raise AttributeError('Stats require site_properties annotation.')
         stats = dict()
-        
+
         nodes = self.site_labels(exclude=['bulk','interstitial','subsites'])
 
         # General (meta data)
@@ -1332,9 +1336,9 @@ class Density(Grid):
         >>> density.export3D()
 
         :Arguments:
-        filename     prefix for output files: 
+        filename     prefix for output files:
                      <filename>.psf, <filename>.pdb, and <filename>.vmd
-        site_labels  selects sites (See site_labels())  
+        site_labels  selects sites (See site_labels())
 
         The method writes a psf and a pdb file from the site map,
         suitable for visualization in, for instance, VMD. In addition,
@@ -1372,14 +1376,14 @@ class Density(Grid):
         props = self.site_properties
         for node in site_labels:   # node is the label==resid and it must be an integer
             pos = props[node].center
-            vol = props[node].volume              
-            occ = props[node].occupancy_avg       
+            vol = props[node].volume
+            occ = props[node].occupancy_avg
             commonlabel = props.equivalence_name[node].strip()
             if commonlabel:
                 identity = 1.0
                 aname = 'C'     # equiv/Common
             else:
-                identity = 0.0 
+                identity = 0.0
                 aname = 'S'     # single site
             pdb_occupancy = occ    # this should be customizable and selected from
             pdb_beta = identity    # volume, occupancy, degree, identity
@@ -1388,7 +1392,7 @@ class Density(Grid):
         io=Bio.PDB.PDBIO()
         s = B.get_structure()
         io.set_structure(s)
-        pdbfile = self.filename(filename,'pdb')        
+        pdbfile = self.filename(filename,'pdb')
         io.save(pdbfile)
 
     def _write_psf(self,filename,site_labels):
@@ -1421,11 +1425,11 @@ class Density(Grid):
             if commonlabel:
                 aname = 'C'     # equiv/Common    same as in pdb
             else:
-                aname = 'S'     # single site                
-            psf.write(psf_ATOM_format % 
+                aname = 'S'     # single site
+            psf.write(psf_ATOM_format %
                       {'iatom':iatom, 'segid':segid, 'resid':node,
                        'resname':resname, 'name':aname, 'type':atype,
-                       'charge':charge, 'mass':mass,'imove':imove} )        
+                       'charge':charge, 'mass':mass,'imove':imove} )
         # ignore all the other sections (don't make sense anyway)
         psf.close()
 
@@ -1471,7 +1475,7 @@ puts "Labels can be deleted with 'delsitelabels'."
 """)
         vmd.close()
 
-        
+
 
     def _check_map(self):
         try:
@@ -1494,7 +1498,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         # Currently excludes cells that are not connected to any other
         # cells. THIS MAY HAVE TO BE CHANGED (add [0,0,0] to __delta_ and
         # also check export_map()).
-        
+
         self.graph = NX.Graph()      # nodes are indices (x,y,z) in map/grid
         self.graph.name = 'density'  # graph.info() ...
 
@@ -1514,7 +1518,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         if self.P['MINsite'] == 1:
             self.graph.add_nodes_from(sidx)  # include ALL high-density regions
 
-        
+
     def _shell(self,site):
         """list of indices of neighbour cells in the (+,+,+) octant
 
@@ -1523,7 +1527,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         the 'forward' direction.
 
         Note:
-        * The site itself is excluded from the neighbours. 
+        * The site itself is excluded from the neighbours.
         * Periodic boundary conditions have NOT been taken care off
         """
         return map(tuple, site + self.__delta_first_octant__)  # site must be a tuple
@@ -1575,7 +1579,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         equivalence_name = [None] * len(labels)    # want any-length strings
         empty_centers = [None] * len(labels)       # workaround to get an 'object' record
         # Define and initialize the important data structure 'site_properties'.
-        # See also find_equivalent_sites_with()        
+        # See also find_equivalent_sites_with()
         self.site_properties = numpy.rec.fromarrays([
             labels,                      # site number (id)
             self._site_volumes(labels),  # volume
@@ -1588,7 +1592,7 @@ puts "Labels can be deleted with 'delsitelabels'."
             names='label,volume,occupancy_avg,occupancy_std,center,equivalence_label,equivalence_site,equivalence_name')
         self.site_properties.center[:] = self._site_centers(labels)  # now fill with 3-arrays
         self.site_properties.equivalence_name[:] = ''
-                                                    
+
     def __repr__(self):
         features = [str(self.grid.shape)+' bins',]  # always available
         try:
@@ -1646,7 +1650,7 @@ def remap_density(density,ref,verbosity=0):
     * This is not a good way to do the remapping: It requires parallel
       coordinate systems and the exact same delta.
     * It is slow.
-    * It would be much better to interpolate density on the reference grid,    
+    * It would be much better to interpolate density on the reference grid,
     """
     set_verbosity(verbosity)  # set to 0 for no messages
 
@@ -1661,7 +1665,7 @@ def remap_density(density,ref,verbosity=0):
     if not numpy.all(numpy.abs(ref.delta - density.delta) < 1e-4):
         warnings.warn('The grid spacings are not the same; this is probably WRONG.',
                       category=hop.InconsistentDataWarning)
-    
+
     D=numpy.rank(ref.map)
     newgrid = numpy.zeros(ref.grid.shape)
     newmap = SITELABEL['interstitial'] * numpy.ones(ref.map.shape, dtype=numpy.int16)
@@ -1672,7 +1676,7 @@ def remap_density(density,ref,verbosity=0):
     for axis in xrange(D):    # mark outliers with -1 (and filter in transformed())
         x = t_table[axis]
         x[ (x<0)|(x>=ref.grid.shape[axis]) ] = -1
-    
+
     def transformed(ijk=None):
         """Returns transformed index triplett or None if out of bounds or no input.
         >>> i',j',k' = transformed((3,4,5))
@@ -1681,7 +1685,7 @@ def remap_density(density,ref,verbosity=0):
             return None     # called on empty site
         try:
             u,v,w = t_table[0][ijk[0]],t_table[1][ijk[1]],t_table[2][ijk[2]]
-        except IndexError:   
+        except IndexError:
             return None     # outside the table
         if u == -1 or v == -1 or w == -1:
             # only return indices that are in bounds (outliers == -1)
@@ -1691,7 +1695,7 @@ def remap_density(density,ref,verbosity=0):
     # Remap the density (moderately fast but not great):
     # pre-compute pairs (ijk,t(ijk)), only if t(ijk) != None then assign all at once
     msg(3,"Transforming %d indices...\n" % numpy.product(ref.grid.shape))
-    # TODO OPTIMIZE: 
+    # TODO OPTIMIZE:
     # next line is a bottleneck and takes long (the if-part is not the problem)
     idx = numpy.array([(ijk, transformed(ijk)) \
             for ijk in numpy.ndindex(density.map.shape) if transformed(ijk)])
@@ -1727,11 +1731,11 @@ def unique_tuplelist(x):
     tmp.sort()
     if tmp[0] is None:          # None sorts into first position
         takefirst = False       # hack to eliminate None from result
-    else: 
+    else:
         takefirst = True
     idx = numpy.concatenate(([takefirst],tmp[1:]!=tmp[:-1])) # remove duplicates
     return tmp[idx].tolist()    # here we want a list
-    
+
 def find_common_sites(a,b,use_equivalencesites=None):
     """Find sites that overlap in space in Density a and b.
 
@@ -1748,7 +1752,7 @@ def find_common_sites(a,b,use_equivalencesites=None):
     dict(m)    translates labels in a to labels in b
     dict(m[:,[1,0]])
                translates labels in b to labels in a
-    
+
     """
     try:
         if a.map.shape != b.map.shape:
@@ -1769,9 +1773,9 @@ def find_common_sites(a,b,use_equivalencesites=None):
 
 def find_overlap_coeff(a,b):
     """Find sites that overlap in space in Density a and b.
-    
+
     m = find_overlap_coeff(a,b)
-	
+
     :Arguments:
     a        Density instance
     b        Density instance
@@ -1789,27 +1793,27 @@ def find_overlap_coeff(a,b):
     m = numpy.unique(map(tuple,m.transpose()))     # remove multiple entries
     oc = numpy.zeros(len(m[:,0]))
     for isite, i in enumerate(m):
-    	coeff = 0
-	#a_cellvol = a.delta[0][0]*a.delta[1][1]*a.delta[2][2]  # calc vol of grid cell for a
-	#b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
-	sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
-	sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
-	#f_a = hop.constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
-	#f_b = hop.constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
-	#a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
-	#b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
-	#print a_cellvol, b_cellvol
-    	for j in a.sites[i[0]]:
-		for k in b.sites[i[1]]:
-			if j == k:
-				#print a.grid[j], b.grid[k],j,i[0],i[1], a_bulk_density, b_bulk_density
-				if a.grid[j] < b.grid[k]:
-					# density of grid cell point normalized to bulk density in a single grid cell
-					coeff = coeff + (a.grid[j]/sum_a) #/a_bulk_density)
-				else:
-					coeff = coeff + (b.grid[k]/sum_b) #b_bulk_density)
-    	oc[isite] = coeff 
-    return oc 
+        coeff = 0
+        #a_cellvol = a.delta[0][0]*a.delta[1][1]*a.delta[2][2]  # calc vol of grid cell for a
+        #b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
+        sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
+        sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
+        #f_a = hop.constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
+        #f_b = hop.constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
+        #a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
+        #b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
+        #print a_cellvol, b_cellvol
+        for j in a.sites[i[0]]:
+                for k in b.sites[i[1]]:
+                        if j == k:
+                                #print a.grid[j], b.grid[k],j,i[0],i[1], a_bulk_density, b_bulk_density
+                                if a.grid[j] < b.grid[k]:
+                                        # density of grid cell point normalized to bulk density in a single grid cell
+                                        coeff = coeff + (a.grid[j]/sum_a) #/a_bulk_density)
+                                else:
+                                        coeff = coeff + (b.grid[k]/sum_b) #b_bulk_density)
+        oc[isite] = coeff
+    return oc
 
 def density_from_dcd(*args,**kwargs):
     import warnings
@@ -1827,8 +1831,8 @@ def density_from_trajectory(*args,**kwargs):
        density_from_trajectory(PDB, XTC, delta=1.0, atomselection='name OH2', ...) --> density
 
     :Arguments:
-      psf/pdb/gro     
-            topology file 
+      psf/pdb/gro
+            topology file
       dcd/xtc/trr/pdb
             trajectory; if reading a single PDB file it is sufficient to just provide it
             once as a single argument
@@ -1843,17 +1847,17 @@ def density_from_trajectory(*args,**kwargs):
             of delta.) [1.0]
       metadata
             dictionary of additional data to be saved with the object
-      padding 
+      padding
             increase histogram dimensions by padding (on top of initial box size)
             in Angstroem [2.0]
       soluteselection
             MDAnalysis selection for the solute, e.g. "protein" [``None``]
-      cutoff  
+      cutoff
             With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
             (Special routines that are faster than the standard AROUND selection) [0]
-      verbosity: int  
+      verbosity: int
             level of chattiness; 0 is silent, 3 is verbose [3]
-    
+
     :Returns: :class:`hop.sitemap.Density`
 
     :TODO:
@@ -1863,7 +1867,7 @@ def density_from_trajectory(*args,**kwargs):
         * In order to calculate the bulk density, use
 
               atomselection='name OH2',soluteselection='protein and not name H*',cutoff=3.5
-  
+
           This will select water oxygens not within 3.5 A of the protein heavy atoms.
           Alternatively, use the VMD-based  :func:`density_from_volmap` function.
         * The histogramming grid is determined by the initial frames min and max.
@@ -1881,10 +1885,10 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     """Create a density grid from a MDAnalysis.Universe object.
 
       density_from_dcd(universe, delta=1.0, atomselection='name OH2', ...) --> density
-   
+
     :Arguments:
       universe
-            :class:`MDAnalysis.Universe` object with a trajectory   
+            :class:`MDAnalysis.Universe` object with a trajectory
 
     :Keywords:
       atomselection
@@ -1896,21 +1900,21 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
             of delta.) [1.0]
       metadata
             dictionary of additional data to be saved with the object
-      padding 
+      padding
             increase histogram dimensions by padding (on top of initial box size)
             in Angstroem [2.0]
       soluteselection
             MDAnalysis selection for the solute, e.g. "protein" [``None``]
-      cutoff  
+      cutoff
             With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
             (Special routines that are faster than the standard AROUND selection) [0]
-      verbosity: int  
+      verbosity: int
             level of chattiness; 0 is silent, 3 is verbose [3]
-      parameters  
-            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)          
-      kwargs  
+      parameters
+            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)
+      kwargs
             metadata, parameters are modified and passed on to :class:`~hop.sitemap.Density`
-    
+
     :Returns: :class:`hop.sitemap.Density`
 
     """
@@ -1929,14 +1933,14 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
         group = u.selectAtoms(atomselection)
         def current_coordinates():
             return group.coordinates()
-    
+
     coord = current_coordinates()
     msg(3,"Selected %d atoms out of %d atoms (%s) from %d total.\n" %
         (coord.shape[0],len(u.selectAtoms(atomselection)),atomselection,len(u.atoms)))
 
     # mild warning; typically this is run on RMS-fitted trajectories and
     # so the box information is rather meaningless
-    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]    
+    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]
     if tuple(angles) <> (90.,90.,90.):
         warnings.warn("Non-orthorhombic unit-cell --- make sure that it has been remapped properly!")
 
@@ -1950,7 +1954,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     smin = numpy.min(coord,axis=0) - padding
     smax = numpy.max(coord,axis=0) + padding
 
-    BINS = fixedwidth_bins(delta, smin, smax)    
+    BINS = fixedwidth_bins(delta, smin, smax)
     arange = zip(BINS['min'],BINS['max'])
     bins = BINS['Nbins']
 
@@ -1993,9 +1997,9 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     # Density automatically converts histogram to density for isDensity=False
     g = Density(grid=grid,edges=edges,unit=dict(length='Angstrom'),
-                parameters=parameters,metadata=metadata)    
+                parameters=parameters,metadata=metadata)
     msg(3,"\nHistogram completed (density in Angstrom**-3)\n")
-    
+
     return g
 
 
@@ -2048,7 +2052,7 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
                 # must update every time step
                 ns_w = NS.AtomNeighborSearch(solvent)  # build kd-tree on solvent (N_w > N_protein)
                 group = ns_w.search_list(protein,cutoff)  # solvent within CUTOFF of protein
-                return group.coordinates()            
+                return group.coordinates()
     else:
         # slower distance matrix based (calculate all with all distances first)
         import MDAnalysis.core.distances
@@ -2094,10 +2098,10 @@ def density_from_volmap(psf,dcd,dx=None,delta=1.0,atomselection='name OH2',
      metadata       dictionary of additional data to be saved with the object
      parameters     dict of special Density parameters (see Density() doc)
 
-     VolMap args: 
+     VolMap args:
      load_new       True: load psf and dcd into VMD. False: use psf and dcd already
                    loaded into VMD (default is True)
-    
+
     Returns a Density object.
 
     """
@@ -2116,7 +2120,7 @@ def density_from_volmap(psf,dcd,dx=None,delta=1.0,atomselection='name OH2',
         remove_dx = True
         dxhandle,dx = tempfile.mkstemp('.dx')
         msg(5,'Using tempororary dx file "%s".\n' % dx)
-        
+
     msg(3,"Connecting to VMD (ignore 'error: uncaptured python exception')\n")
     vmd = hop.external.VMD()
     msg(3,"VolMap calculates the density. This takes a while...\n")
@@ -2169,9 +2173,9 @@ so one should (after computing a site map) also insert an empty bulk site:
   Y.find_equivalence_sites(xray)     # also updates equiv-sites in xray!
   # (2) look at the matches in xray
   xray.Wequiv()        TODO: not working yet
-  
 
-""" + 60*"-" + "\nDensity Class\n\n" + Density.__doc__
+
+.. """ + 60*"-" + "\nDensity Class\n\n" + Density.__doc__
 
     # will probably break under multiple inheritance but I haven't figured out how to use super here
     _saved_attributes = Density._saved_attributes + ['_xray2psf', '_psf2xray']
@@ -2196,7 +2200,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         m = parser.get_structure('0UNK',pdbfile)
         s = m[0]
         # number waters sequentially and store the pdb resid
-        self._xray2psf = dict([(resid_xray,resid_psf+1) for resid_psf,resid_xray in 
+        self._xray2psf = dict([(resid_xray,resid_psf+1) for resid_psf,resid_xray in
                                enumerate([r.id[1] for r in s.get_residues() if water.match(r.resname)])
                                ])
         self._psf2xray = dict([(resid_psf,resid_xray) for resid_xray,resid_psf in self._xray2psf.items()])
@@ -2204,7 +2208,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         return len(self._xray2psf) == len(self.site_labels('sites',exclude='equivalencesites'))
 
     def W(self,N,returntype="auto",format=False):
-        """Returns the resid of water N. 
+        """Returns the resid of water N.
 
         If returntype == 'psf' then N is interpreted as the resid in the
         x-ray crystal structure (or original pdb file) and a resid N' in the
@@ -2219,7 +2223,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         'W128') then it is assumed to be a crystal water and the
         returntype is automatically set to psf, otherwise it acts like
         'xray'.
- 
+
         :Arguments:
         N              resid of molecule (can be an iterable)
         returntype     'auto' | 'psf' | 'xray'
@@ -2314,7 +2318,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         BUG: THIS IS NOT WORKING AS THOUGHT BECAUSE THERE IS NO 1-1
         MAPPING BETWEEN WATER MOLECULES AND SITES AND BECAUSE SITES
         ARE NOT NUMBERED IN THE SAME ORDER AS THE WATER MOLECULES
-        
+
         TODO: The proper way to do this is to find all water molecules
         within a cutoff of each grid cell that belongs to a site and
         then store all the waters as the string name of the site.
@@ -2350,7 +2354,7 @@ def print_combined_equivalence_sites(target,reference):
     ___()
     for (l,n,x1),(l,n,x2) in zip(eqs_r,sorted_t):
         print "%3d %4s   %-5s  %-5s" % (l,n,x1,x2)
-    ___()        
+    ___()
 
 
 class BfactorDensityCreator(object):
@@ -2364,12 +2368,12 @@ class BfactorDensityCreator(object):
     trajectories. Because a pdb is a single snapshot, the density is
     estimated by placing Gaussians of width sigma at the position of
     all selected atoms.
-    
+
     Sigma can be fixed or taken from the B-factor field, in which case
     sigma is taken as sqrt(3.*B/8.)/pi.
 
-    TODO: 
-  
+    TODO:
+
     * Make Gaussian convolution more efficient (at least for same
       sigma) because right now it is VERY slow (which may be
       acceptable if one only runs this once)
@@ -2383,7 +2387,7 @@ class BfactorDensityCreator(object):
 
         DC = BfactorDensityCreator(psf, pdb, delta=<delta>, atomselection=<MDAnalysis selection>,
                                   metadata=<dict>, padding=2, sigma=None)
-        density = DC.PDBDensity()                        
+        density = DC.PDBDensity()
 
         psf     Charmm psf topology file
         pdb     PDB file
@@ -2414,12 +2418,12 @@ class BfactorDensityCreator(object):
         smin = numpy.min(coord,axis=0) - padding
         smax = numpy.max(coord,axis=0) + padding
 
-        BINS = fixedwidth_bins(delta, smin, smax)    
+        BINS = fixedwidth_bins(delta, smin, smax)
         arange = zip(BINS['min'],BINS['max'])
         bins = BINS['Nbins']
-        
+
         # get edges by doing a fake run
-        grid,self.edges = numpy.histogramdd(numpy.zeros((1,3)), 
+        grid,self.edges = numpy.histogramdd(numpy.zeros((1,3)),
                                             bins=bins,range=arange,normed=False)
         self.delta = numpy.diag(map(lambda e: (e[-1] - e[0])/(len(e)-1), self.edges))
         self.midpoints = map(lambda e: 0.5 * (e[:-1] + e[1:]), self.edges)
@@ -2502,7 +2506,7 @@ class BfactorDensityCreator(object):
             msg(3,"Smearing out water position %4d/%5d with RMSF %4.2f A\r" %  \
                     (iwat+1,len(pos[0]),sigma))
         return g
-        
+
     def _smear_rmsf(self,coordinates,grid,edges,rmsf):
         # smear out each water with its individual Gaussian
         # (slower than smear_sigma)
@@ -2521,7 +2525,7 @@ class BfactorDensityCreator(object):
         # p is center of gaussian as grid index, sigma its width (in A)
         x = self.delta[0,0]*(i - p[0])  # in Angstrom
         y = self.delta[1,1]*(j - p[1])
-        z = self.delta[2,2]*(k - p[2])            
+        z = self.delta[2,2]*(k - p[2])
         return (2*numpy.pi*sigma)**(-1.5) * numpy.exp(-(x*x+y*y+z*z)/(2*sigma*sigma))
 
     def _gaussian_cartesian(self,i,j,k,c,sigma):

@@ -1,0 +1,20 @@
+This outline is intended to map out what code is written in hop.trajectory, and as a waste-bin for my 
+thoughts on the code to help me figure out what exactly is there. A more organized outline should be made in 
+the future.
+
+IMPORTS:
+hop.constants, hop.utilities, msg, set_verbosity, SelectionError. These occur everywhere in Oliver's code.
+They are clearly useful function dumps; the only unifying theme behind them is that they contain useful stuff
+but that stuff is useful in all sorts of places.
+
+numpy, MDAnalysis, MDAnalysis.coordinates, warnings. Two big packages full of trajectory analysis software and 
+general analysis software; they are the work-horses of this business.
+
+Lines 39 - 47 (try statement): What is a try statement? Naturally, it tries the try clause, and if there is
+an exception, it passes to the except/finally clause. It stores the exception and tries again. If it happens
+again, it passes to the finally clause and gives up.
+
+totaltime (58 - 60): Calls a function from some other module; presumably book keeping
+
+Line 63: Very important! I finally understand what the trajectory is; it says which molecules were at which point
+in the network.

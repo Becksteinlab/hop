@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-:mod:`hop.graph` module
-=======================
+Generating and analyzing a hopping graph --- :mod:`hop.graph`
+=============================================================
 
 Interprete the high density sites as graph ('transport graph'), with
 the sites as vertices and transitions (sampled by the simulation) as
@@ -37,6 +37,9 @@ Typical use of the module::
 
 The basic object is the :class:`hop.graph.HoppingGraph`; see its
 documentation for further analysis methods.
+
+Classes and functions
+---------------------
 """
 
 import hop.constants, hop.trajectory
@@ -611,10 +614,9 @@ class HoppingGraph(object):
             a,k1,k2 = f.parameters
             ## select rate that contributes more:
             ##if a*k1 > (1-a)*k2:
-            if a > 0.5:
-                k = k1
-            else:
-                k = k2
+            #Above is old; take a weighted average instead
+            k = a*k1 + (1-a)*k2
+            
         else:
             raise ValueError('Unknown waitingtime fit, '+str(f))
         return 1000 * k   # 1/ps --> 1/ns
@@ -1224,8 +1226,9 @@ class HoppingGraph(object):
         N_in  = numpy.sum( [ self.number_of_hops(e) for e in G.in_edges(n, data=True)] )
         N_out = numpy.sum( [-self.number_of_hops(e) for e in G.out_edges(n, data=True)] )
         N_tot = N_in + N_out
-        return {'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
+        ratedict={'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
                 'N_tot':N_tot,'N_in':N_in,'N_out':N_out}
+	return  ratedict
 
     def show_site(self,sites,use_filtered_graph=True):
         """Display data about sites (list of site labels or single site)."""
@@ -1431,7 +1434,7 @@ class HoppingGraph(object):
                  }
         xml = open(filename,'w')
         xml.write("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n"""
-                  """<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/~puninj/XGMML/xgmml.dtd">\n"""
+                  """<!DOCTYPE graph PUBLIC "-//John Punin//DTD graph description//EN" "http://www.cs.rpi.edu/research/groups/pb/punin/public_html/XGMML/GML_XGMML/xgmml.dtd">\n"""
                   """<graph label="%(label)s" directed="1" id="%(id)s" """
                   """xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" """
                   """xmlns:dc="http://purl.org/dc/elements/1.1/" """
@@ -1461,7 +1464,10 @@ class HoppingGraph(object):
                      'occupancy_avg':self.site_properties.occupancy_avg[site],
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
-                     }
+                     'rates':self.rates(site)['N_tot'],
+                    # 'z_pos':self.pos[node]['z'],
+                     
+			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
             else:
@@ -1470,7 +1476,10 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
-            ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
+          #  xml.write("""\t\t<att type="real" name="z_pos" value="%(z_pos)g"/>\n""" % xattr)
+            
+            xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
+	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
             xml.write("""\t</node>\n""")
         for e in G.edges(data=True):
             u,v = self.from_site(e), self.to_site(e)   # === u,v = e[:2]
@@ -1580,6 +1589,25 @@ class HoppingGraph(object):
         pdbfile = self.filename(filename,'pdb')
         io.save(pdbfile)
 
+    def write_tcl(self,graph,props,filename=None,sphere_radius="1"):
+        
+        out=open(filename+".tcl","w")
+        for node in graph:
+            pos = props[node].center
+            vol = props[node].volume
+            occ = props[node].occupancy_avg
+            degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+            commonlabel = props.equivalence_name[node].strip()
+            out.write(" draw sphere" +" {"+ str(pos[0]) +" "+ str(pos[1])+" " +str(pos[2])+ "}" + " radius"+" " + sphere_radius + " resolution 16\n")
+        
+
+            for i in graph[node]:
+                pos_nbr=props[i].center
+                out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+str(pos_nbr[2])+ " }"+ " radius 0.1" + " resolution 16\n")
+        out.close()
+
+
+
     def write_psf(self,graph,props,filename=None):
         """Pseudo psf with nodes as atoms and edges as bonds"""
         # Standard no CHEQ format for a Charmm PSF file:
@@ -1626,7 +1654,7 @@ class HoppingGraph(object):
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
-        if (n+1) % 4 != 0: psf.write('\n')
+            if (n+1) % 4 != 0: psf.write('\n')
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()
