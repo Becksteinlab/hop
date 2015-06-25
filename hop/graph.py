@@ -1465,8 +1465,6 @@ class HoppingGraph(object):
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
                      'rates':self.rates(site)['N_tot'],
-                    # 'z_pos':self.pos[node]['z'],
-                     
 			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
@@ -1476,7 +1474,6 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
-          #  xml.write("""\t\t<att type="real" name="z_pos" value="%(z_pos)g"/>\n""" % xattr)
             
             xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
 	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")

@@ -1,7 +1,5 @@
-# $Id$
-#
 # Hop --- a framework to analyze solvation dynamics from MD simulations
-# Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
+# Copyright (c) 2009-2014 Oliver Beckstein <orbeckst@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +41,8 @@ use the module.
 __all__ = ['constants','sitemap','trajectory','graph','interactive',
            'utilities','external','analysis','siteanalysis','MCMC',
            'qhull']
+
+__version__ = "0.3.4"           
 
 # Warnings
 import warnings
