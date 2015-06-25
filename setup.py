@@ -14,10 +14,10 @@ if sys.version_info[:2] < (2, 5):
     print "Please upgrade your version of python."
     sys.exit(-1)
 if sys.version_info[:2] >= (2, 6):
-    networkx_requirements = 'networkx>1.0'
+    networkx_requirements = 'networkx>1.9.1'
 else:
     # networkx 1.3 only works with 2.6+ so we fiddle the requirements
-    networkx_requirements = 'networkx==1.2'
+    networkx_requirements = 'networkx==1.9.1'
 
 setup(name="Hop",
       version="0.3.3",

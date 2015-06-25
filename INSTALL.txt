@@ -69,7 +69,7 @@ Required python packages
    =============== ===================== ============================================================
    MDAnalysis      >= 0.7.5              http://mdanalysis.googlecode.com
    numpy           >=1.0.3               http://numpy.scipy.org/
-   NetworkX        >=1.0                 https://networkx.lanl.gov/
+   NetworkX        >=1.9.1                 https://networkx.lanl.gov/
    GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
    =============== ===================== ============================================================
 
