@@ -204,7 +204,7 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
                     trajectories=poisson_step(site,trajectory,current_time,waiting_time,delta,entropy_production)
                     entropy_production+=trajectories[3][site]
             rate=np.divide(counts,delta*step,dtype=np.float64)
-            rates.write(str(rate))
+            rates.write(str(rate)+'\n')
             if steps_elapsed_total*delta>=1:
                 steps_elapsed_total=0
         rate=np.divide(counts,delta*steps,dtype=np.float64)
