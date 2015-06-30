@@ -1168,7 +1168,7 @@ class Density(Grid):
         ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
         g = NX.Graph()
         g.add_edges_from(ebunch)
-        commonsites = NX.connected_components(g)  # each item: collection of equivalent sites
+        commonsites = [i for i in NX.connected_components(g)]  # each item: collection of equivalent sites
 
         # liz overlap
         overlap = find_overlap_coeff(densities[SELF],densities[REF])
@@ -1548,7 +1548,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         marking up the map with -1 and then looking for the -1 at the
         end of this function.)
         """
-        self.sites = NX.connected_components(self.graph)  # this does the hard work
+        self.sites = [i for i in NX.connected_components(self.graph)]  # this does the hard work
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
