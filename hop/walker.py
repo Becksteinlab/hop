@@ -174,6 +174,7 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
         rate_observation=0
         steps_elapsed_total=0
         rates=open(filename+'.txt','w')
+        rates.write('up flux' + ' ' str(up_flux) 'deta' + ' ' + str(delta) + ' ' + 'steps' + ' ' + str(steps) + '\n')
         entropy_production=0
         for step in xrange(steps):
             steps_elapsed_total+=1

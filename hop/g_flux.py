@@ -29,6 +29,7 @@ def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,
     crossed_particles_up=[]
     crossed_particles_down=[]
     rates=open(filename+'.txt','w')
+    rates.write('timestep' + ' ' + str(timestep) + ' ' + 'upper boundary' + ' ' + str(in_top) + ' ' + 'lower boundary' + ' ' + str(in_bottom) + '\n')
     cumulative_counts=0
     total_residence_time=0
     weighted_residence_time=0
