@@ -67,15 +67,15 @@ Required python packages
    =============== ===================== ============================================================
    package         version               url
    =============== ===================== ============================================================
-   MDAnalysis      >= 0.7.5              http://mdanalysis.googlecode.com
-   numpy           >=1.0.3               http://numpy.scipy.org/
-   NetworkX        >=1.0                 https://networkx.lanl.gov/
-   GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
+   MDAnalysis      >= 0.7.5              http://www.mdanalysis.org
+   numpy           >=1.0.3               http://numpy.scipy.org
+   NetworkX        >=1.0                 https://networkx.lanl.gov
+   GridDataFormats >= 0.1.1              https://github.com/MDAnalysis/GridDataFormats
    =============== ===================== ============================================================
 
 MDAnalysis_ requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
-http://mdanalysis.googlecode.com/files/ or install it with ::
+http://downloads.mdanalysis.org or install it with ::
 
   pip install MDAnalysis
 
@@ -84,7 +84,7 @@ requires a python environment that is fully set up for scientific
 computing. The good news is that once this is done then Hop should be
 easy.
 
-.. _MDAnalysis:: http://mdanalysis.googlecode.com
+.. _MDAnalysis:: http://www.mdanalysis.org
 
 
 Optional packages

@@ -27,7 +27,7 @@ and reflecting the fact that a "hopping analysis" is performed).
 
 Hop requires MDAnalysis_.
 
-.. _MDAnalysis: http://MDAnalysis.github.io/
+.. _MDAnalysis: http://www.mdanalysis.org
 
 
 Installation
@@ -40,7 +40,7 @@ installed beforehand.
 
 
 .. _Install.rst:
-   https://github.com/orbeckst/hop/blob/master/INSTALL.rst
+   https://github.com/Becksteinlab/hop/blob/master/INSTALL.rst
 
 
 Documentation
@@ -56,7 +56,7 @@ Bug reporting
 Almost invariably, things will not work right away or it will be
 unclear how to accomplish a certain task. In order to keep track of
 feedback I ask you to use the Issue tracker at
-http://github.com/orbeckst/hop/issues 
+http://github.com/Becksteinlab/hop/issues 
 
 It helps tremendously to have everything in one place. Of course, feel
 free to also additionally email me directly.
