@@ -67,7 +67,7 @@ Insert a bulk density::
 
 """
 
-from __future__ import with_statement, absolute_imports
+from __future__ import with_statement, absolute_import
 
 import os
 import errno

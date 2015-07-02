@@ -25,7 +25,7 @@ per-site basis.
 .. warning:: Experimental code.
 
 """
-from __future__ import absolute_imports
+from __future__ import absolute_import
 
 import warnings
 

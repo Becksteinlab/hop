@@ -23,6 +23,7 @@ grid. Calculate the density, change units (both of the grid and of the
 density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.
 """
+from __future__ import absolute_import
 
 import sys
 import os, os.path
