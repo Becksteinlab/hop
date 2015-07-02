@@ -20,7 +20,7 @@ else:
     networkx_requirements = 'networkx==1.2'
 
 setup(name="Hop",
-      version="0.3.4",
+      version="0.3.5",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
