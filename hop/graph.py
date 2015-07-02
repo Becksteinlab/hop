@@ -41,19 +41,25 @@ documentation for further analysis methods.
 Classes and functions
 ---------------------
 """
+from __future__ import absolute_import
 
-import hop.constants, hop.trajectory
-from hop.constants import SITELABEL
-import hop.utilities
-from hop.utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
-import networkx as NX
-import numpy
 import sys
 import cPickle
 import os.path
 import warnings
 
+import networkx as NX
+import numpy
 from MDAnalysis.core.log import ProgressMeter
+
+from . import constants
+from . import trajectory
+from .constants import SITELABEL
+from . import utilities
+from .utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
+
+
+
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.graph")
@@ -68,7 +74,7 @@ class TransportNetwork(object):
     the :meth:`TransportNetwork.HoppingGraph` method.
     """
 
-    def __init__(self,trajectory,density=None,sitelabels=None):
+    def __init__(self, traj, density=None, sitelabels=None):
         """Setup a transport graph from a hopping trajectory instance.
 
         ::
@@ -76,15 +82,15 @@ class TransportNetwork(object):
             tn = TransportNetwork(hops)
         """
         self._cache = dict()
-        if not isinstance(trajectory,hop.trajectory.HoppingTrajectory):
-            errmsg = "'trajectory' must be a <hop.trajectory.HoppingTrajectory> instance."
+        if not isinstance(traj, trajectory.HoppingTrajectory):
+            errmsg = "'traj' must be a <hop.trajectory.HoppingTrajectory> instance."
             logger.fatal(errmsg)
             raise TypeError(errmsg)
-        self.traj = trajectory
+        self.traj = traj
         self.numatoms = self.traj.hoptraj.numatoms
         # TODO: use MDAnalysis unit conversion here
         self.dt = round(self.traj.hoptraj.delta * self.traj.hoptraj.skip_timestep \
-                        * hop.constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
+                        * constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
         self.totaltime = self.traj.totaltime
         self.graph = NX.DiGraph(name='Transport network between sites')
 
@@ -768,7 +774,7 @@ class HoppingGraph(object):
         del h
 
     # XXX: monkey patching, should do this with inheritance/mixin class
-    filename = hop.utilities.filename_function
+    filename = utilities.filename_function
 
     def filter(self,exclude=None):
         """Create a filtered version of the graph.
@@ -865,7 +871,7 @@ class HoppingGraph(object):
         import os,errno
 
         import matplotlib
-        from hop.utilities import matplotlib_interactive
+        from .utilities import matplotlib_interactive
         matplotlib_interactive(interactive)
         import matplotlib.pyplot as plt
 
@@ -1229,7 +1235,7 @@ class HoppingGraph(object):
         N_tot = N_in + N_out
         ratedict={'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
                 'N_tot':N_tot,'N_in':N_in,'N_out':N_out}
-	return  ratedict
+        return  ratedict
 
     def show_site(self,sites,use_filtered_graph=True):
         """Display data about sites (list of site labels or single site)."""
@@ -1466,7 +1472,7 @@ class HoppingGraph(object):
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
                      'rates':self.rates(site)['N_tot'],
-			}
+                        }
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
             else:
@@ -1475,9 +1481,9 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
-            
+
             xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
-	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
+            ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
             xml.write("""\t</node>\n""")
         for e in G.edges(data=True):
             u,v = self.from_site(e), self.to_site(e)   # === u,v = e[:2]
@@ -2000,7 +2006,7 @@ class CombinedGraph(HoppingGraph):
         # separately but using the positions of the nodes of the
         # combined graph layout.
         import pylab
-        from hop.utilities import matplotlib_interactive
+        from .utilities import matplotlib_interactive
         matplotlib_interactive(interactive)
 
         if label_sites is None:

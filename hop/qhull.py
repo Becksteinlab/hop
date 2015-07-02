@@ -67,12 +67,14 @@ Insert a bulk density::
 
 """
 
-from __future__ import with_statement
+from __future__ import with_statement, absolute_imports
 
-from subprocess import Popen
-import os, errno
+import os
+import errno
 import tempfile
 import shutil
+from subprocess import Popen
+
 import numpy
 
 #: Comparisons of distances less than EPSILON yield equal.

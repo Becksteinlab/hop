@@ -52,16 +52,19 @@ Classes and functions
 ---------------------
 
 """
+from __future__ import absolute_import
 
-import hop.graph
-from hop.constants import SITELABEL
-import hop.utilities
-from hop.utilities import msg,set_verbosity
 import numpy
+
+from . import graph
+from .constants import SITELABEL
+from . import utilities
+from .utilities import msg, set_verbosity
+
 
 Nequil_default = 10000
 
-class MCMCsampler(hop.utilities.Saveable):
+class MCMCsampler(utilities.Saveable):
     """Generate an equilibrium distribution of states from a hop graph."""
 
     _saved_attributes = 'all'
@@ -383,8 +386,8 @@ class MCMCsampler(hop.utilities.Saveable):
         lines = pylab.plot(occ_MD, occ_MCMC, 'o', label=labelstring, **kwargs)
 
         # straight line fit
-        import hop.graph
-        f = hop.graph.fitlin(occ_MD,occ_MCMC)
+        import graph
+        f = graph.fitlin(occ_MD,occ_MCMC)
         x = numpy.array([0,1])
         pylab.plot(x,f.fit(x),'--',**kwargs)
 
@@ -416,7 +419,7 @@ class MCMCsampler(hop.utilities.Saveable):
 
     def autocorrelation(self,start=None,stop=None,step=None,**kwargs):
         """Calculates the auto correlation function for all site trajectories."""
-        from hop.utilities import autocorrelation_fft as ACF
+        from .utilities import autocorrelation_fft as ACF
         return numpy.array([ACF(traj,**kwargs)
                               for traj in self.states.T[:,start:stop:step]])
 
@@ -437,7 +440,7 @@ class MCMCsampler(hop.utilities.Saveable):
 
         See also for kwargs:
         """
-        from hop.utilities import averaged_autocorrelation as avACF
+        from .utilities import averaged_autocorrelation as avACF
         tmp = numpy.array([avACF(traj,**kwargs) for traj in self.states.T[:,::step]])
         return tmp[:,0], tmp[:,1]
 
@@ -445,7 +448,7 @@ class MCMCsampler(hop.utilities.Saveable):
 def run(filename='hopgraph.pickle',Ntotal=500000,Nskip=1000,Nequil=Nequil_default):
     """Perform Markov Chain Monte Carlo on a model derived from the hopping graph."""
 
-    h = hop.graph.HoppingGraph(filename=filename)
+    h = graph.HoppingGraph(filename=filename)
     M = MCMCsampler(h)
 
     msg(0,"MCMCsampler() for %s\n" % filename)
@@ -611,7 +614,7 @@ class Pscan(object):
             fh.close()
         msg(3,"Wrote Pscan object to '%s'.\n" % filename)
 
-class MultiPscan(hop.utilities.Saveable):
+class MultiPscan(utilities.Saveable):
     """Run Pscan(**pscanargs) <repeat> times and collect all Pscan objects in list.
     """
 

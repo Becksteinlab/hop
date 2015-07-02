@@ -29,28 +29,20 @@ Classes
 -------
 
 """
+from __future__ import absolute_import
+
+import warnings
+
 import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
 from MDAnalysis.core.log import ProgressMeter
 
-# used to be here, migrated to MDAnalysis
-import warnings
-try:
-    from MDAnalysis.analysis.align import rms_fit_trj, fasta2select
-    def RMS_fit_trj(*args, **kwargs):
-        warnings.warn("RMS_fit_trj is deprecated and will be removed. Use rms_fit_trj",
-                  category=DeprecationWarning)
-        return rms_fit_trj(*args, **kwargs)
-    RMS_fit_trj.__doc__ = rms_fit_trj.__doc__
-except ImportError:
-    pass
+from . import SelectionError
+from . import utilities
+from .utilities import msg, set_verbosity
+from .constants import SITELABEL
 
-import hop.constants
-from hop.constants import SITELABEL
-import hop.utilities
-from hop.utilities import msg,set_verbosity
-from hop import SelectionError
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
@@ -204,7 +196,7 @@ class HoppingTrajectory(object):
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
 
-    filename = hop.utilities.filename_function
+    filename = utilities.filename_function
 
     def next(self):
         """Provides the next time step of a hopping trajectory.
@@ -597,7 +589,7 @@ class TAPtrajectory(object):
             self.TAPradius = TAPradius
             self.TAPsteps = TAPsteps
             # store last TAPsteps in __lastframes
-            self.__lastframes = hop.utilities.Ringbuffer(self.TAPsteps)
+            self.__lastframes = utilities.Ringbuffer(self.TAPsteps)
             # store the last TAP coordinates: initialized here
             self.__currentTAP = self.tgroup.coordinates().copy()
             # fake DCD object that can be slotted into another universe
@@ -629,7 +621,7 @@ class TAPtrajectory(object):
         else:
             raise ValueError('Not sufficient data to create a TAP trajectory.')
 
-    filename = hop.utilities.filename_function
+    filename = utilities.filename_function
 
     def next(self):
         """Provides the next time step of a TAP trajectory.

@@ -24,28 +24,24 @@ density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.
 """
 
-import hop.constants
-from hop.constants import SITELABEL
-import hop.utilities
-from hop.utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
-     DefaultDict, fixedwidth_bins, iterable, asiterable
-import numpy  # need v >= 1.0
 import sys
-import os,os.path,errno
+import os, os.path
+import errno
 import cPickle
 import warnings
 
-from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats
+import numpy                   # need v >= 1.0
 import networkx as NX          # https://networkx.lanl.gov/
+from gridData import OpenDX    # http://github.com/Becksteinlab/GridDataFormats
 
-# set() for older versions of python (<2.4)
-try:
-    set([2,2])
-except NameError:
-    from sets import Set as set
+from . import constants
+from .constants import SITELABEL
+from . import utilities
+from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
+     DefaultDict, fixedwidth_bins, iterable, asiterable
 
 
-class Grid(hop.utilities.Saveable):
+class Grid(utilities.Saveable):
     """Class to manage a multidimensional grid object.
 
     The grid (Grid.grid) can be manipulated as a standard numpy
@@ -175,7 +171,7 @@ class Grid(hop.utilities.Saveable):
                     self.unit[unit_type] = None
                     continue
                 try:
-                    hop.constants.conversion_factor[unit_type][value]
+                    constants.conversion_factor[unit_type][value]
                     self.unit[unit_type] = value
                 except KeyError:
                     raise ValueError('Unit '+str(value)+\
@@ -224,7 +220,7 @@ class Grid(hop.utilities.Saveable):
         """
         if unit == self.unit['length']:
             return
-        cvnfact = hop.constants.get_conversion_factor('length',self.unit['length'],unit)
+        cvnfact = constants.get_conversion_factor('length',self.unit['length'],unit)
         self.edges = [x * cvnfact for x in self.edges]
         self.unit['length'] = unit
         self._update()        # needed to recalculate midpoints and origin
@@ -254,7 +250,7 @@ class Grid(hop.utilities.Saveable):
             raise RuntimeError('The grid is not a density so converty_density(0 makes no sense.')
         if unit == self.unit['density']:
             return
-        self.grid *= hop.constants.get_conversion_factor('density',self.unit['density'],unit)
+        self.grid *= constants.get_conversion_factor('density',self.unit['density'],unit)
         self.unit['density'] = unit
 
     def centers(self):
@@ -590,7 +586,7 @@ class Density(Grid):
 
     # methods to calculate site_properties
     def _site_occupancies(self,labels):
-        factor = hop.constants.get_conversion_factor('density',self.unit['density'],
+        factor = constants.get_conversion_factor('density',self.unit['density'],
                                                      self.unit['length'])
         Vcell = factor * numpy.linalg.det(self.delta)
         def occupancy(site):
@@ -1798,8 +1794,8 @@ def find_overlap_coeff(a,b):
         #b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
         sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
         sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
-        #f_a = hop.constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
-        #f_b = hop.constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
+        #f_a = constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
+        #f_b = constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
         #a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
         #b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
         #print a_cellvol, b_cellvol
@@ -1980,9 +1976,9 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     metadata['atomselection'] = atomselection
     metadata['numframes'] = numframes
     metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
-                                  * hop.constants.get_conversion_factor('time','AKMA','ps'), 3)
+                                  * constants.get_conversion_factor('time','AKMA','ps'), 3)
     metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
-                     hop.constants.get_conversion_factor('time','AKMA','ps')
+                     constants.get_conversion_factor('time','AKMA','ps')
     metadata['time_unit'] = 'ps'
     metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
     metadata['dcd_delta'] = u.trajectory.delta         # in AKMA

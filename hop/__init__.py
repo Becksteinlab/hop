@@ -42,7 +42,7 @@ __all__ = ['constants','sitemap','trajectory','graph','interactive',
            'utilities','external','analysis','siteanalysis','MCMC',
            'qhull']
 
-__version__ = "0.3.4"           
+__version__ = "0.3.4"
 
 # Warnings
 import warnings

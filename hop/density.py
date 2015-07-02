@@ -30,23 +30,27 @@ As an input a trajectory is required that
 Classes and functions
 ---------------------
 """
-import MDAnalysis
-import hop
-import hop.constants
-import hop.utilities
-from hop.utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
-     DefaultDict, fixedwidth_bins, iterable, asiterable, CustomProgressMeter
-from hop.sitemap import Density
-import numpy  # need v >= 1.0
+from __future__ import absolute_import
+
 import sys
-import os,os.path,errno
+import os, os.path
+import errno
 import cPickle
 import warnings
 
-from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats
+import numpy
+import MDAnalysis
+from gridData import OpenDX
+
+from . import MissingDataError, InconsistentDataWarning
+from . import constants
+from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
+     DefaultDict, fixedwidth_bins, iterable, asiterable, CustomProgressMeter
+from .sitemap import Density
+
 
 import logging
-logger = logging.getLogger("MDAnalysis.analysis.hop.density")
+logger = logging.getLogger("hop.density")
 
 
 class DensityCollector(object):
@@ -133,7 +137,7 @@ class DensityCollector(object):
         if not hasattr(self, 'grid'):
             errmsg = "DensityCollector.Density(): No data for density available. Run collect() first."
             logger.error(errmsg)
-            raise hop.MissingDataError(errmsg)
+            raise MissingDataError(errmsg)
         u = self.universe
         metadata = self.metadata
         metadata['collector'] = self.name
@@ -329,15 +333,15 @@ class DensityCreator(object):
         if len(self.densities) != 2:
             errmsg = "DensityCreator.DensityWithBulk(): Need exactly two densities ('solvent' and 'bulk')."
             logger.fatal(errmsg)
-            raise hop.MissingDataError(errmsg)
+            raise MissingDataError(errmsg)
         try:
             solvent = self.densities['solvent']
             bulk = self.densities['bulk']
         except KeyError:
             errmsg = "Need a 'solvent' and a 'bulk' density in %s.densities" % self.__class__.__name__
             logger.fatal(errmsg)
-            raise hop.MissingDataError(errmsg)
-	logger.debug("DensityWithBulk: solvent_threshold = %r", solvent_threshold)
+            raise MissingDataError(errmsg)
+        logger.debug("DensityWithBulk: solvent_threshold = %r", solvent_threshold)
         logger.debug("DensityWithBulk: bulk_threshold = %r", bulk_threshold)
         solvent.convert_density(density_unit)
         solvent.map_sites(solvent_threshold)
@@ -522,9 +526,9 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     metadata['atomselection'] = atomselection
     metadata['numframes'] = numframes
     metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
-                                  * hop.constants.get_conversion_factor('time','AKMA','ps'), 3)
+                                  * constants.get_conversion_factor('time','AKMA','ps'), 3)
     metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
-                     hop.constants.get_conversion_factor('time','AKMA','ps')
+                     constants.get_conversion_factor('time','AKMA','ps')
     metadata['time_unit'] = 'ps'
     metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
     metadata['dcd_delta'] = u.trajectory.delta         # in AKMA
@@ -816,7 +820,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_xray)d in x-ray structure." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='#')
 
     def _Wxray(self,resid_psf,format=False):
@@ -826,7 +830,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_psf)d in psf." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='W')
 
     def _Wformatter(self,resid,format=False,typechar=None):
@@ -1047,7 +1051,7 @@ class BfactorDensityCreator(object):
                 "Site <-> water matching will not work."  % \
                 (len(d._xray2psf), len(d.site_labels('sites', exclude='equivalencesites')))
             logger.warn(wmsg)
-            warnings.warn(wmsg, category=hop.InconsistentDataWarning)
+            warnings.warn(wmsg, category=InconsistentDataWarning)
         return d
 
     def _smear_sigma(self,grid,sigma):

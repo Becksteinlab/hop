@@ -25,19 +25,23 @@ per-site basis.
 .. warning:: Experimental code.
 
 """
+from __future__ import absolute_imports
+
+import warnings
 
 import numpy
-import hop
-import hop.utilities
-import hop.trajectory
-from hop.utilities import set_verbosity,msg, iterable, IntrospectiveDict
-from hop.constants import SITELABEL
-import warnings
+
+from . import MissingDataError
+from . import trajectory
+from . import utilities
+from .utilities import set_verbosity, msg, iterable, IntrospectiveDict
+from .constants import SITELABEL
+
 
 ## For launching into the debugger, add 'debug_here()' in the code
 #from IPython.Debugger import Tracer; debug_here = Tracer()
 
-class SiteArray(hop.utilities.Saveable):
+class SiteArray(utilities.Saveable):
     """Base class to implement containers that hold observables from a trajectory.
 
     The base class is not useful on its own and must be derived from.
@@ -154,7 +158,7 @@ class SiteArray(hop.utilities.Saveable):
             if self.distribution is None and self.data is not None:
                 raise ValueError("No normalized data available, try normalize=False.")
             else:
-                raise hop.MissingDataError("Cannot plot histograms because data are missing. Run compute() first.")
+                raise MissingDataError("Cannot plot histograms because data are missing. Run compute() first.")
 
         step = self.autoset_step(step)
         data = data[:,::step]
@@ -224,7 +228,7 @@ class SiteArray(hop.utilities.Saveable):
             if len(self.site2indx) == 0: raise
             if len(self.sites) == 0: raise
         except:
-            raise hop.MissingDataError("Cannot plot histograms because data are missing. Run compute() first.")
+            raise MissingDataError("Cannot plot histograms because data are missing. Run compute() first.")
         step = self.autoset_step(step)
         data = data[:,::step]
 
@@ -370,7 +374,7 @@ class SiteTrajectoryArray(SiteArray):
 
     def autocorrelation(self,start=None,stop=None,step=None,**kwargs):
         """Calculates the auto correlation function for all site trajectories."""
-        from hop.utilities import autocorrelation_fft as ACF
+        from .utilities import autocorrelation_fft as ACF
         return numpy.array([ACF(traj,**kwargs)
                               for traj in self.data[:,start:stop:step]])
 
@@ -391,11 +395,11 @@ class SiteTrajectoryArray(SiteArray):
 
         See also for kwargs:
         """
-        from hop.utilities import averaged_autocorrelation as avACF
+        from .utilities import averaged_autocorrelation as avACF
         tmp = numpy.array([avACF(traj,**kwargs) for traj in self.data[:,::step]])  # [(mean,std),...]
         return tmp[:,0], tmp[:,1]
 
-    #averaged_autocorrelation.func_doc += hop.utilities.averaged_autocorrelation.func_doc
+    #averaged_autocorrelation.func_doc += utilities.averaged_autocorrelation.func_doc
 
     def _calculate_normalization(self):
         """Normalize each site to its highest value."""
@@ -669,8 +673,8 @@ class SiteAnalysisObservable(object):
         if trajectory:
             assert collection.data_dcd.numframes == collection.hop_dcd.numframes
             trajectory_parameters = {'numframes': collection.hop_dcd.numframes,
-                                     'totaltime': hop.trajectory.totaltime(collection.hop_dcd,'ps'),
-                                     'delta_t':   hop.trajectory.delta_t(collection.hop_dcd,'ps')}
+                                     'totaltime': trajectory.totaltime(collection.hop_dcd,'ps'),
+                                     'delta_t':   trajectory.delta_t(collection.hop_dcd,'ps')}
             self.trajectories = SiteTrajectoryArray(self.name,self.sites,
                                                     self.max_site,trajectory_parameters,
                                                     properties=plot_properties)
@@ -864,7 +868,7 @@ ObservablesRegistry = {'distance':Distance,
                        'orbitoccupancy':OrbitOccupancy,
                        }
 
-class Collection(hop.utilities.Saveable):
+class Collection(utilities.Saveable):
     """A Collection of observables to be calculated for a hopping trajectory.
     (the central object of the siteanalysis module)
 
@@ -1076,7 +1080,7 @@ class Collection(hop.utilities.Saveable):
             self.hop_dcd.numframes
             self.density.site_properties.center
         except:  # typically triggered when Collection was recreated from a pickled file
-            raise hop.MissingDataError("Cannot compute() histograms because trajectory "
+            raise MissingDataError("Cannot compute() histograms because trajectory "
                                        "data is missing.")
         if start is None: start = 0
         elif start < 0:   start = self.data_dcd.numframes + start
@@ -1190,7 +1194,7 @@ class Collection(hop.utilities.Saveable):
 #----------------------------------------------------------------------
 #
 
-class test:
+class Test(object):
     def __init__(self,psf='inp/ifabp_water.psf',dcd='trj/rmsfit_ifabp_water_1.dcd',
                  density="analysis/water",hoptrj="trj/hoptrj",with_observables=True):
         """Test typical setup for SiteAnalysis. Supply filenames for
@@ -1199,13 +1203,12 @@ class test:
         (it assumes that the hopping psf has the same name with the
         psf prefix)"""
         import MDAnalysis
-        import hop.utilities
-        #hop.utilities.matplotlib_interactive(False)
-        import hop.sitemap, hop.trajectory
+        #utilities.matplotlib_interactive(False)
+        import hop.sitemap
 
         self.u = MDAnalysis.Universe(psf,dcd)
         self.wat = self.u.selectAtoms('name OH2')
-        self.hoptraj = hop.trajectory.HoppingTrajectory(filename=hoptrj)
+        self.hoptraj = trajectory.HoppingTrajectory(filename=hoptrj)
         self.dens = hop.sitemap.Density(filename=density)
         self.A = Collection(self.wat,self.hoptraj,self.dens)
         if with_observables:
