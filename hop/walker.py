@@ -3,10 +3,13 @@ import numpy as np
 import copy
 import MDAnalysis
 
-def rate_sum_update(hopgraph):
+def rate_sum_update(hopgraph,oneway=True):
 
     h=hopgraph
-    h.filter(exclude={'bulk':True,"outliers":True,"unconnected":True,'oneway':True})
+    if oneway==True:
+        h.filter(exclude={"bulk":True,"outliers":True,"unconnected":True,'oneway':True})
+    else:
+        h.filter(exclude={"bulk":True,"outliers":True,"unconnected":True})
     g=copy.deepcopy(h)
     for node in h.filtered_graph:
         rate_sum=0
@@ -19,10 +22,14 @@ def rate_sum_update(hopgraph):
     g.graph[1]['rate_sum']=rate_sum_bulk
     return g
 
-def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num=400,filename='walker_rates',track_entropy_production=False):
+def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num=400,filename='walker_rates',track_entropy_production=False,oneway=True,up_flux=True):
     h=hopgraph
-    h.filter(exclude={"bulk":True,"outliers":True,"unconnected":True,'oneway':True})
-    h=rate_sum_update(h)
+    if oneway==True:
+        h.filter(exclude={"bulk":True,"outliers":True,"unconnected":True,'oneway':True})
+    else:
+        h.filter(exclude={"bulk":True,"outliers":True,"unconnected":True})
+        
+    h=rate_sum_update(h,oneway)
     trajectories=np.zeros((4,particle_num))
     u=MDAnalysis.Universe(topology)
     p=u.selectAtoms('protein')
@@ -174,7 +181,7 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
         rate_observation=0
         steps_elapsed_total=0
         rates=open(filename+'.txt','w')
-        rates.write('up flux' + ' ' str(up_flux) 'deta' + ' ' + str(delta) + ' ' + 'steps' + ' ' + str(steps) + '\n')
+        rates.write('up flux' + ' ' + str(up_flux) + 'delta' + ' ' + str(delta) + ' ' + 'steps' + ' ' + str(steps) + '\n')
         entropy_production=0
         for step in xrange(steps):
             steps_elapsed_total+=1

@@ -14,7 +14,7 @@ def setup(topology,trajectory,water_label,protein_label):
     protein_box=p.bbox()
     return [u,w]
 
-def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,write_out_time=1000,timestep=0.001,use_cutoff=False,time_cutoff=1000,filename='rates'):
+def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,write_out_time=1000,timestep=0.001,use_cutoff=False,time_cutoff=1000,filename_down='flux_down',filename_up='flux_up'):
 
     universe,water=setup(topology,trajectory,
     water_label,protein_label)
@@ -28,8 +28,10 @@ def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,
     time_elapsed=0
     crossed_particles_up=[]
     crossed_particles_down=[]
-    rates=open(filename+'.txt','w')
-    rates.write('timestep' + ' ' + str(timestep) + ' ' + 'upper boundary' + ' ' + str(in_top) + ' ' + 'lower boundary' + ' ' + str(in_bottom) + '\n')
+    rates_down=open(filename_down+'.txt','w')
+    rates_up=open(filename_up+'.txt','w')
+    rates_down.write('timestep' + ' ' + str(timestep) + ' ' + 'upper boundary' + ' ' + str(in_top) + ' ' + 'lower boundary' + ' ' + str(in_bottom) + '\n')
+    rates_up.write('timestep' + ' ' + str(timestep) + ' ' + 'upper boundary' + ' ' + str(in_top) + ' ' + 'lower boundary' + ' ' + str(in_bottom) + '\n')
     cumulative_counts=0
     total_residence_time=0
     weighted_residence_time=0
@@ -60,9 +62,9 @@ def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,
                         counts_down+=1
             if universe.trajectory.frame!=0:
                 rate_up=np.divide(counts_up,u.trajectory.frame*timestep,dtype=np.float64)
-                rates.write(str(rate_up) + '\n')
+                rates_up.write(str(rate_up) + '\n')
                 rate_down=np.divide(counts_down,u.trajectory.frame*timestep,dtype=np.float64)
-                rates.write(str(rate_down) + '\n')
+                rates_down.write(str(rate_down) + '\n')
                 
                 rate=np.divide(counts_up-counts_down,u.trajectory.frame*timestep,dtype=np.float64)
                 inst_rate=np.divide(inst_counts_up-inst_counts_down,u.trajectory.frame*timestep,dtype=np.float64)
