@@ -1682,105 +1682,6 @@ class HoppingGraph(object):
         out.close()                                         
 
     def write_psf(self,graph,props,filename=None):
-        """
-        Pseudo psf with nodes as atoms and edges as bonds
-        """
-        # Standard no CHEQ format for a Charmm PSF file:
-        psf_ATOM_format = '%(iatom)8d %(segid)4s %(resid)-4d %(resname)4s '+\
-                          '%(name)-4s %(type)4s %(charge)-14.6f%(mass)-14.4f%(imove)8d\n'
-
-        psffilename = self.filename(filename,'psf')
-        psf = open(psffilename,'w')
-        psf.write('PSF\n\n')
-        psf.write('%7d !NTITLE\n' % 2)
-        psf.write('* Graph topology written by\n'+\
-                  '* $Id$\n')
-        psf.write('\n')
-
-        # ATOMS
-        psf.write('%6d !NATOM\n' % graph.number_of_nodes())
-        segid = 'GRPH'     # choose the same identifiers as in pdb
-        resname = 'NOD'    # choose the same identifiers as in pdb
-        charge = 0
-        mass = 1.0
-        imove = 0            # no fixed 'atoms'
-        node2iatom = dict()  # needed for BONDS
-        for iatom,node in enumerate(graph.nodes_iter()):
-            # atom numbering starts at 1, so iatom+1
-            iatom += 1
-            node2iatom[node] = iatom
-            # write common atoms as N, different as CA (HACK...)
-            commonlabel = props.equivalence_name[node].strip()
-            if commonlabel:
-                identity = 1.0
-                aname = 'N'
-                atype = 'N'
-            else:
-                identity = 0.0
-                aname = 'CA'       # choose the same identifiers as in pdb
-                atype = 'CA'       # choose the same identifiers as in pdb
-            psf.write(psf_ATOM_format %
-                      {'iatom':iatom, 'segid':segid, 'resid':node,
-                       'resname':resname, 'name':aname, 'type':atype,
-                       'charge':charge, 'mass':mass,'imove':imove} )
-        # BONDS: fortran fmt03='(8I8)'
-        # (note: write directed bonds and one atom per residue/node)
-        psf.write('%6d !NBOND: bonds\n' % graph.number_of_edges())
-        for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
-            psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
-            if (n+1) % 4 == 0: psf.write('\n')
-            if (n+1) % 4 != 0: psf.write('\n')
-
-        # ignore all the other sections (don't make sense anyway)
-        psf.close()
-
-    def select_graph(self,use_filtered_graph):
-        """Returns filtered graph for True argument, or the raw graph otherwise)"""
-        if use_filtered_graph:
-            # Is there a filtered graph we should be using?
-            try:
-                graph = self.filtered_graph
-                graph.number_of_nodes()
-            except AttributeError:
-                raise ValueError('No filtered graph defined; create one with %s.filter().' %
-                                 self.__class__.__name__)
-        else:
-            graph = self.graph
-        return graph
-
-    def _rate(self,taus,method='survivalfunction',block_w=200):
-        """Compute the rate i--> j, k_ji, from the hopping times tau_ji.
-
-        :Returns: dict(kij=*kji*, N=*N*, fit=*fit*)
-
-                  - *kji* : rate constant in 1/ps
-                  - *N* : number of events
-                  - *fit* : instance of :class:`fit_func`
-
-        :Arguments:
-            *taus*
-                array of all waiting times
-            *method*
-               'survivalfunction'
-                    compute as a fit of a*exp(-k1*t)+(1-a)*exp(-k2*t) or exp(-k*t)
-                    to the survival function S(t); the double exp is tried first
-                    and then decided heuristically if a single exp is a better choice.
-                    Heuristics: Use single exp if
-
-                    * number of data points is <= 10
-                    * double exp asymmetry abs(0.5-a) > 0.49
-                    * k1<0 or k2<0
-
-        :Bugs:
-          - Does not switch to single exponential if double exponential fit fails
-            to converge.
-
-        .. Notes:: Should probably use the integral of the double-exponential fit as an
-          approximation for the rate constant instead of just using the slower
-          one (G. Hummer, pers. comm.)
-        """
-
-    def write_psf(self,graph,props,filename=None):
         """Pseudo psf with nodes as atoms and edges as bonds"""
         # Standard no CHEQ format for a Charmm PSF file:
         psf_ATOM_format = '%(iatom)8d %(segid)4s %(resid)-4d %(resname)4s '+\
@@ -1826,7 +1727,7 @@ class HoppingGraph(object):
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
-            if (n+1) % 4 != 0: psf.write('\n')
+        if (n+1) % 4 != 0: psf.write('\n')
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()

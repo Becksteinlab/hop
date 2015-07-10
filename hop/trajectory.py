@@ -283,7 +283,7 @@ class HoppingTrajectory(object):
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
             pm.echo(ts.frame)
-	dcdwriter.close()
+	    dcdwriter.close()
         logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
@@ -401,7 +401,7 @@ class HoppingTrajectory(object):
         self._init_coord2hop()
         #for traj_ts in self.traj[start:stop]:
 	for traj_ts in self.traj:              # no slicing for big trajectories
-        	yield self._coord2hop(traj_ts)
+        yield self._coord2hop(traj_ts)
 
     def _init_coord2hop(self):
         """Allocate helper arrays for _coord2hop()"""
@@ -466,7 +466,7 @@ class HoppingTrajectory(object):
         pos = self.ts._pos     # assign slices to avoid loop (thanks to Naveen)
         pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]]\
                     for iatom in xrange(N)]
-	s = pos[:,0]
+	    s = pos[:,0]
         self._offsites[:] = (s == SITELABEL['interstitial']) | (s == SITELABEL['outlier'])
         pos[:,1] = s      # particles in interstital and outliers are assigned their previous site
         pos[self._offsites,1] = self._sites_last[self._offsites]
