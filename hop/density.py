@@ -245,7 +245,7 @@ class DensityCreator(object):
         kwargs = _kwargs
         # workaround for python 2.5 *args,**kwargs only allowed:
         universe_kwargs = {'permissive':kwargs.pop('permissive',False)}
-        self.universe = MDAnalysis.asUniverse(*args, **universe_kwargs)
+        self.universe = MDAnalysis.as_Universe(*args, **universe_kwargs)
         self.mode = kwargs.pop("mode", "all")   # 'all' runs modes[1:]
         if not self.mode in self.modes:
             errmsg = "DensityCreator: mode must be one of %r, not %r" % (self.modes, self.mode)

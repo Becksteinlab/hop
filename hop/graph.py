@@ -52,6 +52,7 @@ import sys
 import cPickle
 import os.path
 import warnings
+import MDAnalysis
 
 from MDAnalysis.core.log import ProgressMeter
 
@@ -1681,6 +1682,14 @@ class HoppingGraph(object):
                     out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+str(pos_nbr[2])+ " }"+ " radius "+ cutoff_radius + " resolution 16\n")
         out.close()                                         
 
+    def translate(self, translation_vector):
+        for i in xrange(len(self.site_properties.center)):
+            self.site_properties.center[i]+=translation_vector
+
+    def rotate(self, rotation_matrix):
+        for i in xrange(len(self.site_properties.center)):
+            self.site_properties.center[i]=numpy.reshape(numpy.array(numpy.dot(rotation_matrix,self.site_properties.center[i])),(3,))
+
     def write_psf(self,graph,props,filename=None):
         """
         Pseudo psf with nodes as atoms and edges as bonds
@@ -1733,6 +1742,17 @@ class HoppingGraph(object):
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()
+
+    def rate_distribution(self,bins=10,alpha=0.5,log=False):
+        import matplotlib.pyplot as plt
+    
+        self.filter(exclude={'bulk':True,'unconnected':True,'outliers':True})
+        rates=[]
+        for i in self.filtered_graph:
+            for j in self.filtered_graph[i]:
+                rates.append(self.filtered_graph[i][j]['k'])
+    
+        plt.hist(rates,bins,alpha=alpha,log=log)
 
     def select_graph(self,use_filtered_graph):
         """Returns filtered graph for True argument, or the raw graph otherwise)"""
