@@ -34,8 +34,6 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
     u=MDAnalysis.Universe(topology)
     p=u.selectAtoms('protein')
     z_center=p.centerOfGeometry()[2]
-    if edge_count==True:
-        edge_count_array=np.zeros((len(h.filtered_graph.nodes()),len(h.filtered_graph.nodes())))
 
     def generate_waiting_time(site):
         rate_sum=h.filtered_graph[site]['rate_sum'] # normalization factor
@@ -155,6 +153,7 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
             h.site_properties.center[site][2]<=z_center]
             bottom_sites=[site for site in bottom_sites_unfiltered if h.graph.has_edge(site,1)]
         else:
+<<<<<<< HEAD
             top_sites_unfiltered = [site for site in h.filtered_graph.nodes() if
             h.site_properties.center[site][2]<=z_center]
             top_sites=[site for site in top_sites_unfiltered if h.graph.has_edge(1,site)]
@@ -224,24 +223,13 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
                 waiting_time=trajectories[2][trajectory]
                 if site!=0.0:
                     trajectories=poisson_step(site,trajectory,current_time,waiting_time,delta,entropy_production)
-                    if edge_count==True:
-                        edge_count_array[site][trajectories[0][trajectory]]+=1
                     entropy_production+=trajectories[3][site]
             rate=np.divide(counts,delta*step,dtype=np.float64)
-            rates.write(str(rate)+'\n')
+            rates.write(str(rate))
             if steps_elapsed_total*delta>=1:
                 steps_elapsed_total=0
         rate=np.divide(counts,delta*steps,dtype=np.float64)
         net_entropy_production=np.divide(entropy_production,steps*delta)
-        if not edge_count:
-            return (trajectories,rate)
-        else:
-            return (trajectories,rate,edge_count_array)
 
-    return main(particle_num=particle_num,trajectories=trajectories,filename=filename,up_flux=up_flux)
-
-def node_histogram(trajectory,hopgraph):
-    
-    hist=np.histogram(trajectory[0][np.nonzero(np.unique(trajectory[:,:,:][0]))],hopgraph.filtered_graph.nodes())
-    return hist
+    return main(particle_num=particle_num,trajectories=trajectories,filename=filename)
 
