@@ -153,7 +153,6 @@ def flux_calculator(hopgraph,topology,cutoff=1,delta=0.1,steps=1000,particle_num
             h.site_properties.center[site][2]<=z_center]
             bottom_sites=[site for site in bottom_sites_unfiltered if h.graph.has_edge(site,1)]
         else:
-<<<<<<< HEAD
             top_sites_unfiltered = [site for site in h.filtered_graph.nodes() if
             h.site_properties.center[site][2]<=z_center]
             top_sites=[site for site in top_sites_unfiltered if h.graph.has_edge(1,site)]
