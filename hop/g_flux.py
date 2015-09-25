@@ -47,7 +47,6 @@ def track_counts(topology,trajectory,water_label,protein_label,in_top,in_bottom,
                 time_elapsed=0
             for water_index in xrange(len(water_z)):
                 if water_z[water_index]>=in_top:
-<<<<<<< HEAD
                     tracking_list[water_index]=1
                     if tracking_list_last[water_index]==-2:
                         counts_up+=1
