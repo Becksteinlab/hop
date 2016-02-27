@@ -231,7 +231,7 @@ from . import sitemap
 from . import trajectory
 from . import graph
 from . import constants
-from . import density
+from .density import DensityCreator
 
 logger = logging.getLogger("MDAnalysis.analysis.hop.interactive")
 
@@ -291,7 +291,7 @@ def generate_densities(*args, **kwargs):
     bulk_threshold = kwargs.pop('bulk_threshold', numpy.exp(-0.5))
     density_unit = kwargs.pop('density_unit', "water")
     kwargs['mode'] = "all"
-    DC = density.DensityCreator(*args, **kwargs)
+    DC = DensityCreator(*args, **kwargs)
     densities = DC.create()
     # save the precious files right away
     densities['bulk'].save(bulkname)
@@ -461,7 +461,7 @@ def make_hoppingtraj(density,filename,**hopargs):
         raise ValueError(errmsg)
 
     u = MDAnalysis.Universe(density.metadata['psf'],density.metadata['dcd'])
-    group = u.selectAtoms(density.metadata['atomselection'])
+    group = u.select_atoms(density.metadata['atomselection'])
     hops = trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
     hops.write(filename)
     return hops

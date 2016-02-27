@@ -72,7 +72,7 @@ class HoppingTrajectory(object):
     :Attributes:
 
     ts               MDAnalysis.Timestep object
-    numframes        number of frames in hopping trajectory
+    n_frames        number of frames in hopping trajectory
     group            AtomGroup of atoms that are tracked
 
 
@@ -103,7 +103,7 @@ class HoppingTrajectory(object):
         Create from a coordinate trajectory of a group of atoms and a site map:
 
           u = MDAnalysis.Universe(psf,dcd)
-          water = u.selectAtoms('name OH2')
+          water = u.select_atoms('name OH2')
           h = HoppingTrajectory(trajectory=u.trajectory,group=water,density=water_density)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
@@ -134,7 +134,7 @@ class HoppingTrajectory(object):
             self.traj  = trajectory        # MDAnalysis.Universe.trajectory
             self.tgroup = group            # atom selection for trajectory
             if not isinstance(self.tgroup, MDAnalysis.core.AtomGroup.AtomGroup):
-                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
+                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
                     if not hasattr(trajectory,attr):
@@ -173,7 +173,7 @@ class HoppingTrajectory(object):
             self.ts._unitcell = numpy.array((numlabels,90, numlabels,90, 90,1),dtype=numpy.float32)
             # current hopping trajectory frame is in ts._pos[]
             # _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0
-            self.numframes = self.traj.numframes    # total numer of frames
+            self.n_frames = self.traj.n_frames    # total numer of frames
             self._init_coord2hop()                  # init for _map_next_timestep()
             self._map_next_timestep()               # initialize with first timestep
             self.hoptraj = None                     # no hopping trajectory available
@@ -187,11 +187,11 @@ class HoppingTrajectory(object):
                 hoppsf = self.filename(filename,'psf')
                 hopdcd = self.filename(filename,'dcd')
             u = MDAnalysis.Universe(hoppsf,hopdcd)
-            group = u.selectAtoms('type *')
+            group = u.select_atoms('type *')
             self.group = group      # group that refers to hopping trajectory
             self.hoptraj = u.trajectory    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
-            self.numframes = self.hoptraj.numframes
+            self.n_frames = self.hoptraj.n_frames
             self.totaltime = totaltime(self.hoptraj)
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
@@ -271,7 +271,7 @@ class HoppingTrajectory(object):
         dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='Hopping trajectory: x=site y=orbit_site z=0')
-        pm = ProgressMeter(self.numframes, interval=10,
+        pm = ProgressMeter(self.n_frames, interval=10,
                            format="Mapping frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
@@ -389,7 +389,7 @@ class HoppingTrajectory(object):
         if start is None:
             start = 0
         if stop is None:
-            stop = self.numframes
+            stop = self.n_frames
 
         self._init_coord2hop()
         #for traj_ts in self.traj[start:stop]:
@@ -490,7 +490,7 @@ class TAPtrajectory(object):
 
     :Attributes:
     ts               MDAnalysis.Timestep object
-    numframes        number of frames in TAP trajectory
+    n_frames        number of frames in TAP trajectory
     group            AtomGroup of atoms that are tracked
 
 
@@ -514,8 +514,8 @@ class TAPtrajectory(object):
         Create from a coordinate trajectory of a group of water residues:
 
           u = MDAnalysis.Universe(psf,dcd)
-          water = u.selectAtoms('resname TIP*')  # see NOTE below!!
-          water = u.selectAtoms('name OH2')      # better, see NOTE below!!
+          water = u.select_atoms('resname TIP*')  # see NOTE below!!
+          water = u.select_atoms('name OH2')      # better, see NOTE below!!
           h = TAPtrajectory(trajectory=u.trajectory,group=water)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
@@ -532,7 +532,7 @@ class TAPtrajectory(object):
         One can use a TAP filtered trajectory 'on-the-fly' to build the density:
 
           u = Universe(psf,dcd)
-          oxy = u.selectAtoms('name OH2')
+          oxy = u.select_atoms('name OH2')
           TAP = TAPtrajectory(u.trajectory,oxy)
           u.trajectory = TAP.trajectory    # <--- replace orig dcd with TAP !!
           dens = hop.sitemap.density_from_Universe(u,atomselection='name OH2')
@@ -574,7 +574,7 @@ class TAPtrajectory(object):
             self.tgroup = group                          # atom selection for trajectory
             self.tgroup_indices = self.tgroup.indices()  # cache indices
             if not isinstance(self.tgroup,MDAnalysis.core.AtomGroup.AtomGroup):
-                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
+                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
             self.universe = self.tgroup.atoms[0].universe  # Universe of dcd and group (hackish..)
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
@@ -594,12 +594,12 @@ class TAPtrajectory(object):
             self.__currentTAP = self.tgroup.coordinates().copy()
             # fake DCD object that can be slotted into another universe
             self.dcd_attributes = {}
-            for k in ['dcdfilename','delta','filename','fixed','numframes',
+            for k in ['dcdfilename','delta','filename','fixed','n_frames',
                       'numatoms','periodic','remarks',
                       'skip','skip_timestep','start_timestep']:
                 self.dcd_attributes[k] = self.traj.__dict__[k]
             self.trajectory = ThinDCDReader(self)
-            self.numframes = self.dcd_attributes['numframes']
+            self.n_frames = self.dcd_attributes['n_frames']
         elif not (dcd is None or psf is None) or filename is not None:
             # read from dcd
             try:
@@ -610,11 +610,11 @@ class TAPtrajectory(object):
                 psf = self.filename(filename,'psf')
                 dcd = self.filename(filename,'dcd')
             u = MDAnalysis.Universe(psf,dcd)
-            group = u.selectAtoms('type *')   # TODO: why do I need this?
+            group = u.select_atoms('type *')   # TODO: why do I need this?
             self.group = group      # group that refers to hopping trajectory
             self.TAPtraj = u.trajectory    # DCD trajectory object
             self.ts = self.TAPtraj.ts
-            self.numframes = self.TAPtraj.numframes
+            self.n_frames = self.TAPtraj.n_frames
             self.totaltime = totaltime(self.TAPtraj)
             # DCD object that can be slotted into another universe
             self.trajectory = u.trajectory
@@ -692,7 +692,7 @@ class TAPtrajectory(object):
         dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='TAP trajectory')
-        pm = ProgressMeter(self.numframes, interval=10,
+        pm = ProgressMeter(self.n_frames, interval=10,
                            format="Mapping TAP frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
@@ -725,7 +725,7 @@ class TAPtrajectory(object):
         if start is None:
             start = 0
         if stop is None:
-            stop = self.numframes
+            stop = self.n_frames
 
         #for traj_ts in self.traj[start:stop]:
         for traj_ts in self.traj:              # no slicing for big trajectories(ERRORS!)
@@ -797,7 +797,7 @@ class ThinDCDReader(MDAnalysis.coordinates.DCD.DCDReader):
     def __init__(self,datafeeder):
         D = datafeeder
         # should have as attributes:
-        # ['dcdfilename','delta','filename','fixed','numframes', 'numatoms','periodic',
+        # ['dcdfilename','delta','filename','fixed','n_frames', 'numatoms','periodic',
         #  'remarks', 'skip','skip_timestep','start_timestep']
         self.__dict__.update(D.dcd_attributes)
         self.dcdfile = None  # no file is linked; with None, __del__ will be happy

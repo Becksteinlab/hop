@@ -349,13 +349,13 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">maxsites</span><span class="p">,</span><span class="n">parameters</span><span class="p">,</span><span class="n">properties</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the SiteTrajectoryArray.</span>
 
-<span class="sd">        A = SiteTrajectoryArray(sites,maxsites,properties=dict(numframes=&lt;int&gt;))</span>
+<span class="sd">        A = SiteTrajectoryArray(sites,maxsites,properties=dict(n_frames=&lt;int&gt;))</span>
 
 <span class="sd">        :Arguments:</span>
 <span class="sd">        name           name of the observable</span>
 <span class="sd">        sites          list of all site labels</span>
 <span class="sd">        maxsites       highest site label encountered in the trajectory</span>
-<span class="sd">        parameters     dict(numframes=&lt;number of frames that are going to be saved&gt;,</span>
+<span class="sd">        parameters     dict(n_frames=&lt;number of frames that are going to be saved&gt;,</span>
 <span class="sd">                            totaltime=&lt;length of trajectory&gt;,</span>
 <span class="sd">                            delta_t=&lt;length of one frame&gt;)</span>
 <span class="sd">        properties     dict to customize the plot (xlabel, legend_fontsize, ...).</span>
@@ -363,17 +363,17 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">SiteTrajectoryArray</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">maxsites</span><span class="p">,</span><span class="n">parameters</span><span class="p">,</span>
                                                  <span class="n">properties</span><span class="o">=</span><span class="n">properties</span><span class="p">,</span>
                                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;numframes&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;n_frames&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">totaltime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;totaltime&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;delta_t&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># only edges makes really sense</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># only edges makes really sense</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">midpoints</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>    <span class="c"># but for compatibility...</span>
 
         <span class="c"># allocate array (with one additional row to dump data from not-selected sites)</span>
         <span class="n">msg</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&#39;SiteTrajectoryArray.__init__(): &#39;</span>
             <span class="s">&#39;Allocating float data array of size </span><span class="si">%d</span><span class="s"> x </span><span class="si">%d</span><span class="s"> [</span><span class="si">%.1f</span><span class="s"> MiB]&#39;</span> <span class="o">%</span> \
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="o">*</span><span class="mf">32.0</span><span class="o">/</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="o">*</span><span class="mf">32.0</span><span class="o">/</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">Nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
         <span class="c"># keep track of frame number internally</span>
         <span class="c"># TODO: This makes save() fail (need to filter type(&#39;method-wrapper&#39;))</span>
@@ -382,7 +382,7 @@
 
     <span class="k">def</span> <span class="nf">_frame_number_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Supply a new frame number for each call of add().&quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">i</span>
 
 <div class="viewcode-block" id="SiteTrajectoryArray.add"><a class="viewcode-back" href="../../hop/siteanalysis.html#hop.siteanalysis.SiteTrajectoryArray.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">site_data</span><span class="p">,</span><span class="n">sites</span><span class="p">):</span>
@@ -399,9 +399,9 @@
             <span class="c"># self.site2indx[sites] adds any data for not-selected sites to the &#39;rubbish&#39; row</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">site2indx</span><span class="p">[</span><span class="n">sites</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">_next_frame_number</span><span class="p">()]</span> <span class="o">=</span> <span class="n">site_data</span>
         <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Trying to read more frames than specified in numframes=</span><span class="si">%d</span><span class="s">. &quot;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Trying to read more frames than specified in n_frames=</span><span class="si">%d</span><span class="s">. &quot;</span>
                                <span class="s">&quot;You need to &#39;reset()&#39; the observable &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> 
-                               <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                               <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
         <span class="c">#debug_here()</span>
 </div>
 <div class="viewcode-block" id="SiteTrajectoryArray.reset"><a class="viewcode-back" href="../../hop/siteanalysis.html#hop.siteanalysis.SiteTrajectoryArray.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -456,7 +456,7 @@
     <span class="n">distribution</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">distribution</span><span class="p">())</span>
 
 <div class="viewcode-block" id="SiteTrajectoryArray.trajectory"><a class="viewcode-back" href="../../hop/siteanalysis.html#hop.siteanalysis.SiteTrajectoryArray.trajectory">[docs]</a>    <span class="k">def</span> <span class="nf">trajectory</span><span class="p">():</span>
-        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;Numpy array with N sites on axis 0 and numframes values on axis 1&quot;&quot;&quot;</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;Numpy array with N sites on axis 0 and n_frames values on axis 1&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">fget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">def</span> <span class="nf">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
@@ -465,7 +465,7 @@
     <span class="n">trajectory</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">trajectory</span><span class="p">())</span>
 
 <div class="viewcode-block" id="SiteTrajectoryArray.site_trajectory"><a class="viewcode-back" href="../../hop/siteanalysis.html#hop.siteanalysis.SiteTrajectoryArray.site_trajectory">[docs]</a>    <span class="k">def</span> <span class="nf">site_trajectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sites</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns numpy array with N sites on axis 0 and numframes values on axis 1; indexed by the site label&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns numpy array with N sites on axis 0 and n_frames values on axis 1; indexed by the site label&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">site2indx</span><span class="p">[</span><span class="n">sites</span><span class="p">]]</span>
 </div>
 <div class="viewcode-block" id="SiteTrajectoryArray.site_distribution"><a class="viewcode-back" href="../../hop/siteanalysis.html#hop.siteanalysis.SiteTrajectoryArray.site_distribution">[docs]</a>    <span class="k">def</span> <span class="nf">site_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sites</span><span class="p">):</span>
@@ -654,7 +654,7 @@
 <span class="sd">    max_site     the highest site label that occurs in the trajectory</span>
 <span class="sd">    idcd2ihop    translation between dcd indices to hop indices</span>
 <span class="sd">                 sites[self.idcd2ihop[[2,3,5]] -&gt; sites of dcd 2,3,5 </span>
-<span class="sd">    data_indices == MDAnalysis.selectAtoms(...).indices() (atom indices of selected atoms)</span>
+<span class="sd">    data_indices == MDAnalysis.select_atoms(...).indices() (atom indices of selected atoms)</span>
 <span class="sd">    data_ts      (pointer to) the data trajectory time step instance</span>
 <span class="sd">    hop_ts       (pointer to) the hop trajectory time step instance</span>
 
@@ -708,8 +708,8 @@
         <span class="c"># set up site trajectory arrays (if requested)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_trajectories</span> <span class="o">=</span> <span class="n">trajectory</span>
         <span class="k">if</span> <span class="n">trajectory</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">collection</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span> <span class="o">==</span> <span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">numframes</span>
-            <span class="n">trajectory_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;numframes&#39;</span><span class="p">:</span> <span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">numframes</span><span class="p">,</span>
+            <span class="k">assert</span> <span class="n">collection</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">==</span> <span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">n_frames</span>
+            <span class="n">trajectory_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;n_frames&#39;</span><span class="p">:</span> <span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">n_frames</span><span class="p">,</span>
                                      <span class="s">&#39;totaltime&#39;</span><span class="p">:</span> <span class="n">hop</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">totaltime</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="p">,</span><span class="s">&#39;ps&#39;</span><span class="p">),</span>
                                      <span class="s">&#39;delta_t&#39;</span><span class="p">:</span>   <span class="n">hop</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">delta_t</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">hop_dcd</span><span class="p">,</span><span class="s">&#39;ps&#39;</span><span class="p">)}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span> <span class="o">=</span> <span class="n">SiteTrajectoryArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span>
@@ -923,7 +923,7 @@
 <span class="sd">    atom in the hopping trajectory (or the selection must be identical to the</span>
 <span class="sd">    hopping selection); also load the corresponding hopping trajectory:</span>
 
-<span class="sd">      C = Collection(selection=universe.selectAtoms(&#39;name OH2&#39;),</span>
+<span class="sd">      C = Collection(selection=universe.select_atoms(&#39;name OH2&#39;),</span>
 <span class="sd">                     hoptraj=HoppingTrajectory(filename=&#39;hoptraj&#39;),</span>
 <span class="sd">                     density=Density(filename=&#39;water.pickle&#39;))</span>
 
@@ -959,14 +959,14 @@
                  <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbosity</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set up analysis on a per-site basis.</span>
 <span class="sd">        </span>
-<span class="sd">        C = Collection(selection=universe.selectAtoms(&#39;name OH2&#39;),</span>
+<span class="sd">        C = Collection(selection=universe.select_atoms(&#39;name OH2&#39;),</span>
 <span class="sd">                  hoptraj=HoppingTrajectory(filename=&#39;hoptraj&#39;),</span>
 <span class="sd">                  density=Density(filename=&#39;water.pickle&#39;),</span>
 <span class="sd">                  include_sites=&#39;default&#39;,exclude_sites=[&#39;default&#39;,&#39;bulk&#39;],</span>
 <span class="sd">                  filename=None, verbosity=None)</span>
 
 <span class="sd">        :Arguments:</span>
-<span class="sd">        selection          MDAnalysis.selectAtoms selection (from psf+dcd)</span>
+<span class="sd">        selection          MDAnalysis.select_atoms selection (from psf+dcd)</span>
 <span class="sd">        hoptraj            hop.trajectory.HoppingTrajectory instance (from psf+dcd)</span>
 <span class="sd">        density            hop.sitemap.Density instance with a sitemap defined</span>
 <span class="sd">        include_sites      any valid argument to </span>
@@ -1004,9 +1004,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">set_default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
             <span class="c"># sanity checks</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span> <span class="o">&lt;&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">numframes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">&lt;&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">n_frames</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Data trajectory and hopping trajectory differ in length: &quot;</span>
-                                 <span class="s">&quot;</span><span class="si">%d</span><span class="s"> vs </span><span class="si">%d</span><span class="s"> frames&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">numframes</span><span class="p">))</span>
+                                 <span class="s">&quot;</span><span class="si">%d</span><span class="s"> vs </span><span class="si">%d</span><span class="s"> frames&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">n_frames</span><span class="p">))</span>
 
             <span class="c"># compute index arrays between sites, atoms, and histograms</span>
             <span class="n">hopSR2A</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1094,8 +1094,8 @@
 
 <span class="sd">        :Arguments:</span>
 <span class="sd">        observables   list of names of observables to compute; None means &#39;all&#39;</span>
-<span class="sd">        start         0...numframes-1  NOTE: 0-based frame indexing</span>
-<span class="sd">        stop          1...numframes</span>
+<span class="sd">        start         0...n_frames-1  NOTE: 0-based frame indexing</span>
+<span class="sd">        stop          1...n_frames</span>
 <span class="sd">        step          1</span>
 <span class="sd">        progress_interval   10 (print progress every &lt;interval&gt; steps)</span>
 <span class="sd">          </span>
@@ -1113,17 +1113,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># sanity check</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">numframes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hop_dcd</span><span class="o">.</span><span class="n">n_frames</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">site_properties</span><span class="o">.</span><span class="n">center</span>
         <span class="k">except</span><span class="p">:</span>  <span class="c"># typically triggered when Collection was recreated from a pickled file</span>
             <span class="k">raise</span> <span class="n">hop</span><span class="o">.</span><span class="n">MissingDataError</span><span class="p">(</span><span class="s">&quot;Cannot compute() histograms because trajectory &quot;</span>
                                        <span class="s">&quot;data is missing.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">elif</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>   <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span> <span class="o">+</span> <span class="n">start</span>
-        <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span>
-        <span class="k">elif</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>    <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">numframes</span> <span class="o">+</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">numframes</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">step</span>
+        <span class="k">elif</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>   <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">+</span> <span class="n">start</span>
+        <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span>
+        <span class="k">elif</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>    <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dcd</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">+</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">n_frames</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">step</span>
 
         <span class="n">_observables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observables</span><span class="p">(</span><span class="n">observables</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset_observable</span><span class="p">(</span><span class="n">observables</span><span class="p">)</span>
@@ -1245,7 +1245,7 @@
         <span class="kn">import</span> <span class="nn">hop.sitemap</span><span class="o">,</span> <span class="nn">hop.trajectory</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">u</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">selectAtoms</span><span class="p">(</span><span class="s">&#39;name OH2&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s">&#39;name OH2&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">HoppingTrajectory</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">hoptrj</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dens</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">density</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">Collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wat</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dens</span><span class="p">)</span>

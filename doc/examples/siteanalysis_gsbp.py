@@ -110,7 +110,7 @@ import hop.siteanalysis, hop.sitemap, hop.trajectory
 
 print "== loading data =="
 u = MDAnalysis.Universe(F['psf'],F['trj'])
-water = u.selectAtoms('name OH2')
+water = u.select_atoms('name OH2')
 hoptraj = hop.trajectory.HoppingTrajectory(hoppsf=F['hoppsf'],hopdcd=F['hoptrj'])
 density = hop.sitemap.Density(filename=F['density'])
 

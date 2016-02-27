@@ -138,7 +138,7 @@
 <span class="sd">    :Arguments:</span>
 <span class="sd">    - psf: Charmm topology file</span>
 <span class="sd">    - pdb: coordinates</span>
-<span class="sd">    - selection: MDAnalysis selectAtoms() selection string [C-alpha atoms]</span>
+<span class="sd">    - selection: MDAnalysis select_atoms() selection string [C-alpha atoms]</span>
 <span class="sd">    - filename: name of the output file; used as input for :class:`ConvexHull`</span>
 <span class="sd">    - scale: scale points around the centre of geometry; values of 0.5 - 0.7 typically ensure that</span>
 <span class="sd">      the convex hull is inside the protein; default is to not to scale, i.e. scale = 1.</span>
@@ -146,7 +146,7 @@
 
     <span class="kn">from</span> <span class="nn">MDAnalysis</span> <span class="kn">import</span> <span class="n">asUniverse</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">asUniverse</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">permissive</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;permissive&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
-    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">selectAtoms</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;selection&#39;</span><span class="p">,</span> <span class="s">&quot;name CA&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;selection&#39;</span><span class="p">,</span> <span class="s">&quot;name CA&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
     <span class="n">write_coordinates</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;filename&#39;</span><span class="p">,</span> <span class="s">&quot;points.dat&quot;</span><span class="p">),</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;scale&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">))</span>
     </div>
 <div class="viewcode-block" id="write_coordinates"><a class="viewcode-back" href="../../hop/qhull.html#hop.qhull.write_coordinates">[docs]</a><span class="k">def</span> <span class="nf">write_coordinates</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>

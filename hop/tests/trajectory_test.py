@@ -5,7 +5,7 @@
 def _setup_testcase_fromdensity():
     import MDAnalysis, hop.trajectory, hop.sitemap
     u = MDAnalysis.Universe('./NPT/ifabp_water.psf','./NPT/ifabp_water_1.dcd')
-    group = u.selectAtoms("name OH2")
+    group = u.select_atoms("name OH2")
     wd = hop.sitemap.Density(filename='waterdensity') 
     return hop.trajectory.HoppingTrajectory(u.dcd,group,wd)
 
@@ -18,7 +18,7 @@ def _test0(stop=2):
     sh = _setup_testcase_fromdensity()
     for ts in sh.map_dcd(0,stop):
         msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-            (ts.frame,sh.numframes,100.0*ts.frame/sh.numframes))
+            (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
         #print sh.frame
     msg(3,'\nMapping completed\n')
     return sh
@@ -38,7 +38,7 @@ def _test1(stop=5,repeat=5,N=4):
     def _timer_mapdcd(sh,stop):
         for ts in sh.map_dcd(0,stop):
             msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,sh.numframes,100.0*ts.frame/sh.numframes))
+                (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
         msg(3,'\nMapping completed\n')
 
 
@@ -63,7 +63,7 @@ def _test2(stop=None,repeat=5,N=4):
     def _timer_readhops(sh,stop):
         for ts in sh:
             msg(3,"Reading frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,sh.numframes,100.0*ts.frame/sh.numframes))
+                (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
         msg(3,'\nReading completed\n')
         
     tt = timeit.Timer(stmt='_timer_readhops(sh,'+str(stop)+')',

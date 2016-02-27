@@ -312,13 +312,13 @@ class SiteTrajectoryArray(SiteArray):
     def __init__(self,name,sites,maxsites,parameters,properties=None,**kwargs):
         """Initialize the SiteTrajectoryArray.
 
-        A = SiteTrajectoryArray(sites,maxsites,properties=dict(numframes=<int>))
+        A = SiteTrajectoryArray(sites,maxsites,properties=dict(n_frames=<int>))
 
         :Arguments:
         name           name of the observable
         sites          list of all site labels
         maxsites       highest site label encountered in the trajectory
-        parameters     dict(numframes=<number of frames that are going to be saved>,
+        parameters     dict(n_frames=<number of frames that are going to be saved>,
                             totaltime=<length of trajectory>,
                             delta_t=<length of one frame>)
         properties     dict to customize the plot (xlabel, legend_fontsize, ...).
@@ -326,17 +326,17 @@ class SiteTrajectoryArray(SiteArray):
         super(SiteTrajectoryArray,self).__init__(name,sites,maxsites,parameters,
                                                  properties=properties,
                                                  **kwargs)
-        self.numframes = self.parameters['numframes']
+        self.n_frames = self.parameters['n_frames']
         self.totaltime = self.parameters['totaltime']
         self.delta     = self.parameters['delta_t']
-        self.edges = self.delta * numpy.arange(self.numframes+1)   # only edges makes really sense
+        self.edges = self.delta * numpy.arange(self.n_frames+1)   # only edges makes really sense
         self.midpoints = 0.5*(self.edges[1:] + self.edges[:-1])    # but for compatibility...
 
         # allocate array (with one additional row to dump data from not-selected sites)
         msg(4,'SiteTrajectoryArray.__init__(): '
             'Allocating float data array of size %d x %d [%.1f MiB]' % \
-                (self.Nsites+1,self.numframes,(self.Nsites+1)*self.numframes*32.0/(1024**2)))
-        self._data = numpy.zeros((self.Nsites+1,self.numframes),dtype=float)
+                (self.Nsites+1,self.n_frames,(self.Nsites+1)*self.n_frames*32.0/(1024**2)))
+        self._data = numpy.zeros((self.Nsites+1,self.n_frames),dtype=float)
 
         # keep track of frame number internally
         # TODO: This makes save() fail (need to filter type('method-wrapper'))
@@ -345,7 +345,7 @@ class SiteTrajectoryArray(SiteArray):
 
     def _frame_number_generator(self):
         """Supply a new frame number for each call of add()."""
-        for i in xrange(self.numframes):
+        for i in xrange(self.n_frames):
             yield i
 
     def add(self,site_data,sites):
@@ -362,9 +362,9 @@ class SiteTrajectoryArray(SiteArray):
             # self.site2indx[sites] adds any data for not-selected sites to the 'rubbish' row
             self._data[self.site2indx[sites],self._next_frame_number()] = site_data
         except StopIteration:
-            raise RuntimeError("Trying to read more frames than specified in numframes=%d. "
+            raise RuntimeError("Trying to read more frames than specified in n_frames=%d. "
                                "You need to 'reset()' the observable '%s'."
-                               % (self.numframes,self.name))
+                               % (self.n_frames,self.name))
         #debug_here()
 
     def reset(self):
@@ -419,7 +419,7 @@ class SiteTrajectoryArray(SiteArray):
     distribution = property(**distribution())
 
     def trajectory():
-        doc = """Numpy array with N sites on axis 0 and numframes values on axis 1"""
+        doc = """Numpy array with N sites on axis 0 and n_frames values on axis 1"""
         def fget(self):
             return self._data[:-1]
         def fset(self,x):
@@ -428,7 +428,7 @@ class SiteTrajectoryArray(SiteArray):
     trajectory = property(**trajectory())
 
     def site_trajectory(self,sites):
-        """Returns numpy array with N sites on axis 0 and numframes values on axis 1; indexed by the site label"""
+        """Returns numpy array with N sites on axis 0 and n_frames values on axis 1; indexed by the site label"""
         return self.trajectory[self.site2indx[sites]]
 
     def site_distribution(self,sites):
@@ -617,7 +617,7 @@ class SiteAnalysisObservable(object):
     max_site     the highest site label that occurs in the trajectory
     idcd2ihop    translation between dcd indices to hop indices
                  sites[self.idcd2ihop[[2,3,5]] -> sites of dcd 2,3,5
-    data_indices == MDAnalysis.selectAtoms(...).indices() (atom indices of selected atoms)
+    data_indices == MDAnalysis.select_atoms(...).indices() (atom indices of selected atoms)
     data_ts      (pointer to) the data trajectory time step instance
     hop_ts       (pointer to) the hop trajectory time step instance
 
@@ -671,8 +671,8 @@ class SiteAnalysisObservable(object):
         # set up site trajectory arrays (if requested)
         self.has_trajectories = trajectory
         if trajectory:
-            assert collection.data_dcd.numframes == collection.hop_dcd.numframes
-            trajectory_parameters = {'numframes': collection.hop_dcd.numframes,
+            assert collection.data_dcd.n_frames == collection.hop_dcd.n_frames
+            trajectory_parameters = {'n_frames': collection.hop_dcd.n_frames,
                                      'totaltime': trajectory.totaltime(collection.hop_dcd,'ps'),
                                      'delta_t':   trajectory.delta_t(collection.hop_dcd,'ps')}
             self.trajectories = SiteTrajectoryArray(self.name,self.sites,
@@ -886,7 +886,7 @@ class Collection(utilities.Saveable):
     atom in the hopping trajectory (or the selection must be identical to the
     hopping selection); also load the corresponding hopping trajectory:
 
-      C = Collection(selection=universe.selectAtoms('name OH2'),
+      C = Collection(selection=universe.select_atoms('name OH2'),
                      hoptraj=HoppingTrajectory(filename='hoptraj'),
                      density=Density(filename='water.pickle'))
 
@@ -922,14 +922,14 @@ class Collection(utilities.Saveable):
                  filename=None, verbosity=None):
         """Set up analysis on a per-site basis.
 
-        C = Collection(selection=universe.selectAtoms('name OH2'),
+        C = Collection(selection=universe.select_atoms('name OH2'),
                   hoptraj=HoppingTrajectory(filename='hoptraj'),
                   density=Density(filename='water.pickle'),
                   include_sites='default',exclude_sites=['default','bulk'],
                   filename=None, verbosity=None)
 
         :Arguments:
-        selection          MDAnalysis.selectAtoms selection (from psf+dcd)
+        selection          MDAnalysis.select_atoms selection (from psf+dcd)
         hoptraj            hop.trajectory.HoppingTrajectory instance (from psf+dcd)
         density            hop.sitemap.Density instance with a sitemap defined
         include_sites      any valid argument to
@@ -967,9 +967,9 @@ class Collection(utilities.Saveable):
                 self.filename(filename,set_default=True)
 
             # sanity checks
-            if self.data_dcd.numframes <> self.hop_dcd.numframes:
+            if self.data_dcd.n_frames <> self.hop_dcd.n_frames:
                 raise ValueError("Data trajectory and hopping trajectory differ in length: "
-                                 "%d vs %d frames" % (self.data_dcd.numframes,self.hop_dcd.numframes))
+                                 "%d vs %d frames" % (self.data_dcd.n_frames,self.hop_dcd.n_frames))
 
             # compute index arrays between sites, atoms, and histograms
             hopSR2A = {}
@@ -1057,8 +1057,8 @@ class Collection(utilities.Saveable):
 
         :Arguments:
         observables   list of names of observables to compute; None means 'all'
-        start         0...numframes-1  NOTE: 0-based frame indexing
-        stop          1...numframes
+        start         0...n_frames-1  NOTE: 0-based frame indexing
+        stop          1...n_frames
         step          1
         progress_interval   10 (print progress every <interval> steps)
 
@@ -1076,17 +1076,17 @@ class Collection(utilities.Saveable):
         """
         # sanity check
         try:
-            self.data_dcd.numframes
-            self.hop_dcd.numframes
+            self.data_dcd.n_frames
+            self.hop_dcd.n_frames
             self.density.site_properties.center
         except:  # typically triggered when Collection was recreated from a pickled file
             raise MissingDataError("Cannot compute() histograms because trajectory "
                                        "data is missing.")
         if start is None: start = 0
-        elif start < 0:   start = self.data_dcd.numframes + start
-        if stop is None:  stop = self.data_dcd.numframes
-        elif stop < 0:    stop = self.data_dcd.numframes + stop + 1
-        numframes = (stop - start + 1)/step
+        elif start < 0:   start = self.data_dcd.n_frames + start
+        if stop is None:  stop = self.data_dcd.n_frames
+        elif stop < 0:    stop = self.data_dcd.n_frames + stop + 1
+        n_frames = (stop - start + 1)/step
 
         _observables = self._observables(observables)
         self.reset_observable(observables)
@@ -1207,7 +1207,7 @@ class Test(object):
         import hop.sitemap
 
         self.u = MDAnalysis.Universe(psf,dcd)
-        self.wat = self.u.selectAtoms('name OH2')
+        self.wat = self.u.select_atoms('name OH2')
         self.hoptraj = trajectory.HoppingTrajectory(filename=hoptrj)
         self.dens = hop.sitemap.Density(filename=density)
         self.A = Collection(self.wat,self.hoptraj,self.dens)

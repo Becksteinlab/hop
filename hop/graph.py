@@ -195,7 +195,7 @@ class TransportNetwork(object):
         # (could use a numpy.rec --- would do exactly what I want)
         state = numpy.empty(self.numatoms,dtype=dict)
         state[:] = [{'s0':s[iatom], 't0': self.traj.ts.frame, 't1': None} for iatom in xrange(self.numatoms)]
-        pm = ProgressMeter(self.traj.numframes, interval=100,
+        pm = ProgressMeter(self.traj.n_frames, interval=100,
                            format="Analyzing hops: frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
 
         for ts in hops:

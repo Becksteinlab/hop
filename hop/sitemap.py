@@ -1916,7 +1916,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     """
     try:
-        universe.selectAtoms('all')
+        universe.select_atoms('all')
         universe.trajectory.ts
     except AttributeError:
         raise TypeError("The universe must be a proper MDAnalysis.Universe instance.")
@@ -1927,13 +1927,13 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
         def current_coordinates():
             return notwithin_coordinates()
     else:
-        group = u.selectAtoms(atomselection)
+        group = u.select_atoms(atomselection)
         def current_coordinates():
             return group.coordinates()
 
     coord = current_coordinates()
     msg(3,"Selected %d atoms out of %d atoms (%s) from %d total.\n" %
-        (coord.shape[0],len(u.selectAtoms(atomselection)),atomselection,len(u.atoms)))
+        (coord.shape[0],len(u.select_atoms(atomselection)),atomselection,len(u.atoms)))
 
     # mild warning; typically this is run on RMS-fitted trajectories and
     # so the box information is rather meaningless
@@ -1962,21 +1962,21 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     for ts in u.trajectory:
         msg(3,"Histograming %6d atoms in frame %5d/%d  [%5.1f%%]\r" % \
-            (len(coord), ts.frame,u.trajectory.numframes,100.0*ts.frame/u.trajectory.numframes))
+            (len(coord), ts.frame,u.trajectory.n_frames,100.0*ts.frame/u.trajectory.n_frames))
         coord = current_coordinates()
         if len(coord) == 0: continue
         h[:],edges[:] = numpy.histogramdd(coord, bins=bins, range=arange, normed=False)
         grid += h  # accumulate average histogram
-    numframes = u.trajectory.numframes / u.trajectory.skip
-    grid /= float(numframes)
+    n_frames = u.trajectory.n_frames / u.trajectory.skip
+    grid /= float(n_frames)
 
     # pick from kwargs
     metadata = kwargs.pop('metadata',{})
     metadata['psf'] = u.filename
     metadata['dcd'] = u.trajectory.filename
     metadata['atomselection'] = atomselection
-    metadata['numframes'] = numframes
-    metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
+    metadata['n_frames'] = n_frames
+    metadata['totaltime'] = round(u.trajectory.n_frames * u.trajectory.delta * u.trajectory.skip_timestep \
                                   * constants.get_conversion_factor('time','AKMA','ps'), 3)
     metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
                      constants.get_conversion_factor('time','AKMA','ps')
@@ -2029,8 +2029,8 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
     # distance matrix    633        1          1           False
     # AROUND + kdtree    420        0.66       1.5         n/a ('name OH2 around 4 protein')
     # manual + kdtree    182        0.29       3.5         True
-    solvent = universe.selectAtoms(sel1)
-    protein = universe.selectAtoms(sel2)
+    solvent = universe.select_atoms(sel1)
+    protein = universe.select_atoms(sel2)
     if use_kdtree:
         # using faster hand-coded 'not within' selection with kd-tree
         import MDAnalysis.KDTree.NeighborSearch as NS
@@ -2408,7 +2408,7 @@ class BfactorDensityCreator(object):
         from MDAnalysis import Universe
         set_verbosity(verbosity)  # set to 0 for no messages
         u = Universe(psf,pdbfilename=pdb)
-        group = u.selectAtoms(atomselection)
+        group = u.select_atoms(atomselection)
         coord = group.coordinates()
         msg(3,"Selected %d atoms (%s) out of %d total.\n" %
             (coord.shape[0],atomselection,len(u.atoms)))
@@ -2425,7 +2425,7 @@ class BfactorDensityCreator(object):
         self.delta = numpy.diag(map(lambda e: (e[-1] - e[0])/(len(e)-1), self.edges))
         self.midpoints = map(lambda e: 0.5 * (e[:-1] + e[1:]), self.edges)
         self.origin = map(lambda m: m[0], self.midpoints)
-        numframes = 1
+        n_frames = 1
 
         if sigma is None:
             # histogram individually, and smear out at the same time
@@ -2448,7 +2448,7 @@ class BfactorDensityCreator(object):
             metadata = dict(psf=psf)
         metadata['pdb'] = pdb
         metadata['atomselection'] = atomselection
-        metadata['numframes'] = numframes
+        metadata['n_frames'] = n_frames
         metadata['sigma'] = sigma
         self.metadata = metadata
 

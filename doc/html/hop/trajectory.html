@@ -95,7 +95,7 @@ here for efficieny reasons. The z field is unused at the moment and set to
 </tbody>
 </table>
 <p>ts               MDAnalysis.Timestep object
-numframes        number of frames in hopping trajectory
+n_frames        number of frames in hopping trajectory
 group            AtomGroup of atoms that are tracked</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -235,7 +235,7 @@ II,LSEGID,LRESID,LRES,TYPE(I),IAC(I),CG(I),AMASS(I),IMOVE(I)</p>
 <dt><em>select</em></dt>
 <dd><ol class="first arabic simple">
 <li>any valid selection string for
-<tt class="xref py py-meth docutils literal"><span class="pre">selectAtoms()</span></tt> that produces identical
+<tt class="xref py py-meth docutils literal"><span class="pre">select_atoms()</span></tt> that produces identical
 selections in <em>mobile</em> and <em>reference</em>; or</li>
 <li>a dictionary <tt class="docutils literal"><span class="pre">{'mobile':sel1,</span> <span class="pre">'reference':sel2}</span></tt> (the
 <tt class="xref py py-func docutils literal"><span class="pre">fasta2select()</span></tt> function returns such a
@@ -288,7 +288,7 @@ output file format is the same as the input <em>traj</em>.</p>
 </tbody>
 </table>
 <p>ts               MDAnalysis.Timestep object
-numframes        number of frames in TAP trajectory
+n_frames        number of frames in TAP trajectory
 group            AtomGroup of atoms that are tracked</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
