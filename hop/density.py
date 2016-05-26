@@ -601,7 +601,7 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
                 return group.coordinates()
     else:
         # slower distance matrix based (calculate all with all distances first)
-        import MDAnalysis.core.distances
+        import MDAnalysis.lib.distances
         dist = numpy.zeros((len(solvent),len(protein)),dtype=numpy.float64)
         box = None  # as long as s_coor is not minimum-image remapped
         if not_within is True:   # default
@@ -845,7 +845,7 @@ so one should (after computing a site map) also insert an empty bulk site:
 
     def site_insert_nobulk(self):
         """Insert an empty bulk site for cases when this is convenient."""
-        class Nobulk:
+        class Nobulk():
             def __init__(self,dens):
                 # copy the attributes that are checked in Density.site_insert_bulk()
                 self.map = numpy.empty_like(dens.map)
