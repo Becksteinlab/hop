@@ -27,7 +27,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       author="Oliver Beckstein",
       author_email="orbeckst@gmail.com",
       license="GPLv3",
-      url=None,
+      url="https://github.com/Becksteinlab/hop",
       keywords="science 'molecular dynamics' analysis hydration water",
       scripts = ['scripts/hop-generate-densities.py',
                  'scripts/hop-generate-hopgraph.py',
@@ -38,7 +38,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx>=1.11',
                         'MDAnalysis>0.15.0',
-                        'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
+                        'GridDataFormats>=0.1.1', # http://github.com/MDAnalysis/GridDataFormats
                         ],
       extras_require={
           'plotting': ['matplotlib>=0.91.3', # probably already installed

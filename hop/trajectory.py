@@ -350,7 +350,7 @@ class HoppingTrajectory(object):
         psf.write('PSF EXT\n\n')
         psf.write('%7d !NTITLE\n' % 3)
         psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
-                  '* See http://github.com/orbeckst/hop\n'
+                  '* See http://github.com/Becksteinlab/hop\n'
                   '* This is NOT a fully functional psf but should work for visualization.\n')
         psf.write('\n')
 

@@ -14,7 +14,7 @@ primitive script). In particular:
  * The density threshold for defining bulk is fixed at exp(-0.5) = 0.60...
 
 For more fine grained control, use hop.interactive.generate_densities()
-directly or file a enhancement request at http://github.com/orbeckst/hop/issues
+directly or file a enhancement request at http://github.com/Becksteinlab/hop/issues
 
 
 Some common selection strings:
