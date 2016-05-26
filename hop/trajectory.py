@@ -133,6 +133,8 @@ class HoppingTrajectory(object):
         if not (trajectory is None or group is None or density is None):
             self.traj  = trajectory        # MDAnalysis.Universe.trajectory
             self.tgroup = group            # atom selection for trajectory
+            if len(group) == 0:
+                raise ValueError("Group contains 0 particles, should be >0")
             if not isinstance(self.tgroup, MDAnalysis.core.AtomGroup.AtomGroup):
                 raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
             if isinstance(fixtrajectory,dict):
@@ -187,7 +189,9 @@ class HoppingTrajectory(object):
                 hoppsf = self.filename(filename,'psf')
                 hopdcd = self.filename(filename,'dcd')
             u = MDAnalysis.Universe(hoppsf,hopdcd)
-            group = u.select_atoms('type *')
+            group = u.atoms
+            if u.atoms.n_atoms == 0:
+                raise ValueError("Hop trajectory contains 0 particles.")
             self.group = group      # group that refers to hopping trajectory
             self.hoptraj = u.trajectory    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
@@ -268,7 +272,7 @@ class HoppingTrajectory(object):
             delta_ps = self.traj.convert_time_from_native(self.traj.delta)  # length of ts in ps
             delta = get_conversion_factor('time', 'ps', 'AKMA') * delta_ps
 
-        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
+        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.n_atoms,
                                              start,step,delta,
                                              remarks='Hopping trajectory: x=site y=orbit_site z=0')
         pm = ProgressMeter(self.n_frames, interval=10,
@@ -356,14 +360,14 @@ class HoppingTrajectory(object):
             for atom in self.tgroup:
                 # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
                 psf.write(psf_EXT_ATOM_format %
-                          {'iatom':atom.number+1, 'segid':atom.segid[:8], 'resid':atom.resid,
+                          {'iatom':atom.index+1, 'segid':atom.segid[:8], 'resid':atom.resid,
                            'resname':atom.resname[:8], 'name':atom.name[:8], 'type':atom.type,
                            'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
                 # emergency stop if we cannot handle the size of the system
-                if atom.resid >= 10**8 or atom.number+1 >= 10**10:
+                if atom.resid >= 10**8 or atom.index+1 >= 10**10:
                     raise NotImplementedError("Sorry, too many atoms (%d) or resids (%d) for the standard "
-                                              "PSF format. File a bug at http://github.com/orbeckst/hop/issues"
-                                              % (atom.number+1, atom.resid))
+                                              "PSF format. File a bug at http://github.com/Becksteinlab/hop/issues"
+                                              % (atom.index+1, atom.resid))
             # ignore all the other sections (enough for MDAnalysis, VMD, and me)
         finally:
             psf.close()
@@ -400,8 +404,8 @@ class HoppingTrajectory(object):
         """Allocate helper arrays for _coord2hop()"""
         # initialization with 'interstitial' is CRUCIAL: throws away first frame
         # and makes sure that we don't keep spurious sites from 1st frame around
-        self._sites_last = SITELABEL['interstitial'] * numpy.ones(self.tgroup.numberOfAtoms())
-        self._offsites = numpy.empty(self.tgroup.numberOfAtoms(),dtype=bool)
+        self._sites_last = SITELABEL['interstitial'] * numpy.ones(self.tgroup.n_atoms)
+        self._offsites = numpy.empty(self.tgroup.n_atoms,dtype=bool)
 
     def _coord2hop(self,ts):
         """Translate a single trajectory coordinate frame into a hopping
@@ -594,8 +598,8 @@ class TAPtrajectory(object):
             self.__currentTAP = self.tgroup.coordinates().copy()
             # fake DCD object that can be slotted into another universe
             self.dcd_attributes = {}
-            for k in ['dcdfilename','delta','filename','fixed','n_frames',
-                      'numatoms','periodic','remarks',
+            for k in ['delta','filename','fixed','n_frames',
+                      'n_atoms','periodic','remarks',
                       'skip','skip_timestep','start_timestep']:
                 self.dcd_attributes[k] = self.traj.__dict__[k]
             self.trajectory = ThinDCDReader(self)
@@ -689,7 +693,7 @@ class TAPtrajectory(object):
         if delta is None:
             delta = self.traj.delta          # length of ts (AKMA units)
 
-        dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.numatoms,
+        dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.n_atoms,
                                              start,step,delta,
                                              remarks='TAP trajectory')
         pm = ProgressMeter(self.n_frames, interval=10,
