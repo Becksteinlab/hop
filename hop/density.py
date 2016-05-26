@@ -125,11 +125,9 @@ class DensityCollector(object):
             self.grid += self._h  # accumulate average histogram
         return len(coord)
 
-    def finish(self):
+    def finish(self, n_frames):
         if self.isComplete():
             return
-        u = self.universe
-        n_frames = u.trajectory.n_frames / u.trajectory.skip
         self.grid /= float(n_frames)
         self.__complete = True
 
@@ -299,7 +297,7 @@ class DensityCreator(object):
 
         self.densities = {}
         for c in self.collectors:
-            c.finish()
+            c.finish(u.trajectory.n_frames)  # adjust if we implement trajectory slicing
             self.densities[c.name] = c.Density()
         # should save precious files!!!
         return self.densities
