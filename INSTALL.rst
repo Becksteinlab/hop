@@ -9,10 +9,6 @@ should be installed before Hop and Hop's installation process. The
 latter should be painless because it only consists of pure python
 scripts at the moment.
 
-Please do not hesitate to contact Oliver Beckstein
-<orbeckst@gmail.com> if problems occur or if you have suggestions on
-how to improve the package or these instructions.
-
 
 Quick instructions
 ==================
@@ -29,6 +25,7 @@ or ::
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
 
 .. _pip: http://www.pip-installer.org/en/latest/
+
 
 Requirements
 ============

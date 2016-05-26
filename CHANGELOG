@@ -2,6 +2,13 @@
  Changes in Hop
 ================
 
+0.3.4
+
+   * no functional changes
+   * relicensed under GPL v3
+   * small doc and metadata/url updates
+   * internal code cleanups
+	
 0.3.3 
 
    * requires MDAnalysis 0.7.5

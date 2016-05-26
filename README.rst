@@ -2,15 +2,17 @@
  README
 ========
 
+|zenodo|
+
 **DEVELOPMENT VERSION of hop**: Please note that this is a beta
-version of the package. It is still in heavy development. Feedback is
-very welcome (see below).
+version of the package. It is still in heavy development. Feedback_ is
+very welcome.
 
 
 Hop: analyzing solvent in molecular dynamics trajectories
 =========================================================
 
-This is a collection of python modules to analyze (primarily) water
+This is a collection of Python modules to analyze (primarily) water
 behaviour in MD simulations. The idea is to find regions with a
 density above a given threshold (hydration sites) and catalogue those
 sites. Once this is done, one can analyze water movement in terms of
@@ -46,26 +48,24 @@ installed beforehand.
 Documentation
 =============
 
-Please see the contents of the doc/ directory, in particular
-``doc/overview.txt``, and the python doc strings.
+Please see the contents of the ``doc/`` directory, in particular
+``doc/overview.txt``, and the Python doc strings.
 
 
-Bug reporting
-=============
+Bug reporting and Contributing
+==============================
 
-Almost invariably, things will not work right away or it will be
-unclear how to accomplish a certain task. In order to keep track of
-feedback I ask you to use the Issue tracker at
-http://github.com/Becksteinlab/hop/issues 
+Please raise issues in the `issue tracker`_. This includes
+problems or if you have suggestions how to improve the package or the
+documentation. Pull requests for changes and fixes are also warmly
+welcomed.
 
-It helps tremendously to have everything in one place. Of course, feel
-free to also additionally email me directly.
-
-Thanks!
+.. _issue tracker: https://github.com/Becksteinlab/hop/issues
 
 
 Citing
 ======
+|zenodo|
 
 If you use Hop in published work please cite (for the time being) the
 old abstract and the MDAnalysis paper (because Hop is built on top of
@@ -83,13 +83,8 @@ MDAnalysis):
 
 Thanks!
 
+.. |zenodo| image:: https://zenodo.org/badge/13219/Becksteinlab/hop.svg
+   :target: https://zenodo.org/badge/latestdoi/13219/Becksteinlab/hop
+   :alt: Zenodo DOI
 
-
-Contact
-=======
-
-Please do not hesitate to contact Oliver Beckstein
-<orbeckst@gmail.com> if problems occur or if you have suggestions how
-to improve the package or these instructions.
-
-
+.. _Feedback: https://github.com/Becksteinlab/hop/issues
