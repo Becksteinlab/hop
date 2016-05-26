@@ -1,4 +1,4 @@
 include README.rst INSTALL.rst CHANGELOG COPYING COPYING.LESSER AUTHORS
-include ez_setup.py setup.py requirements.txt
+include setup.py requirements.txt
 recursive-include doc *.txt *.pdf *.png *.jpg README
 recursive-include extras *
