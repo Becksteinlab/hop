@@ -37,6 +37,8 @@ from gridData import OpenDX    # http://github.com/Becksteinlab/GridDataFormats
 
 from . import constants
 from .constants import SITELABEL
+from .exceptions import (MissingDataError, MissingDataWarning,
+                         InconsistentDataWarning, OverwriteWarning)
 from . import utilities
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable
@@ -897,7 +899,7 @@ class Density(Grid):
             warnings.warn("The unit for the density (%s) is different from the unit "
                           "for the bulk density (%s).\n" %
                           (self.unit['threshold'], bulkdensity.unit['threshold']),
-                          category=hop.InconsistentDataWarning)
+                          category=InconsistentDataWarning)
         # do the hack & update
         self.sites.insert(SITELABEL['bulk'],bulkdensity.sites[bulklabel])
         self._draw_map_from_sites()
@@ -1142,7 +1144,7 @@ class Density(Grid):
             if density.equivalent_sites_index:
                 warnings.warn('Density '+str(density)+' already contains equivalent sites, '
                               'which will be overwritten.',
-                              category=hop.OverwriteWarning)
+                              category=OverwriteWarning)
                 density.remove_equivalence_sites()
         warn_and_remove(self)
         if not use_ref_equivalencesites:
@@ -1304,7 +1306,7 @@ class Density(Grid):
             stats['rho_cut'] = self.P['threshold']
             stats['rho_cut_bulk'] = self.P['bulk_threshold']
         except KeyError:
-            warnings.warn("No bulk site defined", category=hop.MissingDataWarning)
+            warnings.warn("No bulk site defined", category=MissingDataWarning)
         stats['N_sites'] = len(nodes)
         stats['N_equivalence_sites'] = len(self.site_labels(include='equivalencesites',exclude=None))
         stats['N_subsites'] = len(self.site_labels(include='subsites',exclude=None))
@@ -1661,7 +1663,7 @@ def remap_density(density,ref,verbosity=0):
 
     if not numpy.all(numpy.abs(ref.delta - density.delta) < 1e-4):
         warnings.warn('The grid spacings are not the same; this is probably WRONG.',
-                      category=hop.InconsistentDataWarning)
+                      category=InconsistentDataWarning)
 
     D=numpy.rank(ref.map)
     newgrid = numpy.zeros(ref.grid.shape)
@@ -2271,7 +2273,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_xray)d in x-ray structure." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='#')
 
     def _Wxray(self,resid_psf,format=False):
@@ -2281,7 +2283,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_psf)d in psf." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='W')
 
     def _Wformatter(self,resid,format=False,typechar=None):
@@ -2431,7 +2433,7 @@ class BfactorDensityCreator(object):
             # histogram individually, and smear out at the same time
             # with the appropriate B-factor
             if numpy.any(group.bfactors == 0.0):
-                warnings.warn("Some B-factors are Zero.",category=hop.MissingDataWarning)
+                warnings.warn("Some B-factors are Zero.",category=MissingDataWarning)
             rmsf = Bfactor2RMSF(group.bfactors)
             grid *= 0.0  # reset grid
             self.g = self._smear_rmsf(coord,grid,self.edges,rmsf)
@@ -2485,7 +2487,7 @@ class BfactorDensityCreator(object):
                           "Site <-> water matching will not work."
                           % (len(d._xray2psf),
                              len(d.site_labels('sites',exclude='equivalencesites'))),
-                          category=hop.InconsistentDataWarning)
+                          category=InconsistentDataWarning)
         return d
 
     def _smear_sigma(self,grid,sigma):

@@ -38,10 +38,10 @@ import MDAnalysis
 import MDAnalysis.coordinates
 from MDAnalysis.core.log import ProgressMeter
 
-from . import SelectionError
+from .exceptions import SelectionError
+from .constants import SITELABEL
 from . import utilities
 from .utilities import msg, set_verbosity
-from .constants import SITELABEL
 
 
 import logging

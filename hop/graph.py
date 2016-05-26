@@ -49,11 +49,13 @@ import warnings
 
 import networkx as NX
 import numpy
-from MDAnalysis.core.log import ProgressMeter
+from MDAnalysis.lib.log import ProgressMeter
 
 from . import constants
+from . import sitemap
 from . import trajectory
 from .constants import SITELABEL
+from .exceptions import MissingDataError, MissingDataWarning
 from . import utilities
 from .utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
 
@@ -86,14 +88,14 @@ class TransportNetwork(object):
             logger.fatal(errmsg)
             raise TypeError(errmsg)
         self.traj = traj
-        self.numatoms = self.traj.hoptraj.numatoms
+        self.n_atoms = self.traj.hoptraj.n_atoms
         # TODO: use MDAnalysis unit conversion here
         self.dt = round(self.traj.hoptraj.delta * self.traj.hoptraj.skip_timestep \
                         * constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
         self.totaltime = self.traj.totaltime
         self.graph = NX.DiGraph(name='Transport network between sites')
 
-        if not density is None and not isinstance(density,hop.sitemap.Density):
+        if not density is None and not isinstance(density, sitemap.Density):
             raise TypeError('density must be a <hop.sitemap.Density> instance.')
         self.density = density  # only needed to pass down site_properties to hopgraph
 
@@ -192,9 +194,9 @@ class TransportNetwork(object):
         # (A flat natoms x 5 int array may be faster but for the time being I need
         # clean-ish code...)
         # (could use a numpy.rec --- would do exactly what I want)
-        state = numpy.empty(self.numatoms,dtype=dict)
+        state = numpy.empty(self.n_atoms,dtype=dict)
         state[:] = [{'s0':s[iatom], 't0': self.traj.ts.frame, 't1': None}
-                    for iatom in xrange(self.numatoms)]
+                    for iatom in xrange(self.n_atoms)]
         pm = ProgressMeter(self.traj.n_frames, interval=100,
                            format="Analyzing hops: frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
 
@@ -208,7 +210,7 @@ class TransportNetwork(object):
             #    explicitly filtered when building the CombinedGraph
             #  * Dan Willenbring reports that also (-1, N) show up.
             #  * code is ugly and not optimized: should be possible to do this on all atoms at once
-            for iatom in xrange(self.numatoms):
+            for iatom in xrange(self.n_atoms):
                 if s[iatom] == SITELABEL['outlier']:
                     # outliers: count them as whence they came (typically, interstitial or bulk)
                     s[iatom] = slast[iatom]
@@ -245,7 +247,7 @@ class TransportNetwork(object):
         # mop up last frame: we can't compute rates but at least use
         # the residency time for anything that still sits on a site or
         # sat on a site and is now back in the interstitial
-        for iatom in xrange(self.numatoms):
+        for iatom in xrange(self.n_atoms):
             if state[iatom]['s0'] == SITELABEL['interstitial']:
                 continue
             node = state[iatom]['s0']          # last site visited
@@ -303,7 +305,7 @@ class TransportNetwork(object):
         try:
             props = self.hopgraph.properties
         except AttributeError:
-            raise hop.MissingDataError("No hopgraph found. Run 'compute_residency_times()' first.")
+            raise MissingDataError("No hopgraph found. Run 'compute_residency_times()' first.")
         self.theta = dict()        # dict of arrays
         for edge in props:
             if type(edge) is tuple:
@@ -1159,7 +1161,7 @@ class HoppingGraph(object):
             # site_properties not fully defined; should perhaps raise...
             warnings.warn('site_properties not complete: %s misses equivalence site data' %
                           self.filename(),       # let's hope filename is set...
-                          category=hop.MissingDataWarning)
+                          category=MissingDataWarning)
             stats['site_N_equivalence_sites'] = 0
             stats['site_N_subsites'] = 0
 

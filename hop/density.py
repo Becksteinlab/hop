@@ -42,8 +42,8 @@ import numpy
 import MDAnalysis
 from gridData import OpenDX
 
-from . import MissingDataError, InconsistentDataWarning
 from . import constants
+from .exceptions import MissingDataError, InconsistentDataWarning
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable, CustomProgressMeter
 from .sitemap import Density
@@ -993,7 +993,7 @@ class BfactorDensityCreator(object):
             # with the appropriate B-factor
             if numpy.any(group.bfactors == 0.0):
                 wmsg = "BfactorDensityCreator: Some B-factors are Zero."
-                warnings.warn(wmsg, category=hop.MissingDataWarning)
+                warnings.warn(wmsg, category=MissingDataWarning)
                 logger.warn(wmsg)
             rmsf = Bfactor2RMSF(group.bfactors)
             grid *= 0.0  # reset grid
