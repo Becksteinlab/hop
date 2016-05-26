@@ -922,6 +922,12 @@ class HoppingGraph(object):
         npage = nrow * ncol
         nfig = int(math.ceil(1.0*nplots/npage))
 
+        if nplots == 0:
+            msg = "Filtered graph contains no transitions: no plots available"
+            warnings.warn(msg, category=MissingDataWarning)
+            logger.warn(msg)
+            return
+
         # erase all figures first
         # (important in interactive sessions with figure pollution)
         for ifig in xrange(1,nfig+1):
@@ -1641,7 +1647,6 @@ class HoppingGraph(object):
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
-        if (n+1) % 4 != 0: psf.write('\n')
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()
