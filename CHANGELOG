@@ -2,6 +2,11 @@
  Changes in Hop
 ================
 
+0.3.5
+
+   * requires MDAnalysis >= 0.15.0
+   * requires Python 2.7
+
 0.3.4
 
    * no functional changes

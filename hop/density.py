@@ -42,8 +42,8 @@ import numpy
 import MDAnalysis
 from gridData import OpenDX
 
-from . import MissingDataError, InconsistentDataWarning
 from . import constants
+from .exceptions import MissingDataError, InconsistentDataWarning
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable, CustomProgressMeter
 from .sitemap import Density
@@ -125,11 +125,9 @@ class DensityCollector(object):
             self.grid += self._h  # accumulate average histogram
         return len(coord)
 
-    def finish(self):
+    def finish(self, n_frames):
         if self.isComplete():
             return
-        u = self.universe
-        n_frames = u.trajectory.n_frames / u.trajectory.skip
         self.grid /= float(n_frames)
         self.__complete = True
 
@@ -299,7 +297,7 @@ class DensityCreator(object):
 
         self.densities = {}
         for c in self.collectors:
-            c.finish()
+            c.finish(u.trajectory.n_frames)  # adjust if we implement trajectory slicing
             self.densities[c.name] = c.Density()
         # should save precious files!!!
         return self.densities
@@ -601,7 +599,7 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
                 return group.coordinates()
     else:
         # slower distance matrix based (calculate all with all distances first)
-        import MDAnalysis.core.distances
+        import MDAnalysis.lib.distances
         dist = numpy.zeros((len(solvent),len(protein)),dtype=numpy.float64)
         box = None  # as long as s_coor is not minimum-image remapped
         if not_within is True:   # default
@@ -845,7 +843,7 @@ so one should (after computing a site map) also insert an empty bulk site:
 
     def site_insert_nobulk(self):
         """Insert an empty bulk site for cases when this is convenient."""
-        class Nobulk:
+        class Nobulk():
             def __init__(self,dens):
                 # copy the attributes that are checked in Density.site_insert_bulk()
                 self.map = numpy.empty_like(dens.map)
@@ -995,7 +993,7 @@ class BfactorDensityCreator(object):
             # with the appropriate B-factor
             if numpy.any(group.bfactors == 0.0):
                 wmsg = "BfactorDensityCreator: Some B-factors are Zero."
-                warnings.warn(wmsg, category=hop.MissingDataWarning)
+                warnings.warn(wmsg, category=MissingDataWarning)
                 logger.warn(wmsg)
             rmsf = Bfactor2RMSF(group.bfactors)
             grid *= 0.0  # reset grid

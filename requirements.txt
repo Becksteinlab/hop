@@ -1,5 +1,0 @@
-numpy>=1.0.3
-scipy
-MDAnalysis>0.7.4
-GridDataFormats>=0.1.1
-networkx>1.0

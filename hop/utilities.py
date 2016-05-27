@@ -1,4 +1,3 @@
-# $Id$
 # Hop --- a framework to analyze solvation dynamics from MD simulations
 # Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
 #
@@ -35,7 +34,7 @@ import warnings
 
 import MDAnalysis.core.log
 
-from . import MissingDataWarning
+from .exceptions import MissingDataWarning
 
 def unlink_f(path):
     """Unlink path but do not complain if file does not exist."""
