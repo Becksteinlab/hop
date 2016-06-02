@@ -13,7 +13,7 @@ if sys.version_info[:2] < (2, 7):
     sys.exit(-1)
 
 setup(name="Hop",
-      version="0.3.5",
+      version="0.3.5-dev",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
