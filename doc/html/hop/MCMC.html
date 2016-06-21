@@ -1,0 +1,374 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>&lt;no title&gt; &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
+    <link rel="up" title="Markov Chain Monte Carlo sampling on a hop graph" href="../MCMC.html" />
+    <link rel="next" title="Auxiliary modules" href="../auxiliary.html" />
+    <link rel="prev" title="Markov Chain Monte Carlo sampling on a hop graph" href="../MCMC.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../auxiliary.html" title="Auxiliary modules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../MCMC.html" accesskey="U">Markov Chain Monte Carlo sampling on a hop graph</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-hop.MCMC"></span><p>Markov Chain Monte Carlo on hopping graph.</p>
+<p>The hop.MCMC module uses the information encoded in a hopping graph to set up a
+Markov Chain Monte Carlo sampling procedure that allows one to rapidly generate
+site occupancy distributions that are distributed in the same way as the one
+sampled from MD.</p>
+<p>The most convenient entry point is the  function</p>
+<blockquote>
+<div>M = MCMC.run(filename=&#8217;hopgraph.pickle&#8217;,Ntotal=&lt;int&gt;)</div></blockquote>
+<p>It takes as input a stored hopgraph and immediately runs an MCMC run of Ntotal
+steps. The output is a MCMCsampler object. It contains the &#8216;trajectory&#8217; and
+useful analysis functions. (Use interactive introspection in ipython to explore
+the possibilities of the object.)</p>
+<p>Notes on the algorithm:</p>
+<ul>
+<li><p class="first">some sort of dynamic lattice Monte Carlo with very simple acceptance
+probabilities (0 or 1, if there&#8217;s no space on the site, and 1 if
+there is)</p>
+<p>... is &#8216;MCMC&#8217; actually the proper description?</p>
+</li>
+<li><p class="first">Extension to multiply occupied sites: use the site occupancy
+distributions from siteanalysis, and replace the unconditional move
+by an acceptance probability == s_i(n)</p>
+</li>
+<li><p class="first">I am currently using time-forward (out-of) and time-backward (into)
+site moves (the latter inspired by coupling from the past).</p>
+</li>
+</ul>
+<dl class="class">
+<dt id="hop.MCMC.MCMCsampler">
+<em class="property">class </em><tt class="descclassname">hop.MCMC.</tt><tt class="descname">MCMCsampler</tt><big>(</big><em>h=None</em>, <em>min_hops_observed=1</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an equilibrium distribution of states from a hop graph.</p>
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.autocorrelation">
+<tt class="descname">autocorrelation</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.autocorrelation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.autocorrelation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the auto correlation function for all site trajectories.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.averaged_autocorrelation">
+<tt class="descname">averaged_autocorrelation</tt><big>(</big><em>step=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.averaged_autocorrelation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.averaged_autocorrelation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the ACF or each site by resampling from the whole trajectory.</p>
+<p>mean(acf), standardev(acf) = averaged_autocorrelation(<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>step            only take every &lt;step&gt; from the trajectory (None == 1)</dt>
+<dd>??? step &gt; 1 seems to take LONGER ???</dd>
+</dl>
+<p>length          length (in frames) of the ACF (default: 1/2*len(series))
+sliding_window  repeat ACF calculation every N frames (default: len(series)/100)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>mean_acf        average over all resampled acfs per site,  shape = (Nsites,length)
+std_acf         standard deviation or the resampled acfs,  shape = (Nsites,length)</p>
+<p>See also for kwargs:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.MCMC.MCMCsampler.firstsiteindex">
+<tt class="descname">firstsiteindex</tt><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.firstsiteindex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.firstsiteindex" title="Permalink to this definition">¶</a></dt>
+<dd><p>State array index of the first site after bulk.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.MCMC.MCMCsampler.index2node">
+<tt class="descname">index2node</tt><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.index2node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.index2node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates sequential array index to node label (in graph).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.init_state">
+<tt class="descname">init_state</tt><big>(</big><em>Nbulk=10000.0</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.init_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.init_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize state with 1 particle per standard site and Nbulk for the bulk site.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.mean">
+<tt class="descname">mean</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mean for each site (excl bulk).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.mean_std">
+<tt class="descname">mean_std</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.mean_std"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.mean_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns site labels, mean, and standard deviation for each site (excl bulk).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.MCMC.MCMCsampler.node2index">
+<tt class="descname">node2index</tt><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.node2index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.node2index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates node label (in graph) to the sequential array index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.occupancy">
+<tt class="descname">occupancy</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensemble averaged occupancy (over ALL states incl bulk) and fluctuation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.occupancy_mean_correl">
+<tt class="descname">occupancy_mean_correl</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.occupancy_mean_correl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.occupancy_mean_correl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the correlation coefficient between simulation and MCMC occupancies.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.occupancy_std_correl">
+<tt class="descname">occupancy_std_correl</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.occupancy_std_correl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.occupancy_std_correl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the correlation coefficient between simulation and MCMC occupancy fluctuations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.plot">
+<tt class="descname">plot</tt><big>(</big><em>filename=None</em>, <em>plot_skip=None</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot density plot of the saved configurations in states[].</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.plot_correl">
+<tt class="descname">plot_correl</tt><big>(</big><em>legend=True</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.plot_correl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.plot_correl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the occupancy from the MD simulation vs the MCMC one.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.plot_occupancy">
+<tt class="descname">plot_occupancy</tt><big>(</big><em>legend=True</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.plot_occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.plot_occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot site label vs &lt;N&gt; +/- std(N).</p>
+<p>legend      True: add legend, False: return (line,description)
+<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs    additional arguments for errbar plot such as color=&#8217;k&#8217;, fmt=&#8217;o&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.run">
+<tt class="descname">run</tt><big>(</big><em>Ntotal=500000</em>, <em>Nskip=1000</em>, <em>verbosity=None</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>MCMC run multiple cycles of lebgth &lt;Nskip&gt; scans for a total of &lt;Ntotal&gt;.</p>
+<p>run(Ntotal=500000,Nskip=1000)</p>
+<p>Starts from the current configuration in state.
+Creates the collection of configurations states: one state every Nskip steps</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.sample">
+<tt class="descname">sample</tt><big>(</big><em>max_iter=10000</em>, <em>record_iterations=True</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run &lt;max_iter&gt; Monte Carlo site moves.</p>
+<p>sample(max_iter=10000)</p>
+<p>Runs a batch of MCMC moves.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.MCMC.MCMCsampler.sites">
+<tt class="descname">sites</tt><a class="headerlink" href="#hop.MCMC.MCMCsampler.sites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates sequential array index to node label (in graph).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hop.MCMC.MCMCsampler.statevector">
+<tt class="descname">statevector</tt><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.statevector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.statevector" title="Permalink to this definition">¶</a></dt>
+<dd><p>State as a numpy array; the corresponding nodes are state.keys()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.MCMCsampler.std">
+<tt class="descname">std</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MCMCsampler.std"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MCMCsampler.std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard deviation for each site.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.MCMC.MultiPscan">
+<em class="property">class </em><tt class="descclassname">hop.MCMC.</tt><tt class="descname">MultiPscan</tt><big>(</big><em>repeat=10</em>, <em>**pscanargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#MultiPscan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.MultiPscan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run Pscan(<a href="#id5"><span class="problematic" id="id6">**</span></a>pscanargs) &lt;repeat&gt; times and collect all Pscan objects in list.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="hop.MCMC.Pscan">
+<em class="property">class </em><tt class="descclassname">hop.MCMC.</tt><tt class="descname">Pscan</tt><big>(</big><em>parameter</em>, <em>pvalues=None</em>, <em>filename='hopgraph.pickle'</em>, <em>Ntotal=1000000.0</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a MCMC sampler for a number of parameter values.</p>
+<dl class="method">
+<dt id="hop.MCMC.Pscan.occupancy_mean_correl">
+<tt class="descname">occupancy_mean_correl</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan.occupancy_mean_correl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan.occupancy_mean_correl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns X=pvalues, Y=occupancy_mean_correlations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.Pscan.plot_occupancy">
+<tt class="descname">plot_occupancy</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan.plot_occupancy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan.plot_occupancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot &lt;n_i&gt; (site occupancy from MCMC) for all parameter values.</p>
+<p>(See _plotter())</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.Pscan.plot_occupancy_mean_correl">
+<tt class="descname">plot_occupancy_mean_correl</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan.plot_occupancy_mean_correl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan.plot_occupancy_mean_correl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot MD occupancy vs MCMC occupancy.</p>
+<p>plot_correl(colorscale=&#8217;linear&#8217;|&#8217;log&#8217;)</p>
+<p>(See _plotter())</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.Pscan.plot_states">
+<tt class="descname">plot_states</tt><big>(</big><em>maxcolumns=2</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan.plot_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan.plot_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot all state &#8216;trajectories&#8217; as a tiled plot.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hop.MCMC.Pscan.save">
+<tt class="descname">save</tt><big>(</big><em>filename='pscan.pickle'</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#Pscan.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.Pscan.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save pscan object to pickle file.</p>
+<p>save(pscan.pickle)</p>
+<p>Load with</p>
+<blockquote>
+<div>import cPickle
+myPscan = cPickle.load(open(&#8216;pscan.pickle&#8217;))</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.MCMC.multi_plot">
+<tt class="descclassname">hop.MCMC.</tt><tt class="descname">multi_plot</tt><big>(</big><em>plist</em>, <em>plottype='whisker'</em>, <em>Nequil=10000</em>, <em>funcname='occupancy_mean_correl'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#multi_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.multi_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display a collection of functions.</p>
+<p>multi_plot(plist,plottype=&#8217;whisker&#8217;,Nequil=10000,funcname=&#8217;occupancy_mean_correl&#8217;,**kwargs)</p>
+<p>The function is obtained from a method call on the objects in plist. The
+assumption is that these are functions of Ntotal (if not, set Nequil=0; Nequil is
+added to x). Each object is a different realization, e.g. multiple MCMC runs.</p>
+<p>plottype       &#8216;whisker&#8217; (whisker plot), &#8216;standard&#8217; (average and standard deviations)
+Nequil         correction, added to x    
+funcname       string; a method of the objects in plist that does EXACTLY the following:</p>
+<blockquote>
+<div>x,y = obj.funcname()
+where x and y are numpy arrays of equal length</div></blockquote>
+<p><a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs       color, boxcolor, mediancolor, capsize</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.MCMC.run">
+<tt class="descclassname">hop.MCMC.</tt><tt class="descname">run</tt><big>(</big><em>filename='hopgraph.pickle'</em>, <em>Ntotal=500000</em>, <em>Nskip=1000</em>, <em>Nequil=10000</em><big>)</big><a class="reference internal" href="../_modules/hop/MCMC.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.MCMC.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform Markov Chain Monte Carlo on a model derived from the hopping graph.</p>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../MCMC.html"
+                        title="previous chapter">Markov Chain Monte Carlo sampling on a hop graph</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../auxiliary.html"
+                        title="next chapter">Auxiliary modules</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/hop/MCMC.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../auxiliary.html" title="Auxiliary modules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../MCMC.html" title="Markov Chain Monte Carlo sampling on a hop graph"
+             >previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../MCMC.html" >Markov Chain Monte Carlo sampling on a hop graph</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

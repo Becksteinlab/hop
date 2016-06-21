@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Interactive or high-level use of the hop trajectory package &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../index.html" />
+    <link rel="up" title="Analyzing hopping graphs and densities" href="../analysis.html" />
+    <link rel="next" title="&lt;no title&gt;" href="analysis.html" />
+    <link rel="prev" title="Analyzing hopping graphs and densities" href="../analysis.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analysis.html" title="&lt;no title&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../analysis.html" title="Analyzing hopping graphs and densities"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../analysis.html" accesskey="U">Analyzing hopping graphs and densities</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-hop.interactive"></span><div class="section" id="interactive-or-high-level-use-of-the-hop-trajectory-package">
+<h1>Interactive or high-level use of the hop trajectory package<a class="headerlink" href="#interactive-or-high-level-use-of-the-hop-trajectory-package" title="Permalink to this headline">¶</a></h1>
+<p>A typical session starts with a trajectory (which should have been
+RMS-fitted to a reference structure). Any topology and trajectory file
+suitable for <a href="#id3"><span class="problematic" id="id4">MDAnalysis_</span></a> can be used such as PSF+DCD, PDB+XTC or a
+single PDB. In the following Charmm/NAMD psf and dcd files are used as
+examples.</p>
+<p>We will use the high-level wrapper functions in <a class="reference internal" href="#module-hop.interactive" title="hop.interactive"><tt class="xref py py-mod docutils literal"><span class="pre">hop.interactive</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">hop.interactive</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<div class="section" id="hydration-sites">
+<h2>Hydration sites<a class="headerlink" href="#hydration-sites" title="Permalink to this headline">¶</a></h2>
+<p>Hydration sites are sites of water density higher than the bulk
+density but one special site is the bulk. The hydration sites and the
+bulk site are computed in two separate steps.</p>
+<div class="section" id="high-density-sites">
+<h3>High density sites<a class="headerlink" href="#high-density-sites" title="Permalink to this headline">¶</a></h3>
+<p>First build the density of the water oxygens.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density</span> <span class="o">=</span> <span class="n">make_density</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you have VMD with the VolMap plugin installed <em>and</em> your trajectory
+fits into your computer&#8217;s RAM you can also choose the VMD backend to
+compute the density (which can be marginally faster):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density</span> <span class="o">=</span> <span class="n">make_density</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">backend</span><span class="o">=</span><span class="s">&#39;VMD&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The density is also saved as a pickled python object so that one can
+easily reload it. The density is also exported as a dx file for
+visualization (e.g. use <a class="reference internal" href="#hop.interactive.visualize_density" title="hop.interactive.visualize_density"><tt class="xref py py-func docutils literal"><span class="pre">hop.interactive.visualize_density()</span></tt></a>,
+which calls <strong class="program">VMD</strong>).</p>
+<p>From the density one creates the &#8216;site map&#8217; for a given threshold (by
+default this is a multiple of the water bulk density):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density</span><span class="o">.</span><span class="n">map_sites</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mf">2.72</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Experiment with the threshold; <tt class="xref py py-class docutils literal"><span class="pre">hop.analysis.DensityAnalysis</span></tt> can help
+to systematically explore the parameter space, and it is also helpful
+to load the density into a visualization software such as VMD and
+interactively explore contour levels. Values between 1.65 and 3 have
+given decent results in the past but this is system-dependent.)</p>
+</div>
+<div class="section" id="bulk-site">
+<h3>Bulk site<a class="headerlink" href="#bulk-site" title="Permalink to this headline">¶</a></h3>
+<p>For a full analysis of hopping events one also needs to define a bulk
+site. This is currently accomplished by calculating a second &#8216;bulk&#8217;
+density (all water not within 3.5 A of the protein) and manually
+inserting the bulk site into the site map for the first density.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density_bulk</span> <span class="o">=</span> <span class="n">make_density</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="s">&#39;bulk&#39;</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">atomselection</span><span class="o">=</span><span class="s">&#39;name OH2&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">soluteselection</span><span class="o">=</span><span class="s">&#39;protein and not name H*&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.5</span>
+<span class="gp">... </span>        <span class="p">)</span>
+</pre></div>
+</div>
+<p>Using VMD&#8217;s VolMap can be potentially be faster &#8212; try it if the
+default seems too slow to you:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density_bulk</span> <span class="o">=</span> <span class="n">make_density</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">,</span><span class="s">&#39;bulk&#39;</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">atomselection</span><span class="o">=</span><span class="s">&#39;name OH2 and not within 3.5 of (protein and name not hydrogen)&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">backend</span><span class="o">=</span><span class="s">&#39;VMD&#39;</span><span class="p">,</span><span class="n">load_new</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The bulk density should be a big, well defined volume so we choose a
+fairly low threshold:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density_bulk</span><span class="o">.</span><span class="n">map_sites</span><span class="p">(</span><span class="mf">0.6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add the biggest bulk site:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">density</span><span class="o">.</span><span class="n">site_insert_bulk</span><span class="p">(</span><span class="n">density_bulk</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">density</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">density_bulk</span>
+</pre></div>
+</div>
+<p>Statistics about the sites can be produced with</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">analyze_density</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">figname</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The results figures will be named <cite>&lt;figname&gt;.pdf</cite>.</p>
+</div>
+<div class="section" id="remapping-for-comparing-site-maps">
+<h3>Remapping for comparing site maps<a class="headerlink" href="#remapping-for-comparing-site-maps" title="Permalink to this headline">¶</a></h3>
+<p>This section is only relevant if you plan on comparing site maps. Then
+you <em>must</em> compare the density to your reference density <em>now</em> before
+proceeding. You will</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p class="first">remap this density to be defined on the same grid as the reference
+density (for this to work, this density must have been generated from
+a trajectory that has been RMS-fitted to the same reference structure
+as; see hop.trajectory.rms_fit_trj() and
+hop.trajectory.fasta2select())</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ref_density</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">Density</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;my_reference_density&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">remapped_density</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">sitemap</span><span class="o">.</span><span class="n">remap_density</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">ref_density</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">find the equivalence sites in the two densities and add those sites
+to <strong>both</strong> densities:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">remapped_density</span><span class="o">.</span><span class="n">find_equivalence_sites_with</span><span class="p">(</span><span class="n">ref_density</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">remapped_density</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">&lt;</span><span class="n">filename</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ref_density</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(You must also recalculate the reference densities hopping
+trajectory (see below) because some sites may have been merged into
+&#8216;equivalence sites&#8217;. See docs for
+hop.sitemap.find_equivalence_sites_with() and
+hop.graph.CombinedGraph()).</p>
+<p>From now on, work with the remapped density:
+&gt;&gt;&gt; density = remapped_density</p>
+</li>
+</ol>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="hopping-trajectory">
+<h2>Hopping trajectory<a class="headerlink" href="#hopping-trajectory" title="Permalink to this headline">¶</a></h2>
+<p>Next we translate the dcd into a &#8216;hopping trajectory&#8217; (saved in dcd
+format) in which coordinates for a given water oxygen are replaced by
+the site it visits at each time step.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hops</span> <span class="o">=</span> <span class="n">make_hoppingtraj</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="s">&#39;hop_water+bulk&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All further analysis should use this hopping trajectory (from disk) as
+it is computationally much cheaper to read the trajectory than to
+re-translate the coordinate trajectory (which is done behind the
+scences if the hopping trajectory is not available).</p>
+</div>
+<div class="section" id="hopping-graph">
+<h2>Hopping graph<a class="headerlink" href="#hopping-graph" title="Permalink to this headline">¶</a></h2>
+<p>The final step is to map out the graph of transitions between sites
+(using the hopping trajectory):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tn</span> <span class="o">=</span> <span class="n">build_hoppinggraph</span><span class="p">(</span><span class="n">hops</span><span class="p">,</span><span class="n">density</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>tn.hopgraph holds this graph (tn.graph just contains all jumps
+including the interstitial and off-sites). The edges of hopgraph are
+the rate constants k_ji (in 1/ps) for hops i &#8211;&gt; j. They are computed
+from an exponential fit to the site survival function S_ji(t) for
+particles waiting to hop from i to j.</p>
+<p>The density is provided to attach data to the nodes of the
+hopgraph. It is required for visualization and analysis (although not
+strictly necessary for the hopgraph itself).</p>
+<p>Further analysis uses tn.hopgraph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">hopgraph</span>           <span class="c"># main result is the &#39;hopgraph&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;hopgraph&#39;</span><span class="p">)</span>        <span class="c"># save the hopping graph (necessary for cg part)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;outliers&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span> <span class="s">&#39;Nmin&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;unconnected&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">show_rates</span><span class="p">()</span>            <span class="c"># show all calculated rate constants (filtered graph)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">plot_fits</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">301</span><span class="p">))</span>  <span class="c"># plot rate constant fits for t=0ps to 300ps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">plot_fits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s">&#39;water&#39;</span><span class="p">)</span>         <span class="c"># write dot file to visualize (filtered) graph</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">plot_site_occupancy</span><span class="p">(</span><span class="s">&#39;siteoccupancy&#39;</span><span class="p">)</span>  <span class="c"># plot site occupancy from graph ---is NOT working</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">plot_residency_times</span><span class="p">(</span><span class="s">&#39;residencytimes&#39;</span><span class="p">)</span><span class="c"># residency times --- is NOT working</span>
+</pre></div>
+</div>
+<p>To compare the water network based on density with another hop graph
+(based on ref_density), construct the CombinedGraph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h_ref</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">HoppingGraph</span><span class="p">(</span><span class="n">filename</span><span class="o">=&lt;</span><span class="n">filename</span><span class="o">&gt;</span><span class="p">)</span> <span class="o">---</span> <span class="n">basically</span> <span class="n">repeat</span> <span class="n">steps</span> <span class="kn">from</span>
+<span class="go">###                                                     --- ref_density only with differ labels</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cg</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">CombinedGraph</span><span class="p">(</span><span class="n">g0</span><span class="o">=</span><span class="n">h</span><span class="p">,</span><span class="n">g1</span><span class="o">=</span><span class="n">h_ref</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cg</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;cg_h&#39;</span><span class="p">,</span><span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cg</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;cg_h_ref&#39;</span><span class="p">,</span><span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="todo">
+<h1>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h1>
+<p>Currently un(der)-documented:
+* Remapping densities to a reference density (see hop.sitemap.remap_density).
+* Comparing densities and finding equivalence sites (see</p>
+<blockquote>
+<div>hop.sitemap.find_common_sites() and Density.find_equivalence_sites_with()).</div></blockquote>
+<ul class="simple">
+<li>Comparing hopgraphs across different simulations: requires equivalence sites in
+both densities; then build the hop.graph.CombinedGraph().</li>
+</ul>
+<dl class="function">
+<dt id="hop.interactive.analyze_density">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">analyze_density</tt><big>(</big><em>density</em>, <em>figure='sitestats'</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#analyze_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.analyze_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Site statistics based on the density alone.</p>
+<p>Plots site volumes, average densities and occupancy, and writes it to the
+pdf file &lt;figure&gt;.pdf</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.build_hoppinggraph">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">build_hoppinggraph</tt><big>(</big><em>hoppingtrajectory</em>, <em>density</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#build_hoppinggraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.build_hoppinggraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the graph of all site hops and calculate the rate constants.</p>
+<p>tgraph = build_hoppinggraph(hops,density)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>hops</dt>
+<dd>hop.trajectory.HoppingTrajectory object</dd>
+<dt>density</dt>
+<dd>hop.sitemap.Density object</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns :</th><td class="field-body">tgraph, a <a class="reference internal" href="graph.html#hop.graph.TransportNetwork" title="hop.graph.TransportNetwork"><tt class="xref py py-class docutils literal"><span class="pre">hop.graph.TransportNetwork</span></tt></a> object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.build_hoppinggraph_fromfiles">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">build_hoppinggraph_fromfiles</tt><big>(</big><em>hoppingtrajectory_filename</em>, <em>density_filename</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#build_hoppinggraph_fromfiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.build_hoppinggraph_fromfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the TransportNetwork including HoppingGraph from files.</p>
+<p>tn = build_hoppinggraph_fromfiles(&#8216;hoptraj&#8217;,&#8217;water_density&#8217;)</p>
+<p>Input:
+hoppingtrajectory_filename   filename for HoppingTrajectory psf and dcd
+density_filename             filename for pickled Density</p>
+<p>Output:
+tn                           hop.graph.TransportNetwork object (qv)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.generate_densities">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">generate_densities</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#generate_densities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.generate_densities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyze the trajectory and generate solvent and bulk density.</p>
+<p>generate_densities(topol, traj, atomselection=&#8217;name OW&#8217;) &#8211;&gt; densities</p>
+<p>This function can take a long time because it has to read the whole
+trajectory. Progress is printed to the screen. It saves results to pickle
+files. These files are <a class="reference internal" href="sitemap.html#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">hop.sitemap.Density</span></tt></a> objects and can be used
+to instantiate such a density object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first docutils">
+<dt>filename</dt>
+<dd><p class="first last">name of the solvent density with bulk site</p>
+</dd>
+<dt>bulkname</dt>
+<dd><p class="first last">bulk density</p>
+</dd>
+<dt>density_unit</dt>
+<dd><p class="first last">unit of measurement for densities and thresholds
+(Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)</p>
+</dd>
+<dt>solvent_threshold <span class="classifier-delimiter">:</span> <span class="classifier">exp(1) = 2.7182818284590451</span></dt>
+<dd><p class="first last">hydration sites when density &gt; this threshold</p>
+</dd>
+<dt>bulk_threshold <span class="classifier-delimiter">:</span> <span class="classifier">exp(-0.5) = 0.60653065971263342</span></dt>
+<dd><p class="first last">bulk site are regions with density &gt; this threshold
+(and water farther away from the protein heavy atoms than <em>cutoff</em>)</p>
+</dd>
+<dt>delta <span class="classifier-delimiter">:</span> <span class="classifier">1.0</span></dt>
+<dd><p class="first last">cubic grid size in Angstrom</p>
+</dd>
+<dt>cutoff</dt>
+<dd><p class="first last">bulk-water is assumed to start at this distance from the
+soluteselection</p>
+</dd>
+<dt>soluteselection <span class="classifier-delimiter">:</span> <span class="classifier">&#8220;protein and not name H*&#8221;</span></dt>
+<dd><p class="first last">how to select the solute (for bulk density)</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last">a dict containing <a class="reference internal" href="sitemap.html#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">hop.sitemap.Density</span></tt></a> instances for the
+the &#8220;solvent&#8221; and the &#8220;bulk&#8221; density; the &#8220;solvent&#8221; has the bulk
+site (largest site in &#8220;bulk&#8221;) inserted as site 1.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The &#8220;solvent&#8221; density is going to be used throughout the rest of the
+protocol. Should you ever remap the sites (i.e. run
+<a class="reference internal" href="sitemap.html#hop.sitemap.Density.map_sites" title="hop.sitemap.Density.map_sites"><tt class="xref py py-meth docutils literal"><span class="pre">map_sites()</span></tt></a> with a different threshold) then
+<strong>you must insert the bulk site again</strong> (because the bulk site is
+removed for technical reasons whenever the sites change); use the saved
+bulk site and the <a class="reference internal" href="sitemap.html#hop.sitemap.Density.site_insert_bulk" title="hop.sitemap.Density.site_insert_bulk"><tt class="xref py py-meth docutils literal"><span class="pre">hop.sitemap.Density.site_insert_bulk()</span></tt></a> method.</p>
+</div>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">Keyword arguments are passed on to <tt class="xref py py-class docutils literal"><span class="pre">hop.density.DensityCreator</span></tt>
+where all possible keywords are documented; the site mapping is done
+with <a class="reference internal" href="sitemap.html#hop.sitemap.Density.map_sites" title="hop.sitemap.Density.map_sites"><tt class="xref py py-meth docutils literal"><span class="pre">hop.sitemap.Density.map_sites()</span></tt></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.hopgraph_basic_analysis">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">hopgraph_basic_analysis</tt><big>(</big><em>h</em>, <em>density</em>, <em>filename</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#hopgraph_basic_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.hopgraph_basic_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do some simple analysis tasks on the hopgraph.</p>
+<p>hopgraph_basic_analysis(h, density, filename)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first last docutils">
+<dt>h</dt>
+<dd><p class="first last">hopgraph, a <a class="reference internal" href="graph.html#hop.graph.HoppingGraph" title="hop.graph.HoppingGraph"><tt class="xref py py-class docutils literal"><span class="pre">hop.graph.HoppingGraph</span></tt></a></p>
+</dd>
+<dt>density</dt>
+<dd><p class="first last">density, a <a class="reference internal" href="sitemap.html#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">hop.sitemap.Density</span></tt></a></p>
+</dd>
+<dt>filename</dt>
+<dd><p class="first last">default filename for generated files; all files and new
+directories are written in the directory pointed to by the
+path component</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.make_density">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">make_density</tt><big>(</big><em>psf</em>, <em>dcd</em>, <em>filename</em>, <em>delta=1.0</em>, <em>atomselection='name OH2'</em>, <em>backend='MDAnalysis'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#make_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.make_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the density by histogramming all the water oxygens in a dcd.</p>
+<p>density = make_density(psf,dcd,filename,delta=1.0)</p>
+<p>The function builds the density object, writes it to disk, and
+also exports it as a dx file for visualization (use
+vizualize_density(density)).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first docutils">
+<dt><a href="#id1"><span class="problematic" id="id2">*</span></a>psf</dt>
+<dd><p class="first last">topology</p>
+</dd>
+<dt><em>dcd</em></dt>
+<dd><p class="first last">trajectory (should be RMS fitted to a reference frame)</p>
+</dd>
+<dt><em>filename</em></dt>
+<dd><p class="first last">default filename for the density</p>
+</dd>
+<dt><em>delta</em></dt>
+<dd><p class="first last">grid spacing Angstrom</p>
+</dd>
+<dt><em>backend</em></dt>
+<dd><p class="first last">&#8220;MDAnalysis&#8221; or &#8220;VMD&#8221; to be used for histogramming the density
+[&#8220;MDAnalysis&#8221;]</p>
+</dd>
+<dt><em>kwargs</em> (depend on backend):</dt>
+<dd><dl class="first last docutils">
+<dt>only for MDAnalysis:</dt>
+<dd><dl class="first docutils">
+<dt><em>padding</em></dt>
+<dd><p class="first last">increase box dimensions for 3D histogramming by padding</p>
+</dd>
+</dl>
+<p><em>soluteselection</em>
+<em>cutoff</em></p>
+<blockquote class="last">
+<div><p>for bulk density: setting both <cite>soluteselection=&#8217;protein and not name H*&#8217;</cite>
+and <cite>cutoff=3.5</cite> A selects <em>&#8216;&lt;atomsel&gt; NOT WITHIN &lt;cutoff&gt; OF &lt;solutesel&gt;&#8217;</em></p>
+</div></blockquote>
+</dd>
+<dt>only for VMD:</dt>
+<dd><dl class="first last docutils">
+<dt><em>load_new</em></dt>
+<dd><p class="first last"><cite>True</cite>: load psf and dcd from file. <cite>False</cite>: use already loaded
+psf and dcd</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><em>density</em>, <a class="reference internal" href="sitemap.html#hop.sitemap.Density" title="hop.sitemap.Density"><tt class="xref py py-class docutils literal"><span class="pre">hop.sitemap.Density</span></tt></a> object; the density is
+converted to a fraction of the density of bulk TIP3P water</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.make_hoppingtraj">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">make_hoppingtraj</tt><big>(</big><em>density</em>, <em>filename</em>, <em>**hopargs</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#make_hoppingtraj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.make_hoppingtraj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the hopping trajectory from a density with a site map.</p>
+<blockquote>
+<div>hops = make_hoptraj(density,filename)</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first last docutils">
+<dt><em>density</em></dt>
+<dd><p class="first last">density object with a site map</p>
+</dd>
+<dt><em>filename</em></dt>
+<dd><p class="first last">prefix for the hop trajectory files (psf and dcd)</p>
+</dd>
+<dt><em>hopargs</em></dt>
+<dd><p class="first last">keyword args to add to <a class="reference internal" href="trajectory.html#hop.trajectory.HoppingTrajectory" title="hop.trajectory.HoppingTrajectory"><tt class="xref py py-class docutils literal"><span class="pre">HoppingTrajectory</span></tt></a> such
+as <cite>fixtrajectory = {&#8216;delta&#8217;:10.22741474887299}</cite></p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This function relies on the density&#8217;s metadata. In particular it
+uses <cite>density.metadata[&#8216;psf&#8217;]</cite> and <cite>metadata[&#8216;dcd&#8217;]</cite> to find its input
+data and <cite>metadata[&#8216;atomselection&#8217;]</cite> to define the atoms to track.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.make_xstal_density">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">make_xstal_density</tt><big>(</big><em>pdb</em>, <em>filename</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#make_xstal_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.make_xstal_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a density from the crystalwaters in a PDB.</p>
+<p>For arguments see <a class="reference internal" href="#hop.interactive.make_density" title="hop.interactive.make_density"><tt class="xref py py-func docutils literal"><span class="pre">make_density()</span></tt></a>.</p>
+<p>(These water are typically named HOH.)</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">Water molecules are counted as point-like
+particles. One can also use
+<a class="reference internal" href="sitemap.html#hop.sitemap.BfactorDensityCreator" title="hop.sitemap.BfactorDensityCreator"><tt class="xref py py-class docutils literal"><span class="pre">hop.sitemap.BfactorDensityCreator</span></tt></a> to broaden water
+molecules according to their B-factor.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="hop.interactive.visualize_density">
+<tt class="descclassname">hop.interactive.</tt><tt class="descname">visualize_density</tt><big>(</big><em>density</em><big>)</big><a class="reference internal" href="../_modules/hop/interactive.html#visualize_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.interactive.visualize_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualize the trajectory with the density in VMD.</p>
+<blockquote>
+<div>visualize_density(density)</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Arguments :</th><td class="field-body"><dl class="first last docutils">
+<dt><em>density</em></dt>
+<dd><p class="first last">hop.sitemap.Density object</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Interactive or high-level use of the hop trajectory package</a><ul>
+<li><a class="reference internal" href="#hydration-sites">Hydration sites</a><ul>
+<li><a class="reference internal" href="#high-density-sites">High density sites</a></li>
+<li><a class="reference internal" href="#bulk-site">Bulk site</a></li>
+<li><a class="reference internal" href="#remapping-for-comparing-site-maps">Remapping for comparing site maps</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hopping-trajectory">Hopping trajectory</a></li>
+<li><a class="reference internal" href="#hopping-graph">Hopping graph</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#todo">TODO</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../analysis.html"
+                        title="previous chapter">Analyzing hopping graphs and densities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="analysis.html"
+                        title="next chapter">&lt;no title&gt;</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/hop/interactive.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analysis.html" title="&lt;no title&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../analysis.html" title="Analyzing hopping graphs and densities"
+             >previous</a> |</li>
+        <li><a href="../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../hop.html" >Hop package &#8212; <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">hop</span></tt></a> &raquo;</li>
+          <li><a href="../analysis.html" >Analyzing hopping graphs and densities</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

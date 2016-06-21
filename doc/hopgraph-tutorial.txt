@@ -1,0 +1,23 @@
+Now that you've got a hopping trajectory, you might want a hopping graph.
+
+To obtain one, you'll need to first store your hopping trajectory in a variable python can operate on:
+
+hoptraj = hop.trajectory.HoppingTrajectory(hoppsf=topology, hopdcd=trajectory)
+
+Next you'll want to create a hop graph and store it in a variable:
+
+tgraph = hop.interactive.build_hoppinggraph(hoptraj,density)
+
+The above code creates a transport network. The hopgraph is only a component of this.
+
+Store the hopgraph in a new variable; the hopgraph is an attribute of the tgraph:
+
+h = tgraph.hopraph
+
+Now we want to save it to the directory you're in:
+
+h.save(filename).
+
+
+
+

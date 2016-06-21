@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>INSTALL &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="index.html" />
+    <link rel="up" title="Obtaining and installing the package" href="installation.html" />
+    <link rel="next" title="Hop package — hop" href="hop.html" />
+    <link rel="prev" title="README" href="README.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="hop.html" title="Hop package — hop"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="README.html" title="README"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="installation.html" accesskey="U">Obtaining and installing the package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="install">
+<h1>INSTALL<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<p>This document gives an overview over additional requirements that
+should be installed before Hop and Hop&#8217;s installation process. The
+latter should be painless because it only consists of pure python
+scripts at the moment.</p>
+<p>Please do not hesitate to contact Oliver Beckstein
+&lt;<a class="reference external" href="mailto:orbeckst&#37;&#52;&#48;gmail&#46;com">orbeckst<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt; if problems occur or if you have suggestions on
+how to improve the package or these instructions.</p>
+<div class="section" id="quick-instructions">
+<h2>Quick instructions<a class="headerlink" href="#quick-instructions" title="Permalink to this headline">¶</a></h2>
+<p>If you are familiar with <a class="reference external" href="http://www.pip-installer.org/en/latest/">pip</a> or <a class="reference external" href="http://pythonhosted.org/setuptools/easy_install.html">easy_install</a> from <a class="reference external" href="http://pythonhosted.org/setuptools/">setuptools</a> then try</p>
+<div class="highlight-python"><pre>pip install Hop-0.3.3.tar.gz</pre>
+</div>
+<p>or</p>
+<div class="highlight-python"><pre>easy_install Hop-0.3.3.tar.gz</pre>
+</div>
+<p>or</p>
+<div class="highlight-python"><pre>cd Hop-0.3.3
+python setup.py install</pre>
+</div>
+<p>Otherwise read the <a class="reference internal" href="#requirements">Requirements</a> and <a class="reference internal" href="#installation">Installation</a> instructions below.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>If Hop is installed with <a class="reference external" href="http://www.pip-installer.org/en/latest/">pip</a> or <a class="reference external" href="http://pythonhosted.org/setuptools/easy_install.html">easy_install</a> then some
+dependencies are handled automatically; if not you will have to
+install packages manually. This is always true for <tt class="docutils literal"><span class="pre">MDAnalysis</span></tt> at
+the moment.</p>
+<p>The <tt class="docutils literal"><span class="pre">GridDataFormats</span></tt> package can be obtained from my home page (see
+below) but in most cases the installation should be able to
+automatically download and install it.</p>
+<p>Installing <tt class="xref py py-mod docutils literal"><span class="pre">matplotlib</span></tt> (if plotting is desired) tends to be less
+painful if it is done in advance, especially through your system&#8217;s
+package manager.</p>
+<div class="section" id="system-requirements">
+<h3>System requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h3>
+<p>Tested with python 2.5, 2.6 (2.3 will not work anymore) on Linux and Mac OS X.</p>
+</div>
+<div class="section" id="required-python-packages">
+<h3>Required python packages<a class="headerlink" href="#required-python-packages" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<caption>Required packages for Hop.</caption>
+<colgroup>
+<col width="16%" />
+<col width="22%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">package</th>
+<th class="head">version</th>
+<th class="head">url</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>MDAnalysis</td>
+<td>&gt;= 0.7.5</td>
+<td><a class="reference external" href="http://mdanalysis.googlecode.com">http://mdanalysis.googlecode.com</a></td>
+</tr>
+<tr class="row-odd"><td>numpy</td>
+<td>&gt;=1.0.3</td>
+<td><a class="reference external" href="http://numpy.scipy.org/">http://numpy.scipy.org/</a></td>
+</tr>
+<tr class="row-even"><td>NetworkX</td>
+<td>&gt;=1.0</td>
+<td><a class="reference external" href="https://networkx.lanl.gov/">https://networkx.lanl.gov/</a></td>
+</tr>
+<tr class="row-odd"><td>GridDataFormats</td>
+<td>&gt;= 0.1.1</td>
+<td><a class="reference external" href="https://github.com/orbeckst/GridDataFormats/archives/master">https://github.com/orbeckst/GridDataFormats/archives/master</a></td>
+</tr>
+</tbody>
+</table>
+<p><a href="#id1"><span class="problematic" id="id2">MDAnalysis_</span></a> requires additional modules; see the instructions at
+its home page. Get the latest snapshot from
+<a class="reference external" href="http://mdanalysis.googlecode.com/files/">http://mdanalysis.googlecode.com/files/</a> or install it with</p>
+<div class="highlight-python"><pre>pip install MDAnalysis</pre>
+</div>
+<p>Note that installation of <a href="#id3"><span class="problematic" id="id4">MDAnalysis_</span></a> can take a while because it
+requires a python environment that is fully set up for scientific
+computing. The good news is that once this is done then Hop should be
+easy.</p>
+</div>
+<div class="section" id="optional-packages">
+<h3>Optional packages<a class="headerlink" href="#optional-packages" title="Permalink to this headline">¶</a></h3>
+<p>The following packages should be installed to make best use of
+Hop, especially for visualization.</p>
+<table border="1" class="docutils">
+<caption>Optional packages for Hop.</caption>
+<colgroup>
+<col width="16%" />
+<col width="22%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">package</th>
+<th class="head">version</th>
+<th class="head">url</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>pygraphviz</td>
+<td>&nbsp;</td>
+<td><a class="reference external" href="https://networkx.lanl.gov/pygraphviz/">https://networkx.lanl.gov/pygraphviz/</a></td>
+</tr>
+<tr class="row-odd"><td>matplotlib</td>
+<td>&gt;=0.91.3</td>
+<td><a class="reference external" href="http://matplotlib.sourceforge.net/">http://matplotlib.sourceforge.net/</a></td>
+</tr>
+<tr class="row-even"><td>rpy (and R)</td>
+<td>&nbsp;</td>
+<td><a class="reference external" href="http://rpy.sourceforge.net/">http://rpy.sourceforge.net/</a></td>
+</tr>
+<tr class="row-odd"><td>biopython</td>
+<td>&nbsp;</td>
+<td><a class="reference external" href="http://www.biopython.org">http://www.biopython.org</a></td>
+</tr>
+</tbody>
+</table>
+<p>When these modules are missing the code will raise an <tt class="xref py py-exc docutils literal"><span class="pre">ImportError</span></tt> when
+attempting to use them; their absence is not always handled gracefuly
+and it is suggested to install at least <tt class="xref py py-mod docutils literal"><span class="pre">matplotlib</span></tt> (pylab).</p>
+<p><strong class="program">R</strong> and <tt class="xref py py-mod docutils literal"><span class="pre">rpy</span></tt> are only used for an experimental heatmap analysis
+and can be safely ignored.</p>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">pygraphviz</span></tt> also requires <strong class="program">graphviz</strong>; see its own installation
+instructions.</p>
+</div>
+<div class="section" id="optional-external-helper-programs">
+<h3>Optional external helper programs<a class="headerlink" href="#optional-external-helper-programs" title="Permalink to this headline">¶</a></h3>
+<p>Some functions and classes can make use of external programs; none of
+them are necessary for the core functionality of Hop but are listed
+here for completeness.</p>
+<dl class="docutils">
+<dt>VMD</dt>
+<dd>VMD&#8217;s VolMap plugin can be used to generate densities. See
+<a class="reference internal" href="#visualization">Visualization</a> for details on VMD.</dd>
+</dl>
+</div>
+<div class="section" id="hints-on-obtaining-packages">
+<h3>Hints on obtaining packages<a class="headerlink" href="#hints-on-obtaining-packages" title="Permalink to this headline">¶</a></h3>
+<p>Many packages can be found through the local package manager (eg apt,
+fink, yum, rpm). networkx is available at the above URL or with the
+<tt class="docutils literal"><span class="pre">easy_install</span></tt> command from python setuptools.</p>
+<p>In Debian/Ubuntu:</p>
+<div class="highlight-python"><pre>aptitude install python-setuptools pkg-config
+
+aptitude install graphviz graphviz-dev python-matplotlib
+easy_install networkx
+easy_install pygraphviz</pre>
+</div>
+</div>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="standard-easyinstall-installation">
+<h3>Standard EasyInstall installation<a class="headerlink" href="#standard-easyinstall-installation" title="Permalink to this headline">¶</a></h3>
+<p>The Hop package can be installed with &#8216;EasyInstall&#8217; which is part of
+<tt class="docutils literal"><span class="pre">setuptools</span></tt> (<a class="reference external" href="http://peak.telecommunity.com/DevCenter/setuptools">http://peak.telecommunity.com/DevCenter/setuptools</a>).</p>
+<p>If you have setuptools already installed you should be able to simply
+install with</p>
+<div class="highlight-python"><pre>easy_install Hop-0.3.3.tar.gz</pre>
+</div>
+<p>You can install <tt class="docutils literal"><span class="pre">setuptools</span></tt> by following the instructions at
+<a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions">http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions</a>
+or on Linux distributions such as Debian or Ubuntu by a
+commandline similar to</p>
+<div class="highlight-python"><pre>aptitude install python-setuptools</pre>
+</div>
+<p>Note that <tt class="docutils literal"><span class="pre">easy_install</span></tt> tries to download additional packages via
+the internet if it cannot find them installed already.</p>
+</div>
+<div class="section" id="installation-in-a-custom-location">
+<h3>Installation in a custom location<a class="headerlink" href="#installation-in-a-custom-location" title="Permalink to this headline">¶</a></h3>
+<p>If you want to install Hop somewhere else but the system default
+please have a look at
+<a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations">http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations</a>
+which describes custom installations.</p>
+<p>From python 2.6 onwards, an installation in a specific user directory
+is supported. It is recommended to install in the following manner:</p>
+<div class="highlight-python"><pre>cd Hop-0.3.3
+python setup.py install --user</pre>
+</div>
+</div>
+</div>
+<div class="section" id="additional-software">
+<h2>Additional software<a class="headerlink" href="#additional-software" title="Permalink to this headline">¶</a></h2>
+<p>The following software is not necessary to use the package itself but
+has been found extremely useful by the author for using Hop or
+analyzing data.</p>
+<div class="section" id="interactive-use-and-ipython">
+<h3>Interactive use and <tt class="docutils literal"><span class="pre">ipython</span></tt><a class="headerlink" href="#interactive-use-and-ipython" title="Permalink to this headline">¶</a></h3>
+<p>When Hop was developed, interactive use from a python command shell
+turned out to be a very convenient application paradigm. <tt class="docutils literal"><span class="pre">ipython</span></tt>
+is very much recommended because of its ease to obtain interactive
+help via <tt class="docutils literal"><span class="pre">?</span></tt> and <tt class="docutils literal"><span class="pre">??</span></tt> and to inspect objects via
+TAB-completion. This is especially helpful because most of the
+documentation is provided as python doc strings, both at the module
+and at the class level.</p>
+<p>For instance, to get an overview over interactive usage, load the
+hop.interactive module and query the top level doc string:</p>
+<div class="highlight-python"><pre>import hop.interactive
+hop.interactive ?</pre>
+</div>
+</div>
+<div class="section" id="visualization">
+<h3>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h3>
+<p>VMD</p>
+<blockquote>
+<div>In order to visualize densities and water networks one can use <a class="reference external" href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a>, which reads natively psf
+and pdb files together with densities in OpenDX format.</div></blockquote>
+</div>
+<div class="section" id="network-analysis-and-layout">
+<h3>Network analysis and layout<a class="headerlink" href="#network-analysis-and-layout" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>graphviz</dt>
+<dd><a class="reference external" href="http://www.graphviz.org/">graphviz</a> is a versatile graph plotter,
+available for Linux and Mac OS X and integrated in most package
+systems. It is also required for <tt class="docutils literal"><span class="pre">pygraphviz</span></tt>. It reads <em>dot</em>
+files.</dd>
+<dt>Cytoscape</dt>
+<dd><a class="reference external" href="http://www.cytoscape.org/">Cytoscape</a> is a very powerful network
+visualization platform; it reads <em>xgmml</em> files exported from Hop.</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">INSTALL</a><ul>
+<li><a class="reference internal" href="#quick-instructions">Quick instructions</a></li>
+<li><a class="reference internal" href="#requirements">Requirements</a><ul>
+<li><a class="reference internal" href="#system-requirements">System requirements</a></li>
+<li><a class="reference internal" href="#required-python-packages">Required python packages</a></li>
+<li><a class="reference internal" href="#optional-packages">Optional packages</a></li>
+<li><a class="reference internal" href="#optional-external-helper-programs">Optional external helper programs</a></li>
+<li><a class="reference internal" href="#hints-on-obtaining-packages">Hints on obtaining packages</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#standard-easyinstall-installation">Standard EasyInstall installation</a></li>
+<li><a class="reference internal" href="#installation-in-a-custom-location">Installation in a custom location</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-software">Additional software</a><ul>
+<li><a class="reference internal" href="#interactive-use-and-ipython">Interactive use and <tt class="docutils literal"><span class="pre">ipython</span></tt></a></li>
+<li><a class="reference internal" href="#visualization">Visualization</a></li>
+<li><a class="reference internal" href="#network-analysis-and-layout">Network analysis and layout</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="README.html"
+                        title="previous chapter">README</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="hop.html"
+                        title="next chapter">Hop package &#8212; <tt class="docutils literal"><span class="pre">hop</span></tt></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/INSTALL.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="hop.html" title="Hop package — hop"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="README.html" title="README"
+             >previous</a> |</li>
+        <li><a href="index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="installation.html" >Obtaining and installing the package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

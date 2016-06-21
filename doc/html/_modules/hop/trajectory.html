@@ -1,0 +1,915 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hop.trajectory &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hop.trajectory</h1><div class="highlight"><pre>
+<span class="c"># $Id$</span>
+<span class="c"># Hop --- a framework to analyze solvation dynamics from MD simulations</span>
+<span class="c"># Copyright (c) 2009 Oliver Beckstein &lt;orbeckst@gmail.com&gt;</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;Based on a definition of grid sites, convert a molecular</span>
+<span class="sd">dynamics trajectory into a trajectory of site hops.</span>
+
+<span class="sd">You will also need the following modules to create the input for HoppingTraj:</span>
+<span class="sd">hop.sitemap, MDAnalysis</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">MDAnalysis</span>
+<span class="kn">import</span> <span class="nn">MDAnalysis.coordinates</span>
+<span class="kn">from</span> <span class="nn">MDAnalysis.core.log</span> <span class="kn">import</span> <span class="n">ProgressMeter</span>
+
+<span class="c"># used to be here, migrated to MDAnalysis</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">MDAnalysis.analysis.align</span> <span class="kn">import</span> <span class="n">rms_fit_trj</span><span class="p">,</span> <span class="n">fasta2select</span>
+<div class="viewcode-block" id="RMS_fit_trj"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.RMS_fit_trj">[docs]</a>    <span class="k">def</span> <span class="nf">RMS_fit_trj</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;RMS_fit_trj is deprecated and will be removed. Use rms_fit_trj&quot;</span><span class="p">,</span>
+                  <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rms_fit_trj</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="n">RMS_fit_trj</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">rms_fit_trj</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="kn">import</span> <span class="nn">hop.constants</span>
+<span class="kn">from</span> <span class="nn">hop.constants</span> <span class="kn">import</span> <span class="n">SITELABEL</span>
+<span class="kn">import</span> <span class="nn">hop.utilities</span>
+<span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="n">msg</span><span class="p">,</span><span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">hop</span> <span class="kn">import</span> <span class="n">SelectionError</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;MDAnalysis.analysis.hop.trajectory&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="totaltime"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.totaltime">[docs]</a><span class="k">def</span> <span class="nf">totaltime</span><span class="p">(</span><span class="n">trajectory</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the total trajectory time from the DCDReader object.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">trajectory</span><span class="o">.</span><span class="n">totaltime</span>
+</div>
+<div class="viewcode-block" id="HoppingTrajectory"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.HoppingTrajectory">[docs]</a><span class="k">class</span> <span class="nc">HoppingTrajectory</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides a time-sequence of sites visited by individual molecules,</span>
+<span class="sd">    called a &#39;hopping trajectory&#39; because the molecules hop between</span>
+<span class="sd">    sites. Their coordinates are mapped to site labels, which have been defined</span>
+<span class="sd">    on a grid previously (using hop.sitemap).</span>
+
+<span class="sd">    :Output format:</span>
+
+<span class="sd">    For simplicity and code reusal this is again a dcd with the site as the</span>
+<span class="sd">    x-coordinate; the y coordinate is set to the &#39;orbit site&#39;, i.e. it records</span>
+<span class="sd">    the site the particle was last at for as long as it does not enter a new</span>
+<span class="sd">    site. It describes the site in whose &#39;basin of attraction&#39; the particle</span>
+<span class="sd">    orbits. Note, however, that the transition to a new site is still counted</span>
+<span class="sd">    as belonging to the previous site (which is arguably incorrect); the</span>
+<span class="sd">    hop.graph module, however, does a proper analysis, which is cannot be done</span>
+<span class="sd">    here for efficieny reasons. The z field is unused at the moment and set to</span>
+<span class="sd">    0.</span>
+
+<span class="sd">    :Attributes:</span>
+
+<span class="sd">    ts               MDAnalysis.Timestep object</span>
+<span class="sd">    numframes        number of frames in hopping trajectory</span>
+<span class="sd">    group            AtomGroup of atoms that are tracked</span>
+
+
+<span class="sd">    :Methods:</span>
+
+<span class="sd">    ## [start:stop]       object can be used as an iterator over the</span>
+<span class="sd">    ##                    hopping trajectory (disabled du to problems when doing random</span>
+<span class="sd">    ##                    access on large dcds; either a bug in DCDReader or python)</span>
+<span class="sd">    next()                advances time step in the hopping trajectory</span>
+<span class="sd">    map_dcd()             iterator that updates the ts and maps the trajectory</span>
+<span class="sd">                          coordinates to site labels</span>
+<span class="sd">    _map_next_timestep()  map next coordinate trajectory step to hopping time step</span>
+<span class="sd">    _read_next_timestep() read next timestep from hopping trajectory</span>
+
+
+<span class="sd">    write()              write the hopping trajectory to a dcd file + psf</span>
+<span class="sd">    write_psf()          write a dummy psf for visualization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">trajectory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">density</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">hopdcd</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">hoppsf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fixtrajectory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts a trajectory into a hopping trajectory, using a sitemap as an index for sites.</span>
+
+<span class="sd">        &gt;&gt;&gt; h = HoppingTrajectory(trajectory=DCDReader,group=AtomGroup,density=Density,</span>
+<span class="sd">                                  fixtrajectory=&lt;dict&gt;,verbosity=3)</span>
+<span class="sd">        &gt;&gt;&gt; h = HoppingTrajectory(filename=&lt;name&gt;)</span>
+
+<span class="sd">        Create from a coordinate trajectory of a group of atoms and a site map:</span>
+
+<span class="sd">          u = MDAnalysis.Universe(psf,dcd)</span>
+<span class="sd">          water = u.selectAtoms(&#39;name OH2&#39;)</span>
+<span class="sd">          h = HoppingTrajectory(trajectory=u.trajectory,group=water,density=water_density)</span>
+
+<span class="sd">        Load from a saved hopping trajectory (in dcd format with dummy psf)</span>
+
+<span class="sd">          h = HoppingTrajectory(hopdcd=&#39;hops.trajectory&#39;,hoppsf=&#39;hops.psf&#39;)</span>
+
+<span class="sd">        :Arguments:</span>
+
+<span class="sd">        trajectory       MDAnalysis.trajectory trajectory instance</span>
+<span class="sd">        group            MDAnalysis.group instance</span>
+<span class="sd">        density          grid3Dc.Grid instance with sitemap set</span>
+
+<span class="sd">        hopdcd           dcd written by write()</span>
+<span class="sd">        hoppsf           psf written by write() (or write_psf())</span>
+<span class="sd">        filename         or simply provide one filename prefix for psf and dcd</span>
+
+<span class="sd">        fixtrajectory    dictionary with attributes of a dcd object and new</span>
+<span class="sd">                         values; used to provide correct values after using</span>
+<span class="sd">                         a catdcd-generated trajectory (hack!), e.g.</span>
+<span class="sd">                         fixtrajectory = {&#39;delta&#39;:10.22741474887299}</span>
+
+<span class="sd">        verbosity        show status messages for &gt;= 3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbosity</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">trajectory</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">density</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traj</span>  <span class="o">=</span> <span class="n">trajectory</span>        <span class="c"># MDAnalysis.Universe.trajectory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span> <span class="o">=</span> <span class="n">group</span>            <span class="c"># atom selection for trajectory</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">,</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">AtomGroup</span><span class="o">.</span><span class="n">AtomGroup</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;group must be a &lt;AtomGroup&gt;, eg MDAnalyis.Universe.selectAtoms().&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fixtrajectory</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">attr</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">fixtrajectory</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span><span class="n">attr</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;fixtrajectory: dcd object does not have attribute &quot;&#39;</span>\
+                                             <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+                    <span class="n">trajectory</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totaltime</span> <span class="o">=</span> <span class="n">totaltime</span><span class="p">(</span><span class="n">trajectory</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">rewind</span><span class="p">()</span>             <span class="c"># make sure to start from frame 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_GD</span> <span class="o">=</span> <span class="n">density</span>             <span class="c"># sitemap.Density object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">map</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GD</span><span class="o">.</span><span class="n">map</span>                  <span class="c"># map of sites</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GD</span><span class="o">.</span><span class="n">edges</span>                <span class="c"># N+1 edges of bins</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dedges</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>   <span class="c"># N bin widths</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GD</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span><span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The density object must have its site map computed.&quot;</span><span class="p">)</span>
+            <span class="n">Dmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">)</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">coordinates</span><span class="p">())</span>
+            <span class="n">Natoms</span><span class="p">,</span><span class="n">D</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">D</span> <span class="o">==</span> <span class="n">Dmap</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Coordinates and map have different dimensions.&quot;</span><span class="p">)</span>
+            <span class="c"># NOTE:</span>
+            <span class="c"># Any count outside the histogram becomes &#39;outlier&#39; so</span>
+            <span class="c"># one should take care to choose a large enough map for the region</span>
+            <span class="c"># of interest. See _coord2hop().</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buffered_map</span> <span class="o">=</span> <span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;outlier&#39;</span><span class="p">]</span> <span class="o">*</span> \
+                                <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span>
+
+            <span class="c"># Here we commit to writing a DCD hopping trajectory:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">DCD</span><span class="o">.</span><span class="n">Timestep</span><span class="p">(</span><span class="n">Natoms</span><span class="p">)</span>   <span class="c"># empty time step for N atoms</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">frame</span>          <span class="c"># current frame</span>
+            <span class="n">numlabels</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># naive... but not crucial</span>
+            <span class="c"># fake unit cell for visualization</span>
+            <span class="c"># Layout of DCD unitcell is [A, alpha, B, beta, gamma, C] (sic!)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">_unitcell</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">numlabels</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span> <span class="n">numlabels</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="c"># current hopping trajectory frame is in ts._pos[]</span>
+            <span class="c"># _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">numframes</span>    <span class="c"># total numer of frames</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_coord2hop</span><span class="p">()</span>                  <span class="c"># init for _map_next_timestep()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_map_next_timestep</span><span class="p">()</span>               <span class="c"># initialize with first timestep</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span> <span class="o">=</span> <span class="bp">None</span>                     <span class="c"># no hopping trajectory available</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="n">hopdcd</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">hoppsf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># read from dcd</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dedges</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dedges</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">hoppsf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;psf&#39;</span><span class="p">)</span>
+                <span class="n">hopdcd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;dcd&#39;</span><span class="p">)</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="n">hoppsf</span><span class="p">,</span><span class="n">hopdcd</span><span class="p">)</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">selectAtoms</span><span class="p">(</span><span class="s">&#39;type *&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>      <span class="c"># group that refers to hopping trajectory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">trajectory</span>    <span class="c"># DCD(!) trajectory object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="o">.</span><span class="n">ts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="o">.</span><span class="n">numframes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totaltime</span> <span class="o">=</span> <span class="n">totaltime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Not sufficient data to create a hopping trajectory.&#39;</span><span class="p">)</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">filename_function</span>
+
+<div class="viewcode-block" id="HoppingTrajectory.next"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.HoppingTrajectory.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Provides the next time step of a hopping trajectory.</span>
+
+<span class="sd">        ts = next()</span>
+
+<span class="sd">        If a hopping trajectory file exists then this is</span>
+<span class="sd">        used. Otherwise, the coordinate trajectory is mapped on the</span>
+<span class="sd">        fly (which is computationally more expensive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="p">:</span>
+            <span class="n">nextTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_next_timestep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nextTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_next_timestep</span>
+        <span class="k">return</span> <span class="n">nextTS</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_map_next_timestep</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next timestep from coordinate trajectory and set up the</span>
+<span class="sd">        hopping trajectory time step</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2hop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">next</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_read_next_timestep</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next time step from hopping trajectory&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+<div class="viewcode-block" id="HoppingTrajectory.write"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.HoppingTrajectory.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">load</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write hopping trajectory as standard dcd file, together with a minimal psf.</span>
+
+<span class="sd">        write(&#39;hop&#39;)</span>
+
+<span class="sd">        Arguments:</span>
+
+<span class="sd">        load = True     Immediately loads the trajectory so that further</span>
+<span class="sd">                        calls to next() will use the computed</span>
+<span class="sd">                        trajectory and don&#39;t use expensive mapping.</span>
+
+<span class="sd">        Ignore the other options and leave them at the</span>
+<span class="sd">        defaults. Currently, only the whole trajectory is written. For</span>
+<span class="sd">        visualization one also needs the dummy psf of the group.</span>
+
+<span class="sd">        Results:</span>
+
+<span class="sd">        filename.trajectory and filename.psf</span>
+
+<span class="sd">        Note that it is your responsibility to load the hopping</span>
+<span class="sd">        trajectory and the appropriate psf together as there is very</span>
+<span class="sd">        limited information stored in the dcd itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>  <span class="c"># this is stupid</span>
+
+        <span class="n">psfname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;psf&#39;</span><span class="p">)</span>
+        <span class="n">dcdname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;dcd&#39;</span><span class="p">)</span>
+
+        <span class="c"># see MDAnalysis/src/dcd/dcd.c for explanations;</span>
+        <span class="c"># other trajectories do not have certain values so we just fake them...</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">start_timestep</span> <span class="c"># starting time step for DCD file</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">skip_timestep</span>   <span class="c"># NSAVC (# ts between written DCD frames)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">MDAnalysis.core.units</span> <span class="kn">import</span> <span class="n">get_conversion_factor</span>
+            <span class="n">delta_ps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">convert_time_from_native</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>  <span class="c"># length of ts in ps</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">get_conversion_factor</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;ps&#39;</span><span class="p">,</span> <span class="s">&#39;AKMA&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta_ps</span>
+
+        <span class="n">dcdwriter</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">DCD</span><span class="o">.</span><span class="n">DCDWriter</span><span class="p">(</span><span class="n">dcdname</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">numatoms</span><span class="p">,</span>
+                                             <span class="n">start</span><span class="p">,</span><span class="n">step</span><span class="p">,</span><span class="n">delta</span><span class="p">,</span>
+                                             <span class="n">remarks</span><span class="o">=</span><span class="s">&#39;Hopping trajectory: x=site y=orbit_site z=0&#39;</span><span class="p">)</span>
+        <span class="n">pm</span> <span class="o">=</span> <span class="n">ProgressMeter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                           <span class="n">format</span><span class="o">=</span><span class="s">&quot;Mapping frame </span><span class="si">%(step)5d</span><span class="s">/</span><span class="si">%(numsteps)6d</span><span class="s">  [</span><span class="si">%(percentage)5.1f%%</span><span class="s">]</span><span class="se">\r</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_dcd</span><span class="p">():</span>
+            <span class="n">dcdwriter</span><span class="o">.</span><span class="n">write_next_timestep</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+            <span class="n">pm</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">frame</span><span class="p">)</span>
+        <span class="n">dcdwriter</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;HoppingTrajectory.write(): wrote hoptraj </span><span class="si">%r</span><span class="s">.&quot;</span><span class="p">,</span> <span class="n">dcdname</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_psf</span><span class="p">(</span><span class="n">psfname</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;HoppingTrajectory.write(): wrote hoppsf </span><span class="si">%r</span><span class="s">.&quot;</span><span class="p">,</span> <span class="n">psfname</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">load</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HoppingTrajectory.write_psf"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.HoppingTrajectory.write_psf">[docs]</a>    <span class="k">def</span> <span class="nf">write_psf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a dummy psf just for the atoms in the selected group</span>
+<span class="sd">        so that one can visualize the hopping trajectory.</span>
+
+<span class="sd">        write_psf(filename)</span>
+
+<span class="sd">        The psf is NOT a fully functional psf. It only contains the</span>
+<span class="sd">        header and the ATOMS section. It is sufficient to display the</span>
+<span class="sd">        hopping trajectory in VMD and can be read in by the MDAnalysis</span>
+<span class="sd">        tools in order to store the atom numbers for the hopping</span>
+<span class="sd">        trajectory.</span>
+
+<span class="sd">        ------</span>
+<span class="sd">        notes</span>
+<span class="sd">        ------</span>
+<span class="sd">        Format from psffres.src</span>
+
+<span class="sd">        CHEQ:</span>
+<span class="sd">        II,LSEGID,LRESID,LRES,TYPE(I),IAC(I),CG(I),AMASS(I),IMOVE(I),ECH(I),EHA(I)</span>
+
+<span class="sd">        standard format:</span>
+<span class="sd">          (I8,1X,A4,1X,A4,1X,A4,1X,A4,1X,I4,1X,2G14.6,I8,2G14.6)</span>
+<span class="sd">          (I8,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,2G14.6,I8,2G14.6)  XPLOR</span>
+<span class="sd">        expanded format EXT:</span>
+<span class="sd">          (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,I4,1X,2G14.6,I8,2G14.6)</span>
+<span class="sd">          (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,A4,1X,2G14.6,I8,2G14.6) XPLOR</span>
+
+<span class="sd">        no CHEQ:</span>
+<span class="sd">        II,LSEGID,LRESID,LRES,TYPE(I),IAC(I),CG(I),AMASS(I),IMOVE(I)</span>
+
+<span class="sd">        standard format:</span>
+<span class="sd">          (I8,1X,A4,1X,A4,1X,A4,1X,A4,1X,I4,1X,2G14.6,I8)</span>
+<span class="sd">          (I8,1X,A4,1X,A4,1X,A4,1X,A4,1X,A4,1X,2G14.6,I8)  XPLOR</span>
+<span class="sd">        expanded format EXT:</span>
+<span class="sd">          (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,I4,1X,2G14.6,I8)</span>
+<span class="sd">          (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,A4,1X,2G14.6,I8) XPLOR</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Standard no CHEQ format:</span>
+        <span class="n">psf_ATOM_format</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%(iatom)8d</span><span class="s"> </span><span class="si">%(segid)4s</span><span class="s"> </span><span class="si">%(resid)-4d</span><span class="s"> </span><span class="si">%(resname)4s</span><span class="s"> &#39;</span><span class="o">+</span>\
+                          <span class="s">&#39;</span><span class="si">%(name)-4s</span><span class="s"> </span><span class="si">%(type)4s</span><span class="s"> </span><span class="si">%(charge)-14.6f%(mass)-14.4f%(imove)8d</span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="c"># This produces:</span>
+        <span class="c">#    2114 XWAT 1    TIP3 OH2    75 -0.834000     15.9994              0</span>
+        <span class="c"># For some reason, I don&#39;t get the same output as I get from Charmm because</span>
+        <span class="c"># Charmm centers the value whereas I can only left or right-align them.</span>
+        <span class="c"># (This is not a problem as the fields are properly lined up!)</span>
+        <span class="c">#    2114 XWAT 1    TIP3 OH2    75  -0.834000       15.9994           0</span>
+
+        <span class="c"># EXT (no CHEQ) format (read by MDAnalysis.topology.PSFParser)</span>
+        <span class="c">#expanded format EXT:</span>
+        <span class="c">#  (I10,1X,A8,1X,A8,1X,A8,1X,A8,1X,I4,1X,2G14.6,I8)  charmm</span>
+        <span class="c">#   II     SEGID RESID RESNM ANAME TYPE  CHARGE MASS IMOVE</span>
+
+        <span class="n">psf_EXT_ATOM_format</span> <span class="o">=</span> \
+            <span class="s">&#39;</span><span class="si">%(iatom)10d</span><span class="s"> </span><span class="si">%(segid)8s</span><span class="s"> </span><span class="si">%(resid)-8d</span><span class="s"> </span><span class="si">%(resname)8s</span><span class="s"> &#39;</span> \
+            <span class="s">&#39;</span><span class="si">%(name)-8s</span><span class="s"> </span><span class="si">%(type)4s</span><span class="s"> </span><span class="si">%(charge)-14.6f%(mass)-14.4f%(imove)8d</span><span class="se">\n</span><span class="s">&#39;</span>
+
+        <span class="n">psf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;PSF EXT</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%7d</span><span class="s"> !NTITLE</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()</span><span class="se">\n</span><span class="s">&#39;</span>
+                  <span class="s">&#39;* See http://github.com/orbeckst/hop</span><span class="se">\n</span><span class="s">&#39;</span>
+                  <span class="s">&#39;* This is NOT a fully functional psf but should work for visualization.</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+        <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%10d</span><span class="s"> !NATOM</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">))</span>
+        <span class="n">imove</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c"># no fixed atoms</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">:</span>
+                <span class="c"># add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)</span>
+                <span class="n">psf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">psf_EXT_ATOM_format</span> <span class="o">%</span>
+                          <span class="p">{</span><span class="s">&#39;iatom&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">number</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;segid&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">segid</span><span class="p">[:</span><span class="mi">8</span><span class="p">],</span> <span class="s">&#39;resid&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">resid</span><span class="p">,</span>
+                           <span class="s">&#39;resname&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">resname</span><span class="p">[:</span><span class="mi">8</span><span class="p">],</span> <span class="s">&#39;name&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="mi">8</span><span class="p">],</span> <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                           <span class="s">&#39;charge&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="s">&#39;mass&#39;</span><span class="p">:</span><span class="n">atom</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span><span class="s">&#39;imove&#39;</span><span class="p">:</span><span class="n">imove</span><span class="p">}</span> <span class="p">)</span>
+                <span class="c"># emergency stop if we cannot handle the size of the system</span>
+                <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">resid</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">8</span> <span class="ow">or</span> <span class="n">atom</span><span class="o">.</span><span class="n">number</span><span class="o">+</span><span class="mi">1</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">10</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Sorry, too many atoms (</span><span class="si">%d</span><span class="s">) or resids (</span><span class="si">%d</span><span class="s">) for the standard &quot;</span>
+                                              <span class="s">&quot;PSF format. File a bug at http://github.com/orbeckst/hop/issues&quot;</span>
+                                              <span class="o">%</span> <span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">number</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">atom</span><span class="o">.</span><span class="n">resid</span><span class="p">))</span>
+            <span class="c"># ignore all the other sections (enough for MDAnalysis, VMD, and me)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">psf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="HoppingTrajectory.map_dcd"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.HoppingTrajectory.map_dcd">[docs]</a>    <span class="k">def</span> <span class="nf">map_dcd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">skip</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator to read the trajectory from start to stop and map</span>
+<span class="sd">        positions to sites.</span>
+
+<span class="sd">        ts = map_dcd(**kwargs)</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">        start        starting frame number (None means first)</span>
+<span class="sd">        stop         last frame to read (exclusive) (None means last)</span>
+<span class="sd">                     (Those are arguments to dcd[start:stop].)</span>
+<span class="sd">        Iterator Returns:</span>
+<span class="sd">        ts           hopping trajectory timestep object (iterator)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># note: iterator + loop is slower than direct loop so I may</span>
+        <span class="c"># implement other functions directly with loops and leave the</span>
+        <span class="c"># iterator for the user</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span><span class="s">&#39;start/stop do not work on big trajectories&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_coord2hop</span><span class="p">()</span>
+        <span class="c">#for traj_ts in self.traj[start:stop]:</span>
+        <span class="k">for</span> <span class="n">traj_ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">:</span>              <span class="c"># no slicing for big trajectories</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2hop</span><span class="p">(</span><span class="n">traj_ts</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_init_coord2hop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Allocate helper arrays for _coord2hop()&quot;&quot;&quot;</span>
+        <span class="c"># initialization with &#39;interstitial&#39; is CRUCIAL: throws away first frame</span>
+        <span class="c"># and makes sure that we don&#39;t keep spurious sites from 1st frame around</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sites_last</span> <span class="o">=</span> <span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;interstitial&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">numberOfAtoms</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">numberOfAtoms</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_coord2hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate a single trajectory coordinate frame into a hopping</span>
+<span class="sd">        trajectory frame and updates the hopping trajectory frame.</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">          ts</span>
+<span class="sd">             :class:`~MDAnalysis.coordinates.base.Timestep` time step object (input coordinate data)</span>
+
+<span class="sd">        :Returns:  hopping ts; Timestep object for the _selected_ atoms with (x=sites y=orbit site z=0)</span>
+<span class="sd">                   (also updates self.ts so that the HoppingTrajectory instance is uptodate.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">frame</span>   <span class="c"># update the hopping time step</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">coordinates</span><span class="p">())</span>
+        <span class="n">N</span><span class="p">,</span><span class="n">D</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c"># Basic nD histograming code from numpy.histogramdd:</span>
+        <span class="c">#</span>
+        <span class="c"># digitize returns i such that bins[i-1] &lt;= x &lt; bins[i]</span>
+        <span class="c"># outliers: i=0 or i=len(bins).</span>
+        <span class="c">#</span>
+        <span class="c"># indices[] are NOT map[] indices: to remove the two outlier</span>
+        <span class="c"># bins (in the logic of digitize()) we would have to subtract</span>
+        <span class="c"># 1 later and also remove indices belonging to outliers. We</span>
+        <span class="c"># cheat and add outlier bins to the map (buffered_map[]) and</span>
+        <span class="c"># simply label outliers in the trajectory.</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">D</span><span class="p">)]</span>
+
+        <span class="c"># Using digitize, values that fall on an edge are put in the right bin.</span>
+        <span class="c"># For the rightmost bin, we want values equal to the right</span>
+        <span class="c"># edge to be counted in the last bin, and not as an outlier.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">D</span><span class="p">):</span>
+            <span class="c"># Rounding precision</span>
+            <span class="n">decimal</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dedges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span> <span class="o">+</span><span class="mi">6</span>
+            <span class="c"># Find which points are on the rightmost edge.</span>
+            <span class="n">on_edge</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span> <span class="n">decimal</span><span class="p">)</span> <span class="o">==</span> \
+                <span class="n">numpy</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">decimal</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c"># Shift these points one bin to the left.</span>
+            <span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">on_edge</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="c"># indices contains the outliers at index 0 and len(edges[i])</span>
+        <span class="c"># To make things simpler, we expand the map with a outlier zone,</span>
+        <span class="c"># label outliers with -1 and then index into the buffered_map</span>
+
+        <span class="c"># fill the core of the buffered map</span>
+        <span class="n">core</span> <span class="o">=</span> <span class="n">D</span><span class="o">*</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffered_map</span><span class="p">[</span><span class="n">core</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span>          <span class="c"># not very expensive</span>
+
+        <span class="c"># Note that now indices[m] corresponds to group[m]</span>
+        <span class="c"># (It&#39;s important that the order is preserved)</span>
+        <span class="c"># The group is not needed right now, though.</span>
+        <span class="c">#</span>
+        <span class="c"># pos[:,0] = site(t), pos[:,1] = orbit site, pos[:,2] = 0 (unused)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">_pos</span>     <span class="c"># assign slices to avoid loop (thanks to Naveen)</span>
+        <span class="n">pos</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">buffered_map</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">iatom</span><span class="p">],</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">iatom</span><span class="p">],</span><span class="n">indices</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">iatom</span><span class="p">]]</span> \
+                    <span class="k">for</span> <span class="n">iatom</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsites</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;interstitial&#39;</span><span class="p">])</span> <span class="o">|</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;outlier&#39;</span><span class="p">])</span>
+        <span class="n">pos</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>      <span class="c"># particles in interstital and outliers are assigned their previous site</span>
+        <span class="n">pos</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsites</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sites_last</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsites</span><span class="p">]</span>
+        <span class="n">pos</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># _sites_last[] was initialized to &#39;interstitial&#39;: this ensures proper accounting</span>
+        <span class="c"># for all later steps (because &#39;interstitial&#39; is thrown away at the analysis stage)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sites_last</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>  <span class="c"># save orbit sites for next step</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts</span>
+
+    <span class="k">def</span> <span class="nf">iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoptraj</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">ts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_coord2hop</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">traj_ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2hop</span><span class="p">(</span><span class="n">traj_ts</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TAPtrajectory"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.TAPtrajectory">[docs]</a><span class="k">class</span> <span class="nc">TAPtrajectory</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides a Time-Averaged Position (TAP) version of the input trajectory.</span>
+
+<span class="sd">    The method is described in Henchman and McCammon, J Comp Chem 23</span>
+<span class="sd">    (2002), 861 doi:10.1002/jcc.10074</span>
+
+<span class="sd">    :Attributes:</span>
+<span class="sd">    ts               MDAnalysis.Timestep object</span>
+<span class="sd">    numframes        number of frames in TAP trajectory</span>
+<span class="sd">    group            AtomGroup of atoms that are tracked</span>
+
+
+<span class="sd">    :Methods:</span>
+
+<span class="sd">    ## [start:stop]         object can be used as an iterator over the</span>
+<span class="sd">    ##                      hopping trajectory (disabled due to dcdreader bug)</span>
+<span class="sd">    next()      advances time step in the hopping trajectory</span>
+<span class="sd">    map_dcd()            iterator that updates the ts and maps the trajectory</span>
+<span class="sd">                         coordinates to site labels</span>
+<span class="sd">    _map_next_timestep()  map next coordinate trajectory step to hopping time step</span>
+<span class="sd">    _read_next_timestep() read next timestep from hopping trajectory</span>
+
+<span class="sd">    write()              write the hopping trajectory to a dcd file + psf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">trajectory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">TAPradius</span><span class="o">=</span><span class="mf">2.8</span><span class="p">,</span><span class="n">TAPsteps</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                 <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">dcd</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">psf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fixtrajectory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A TAP trajectory object converts a trajectory into a TAP trajectory.</span>
+
+<span class="sd">        Create from a coordinate trajectory of a group of water residues:</span>
+
+<span class="sd">          u = MDAnalysis.Universe(psf,dcd)</span>
+<span class="sd">          water = u.selectAtoms(&#39;resname TIP*&#39;)  # see NOTE below!!</span>
+<span class="sd">          water = u.selectAtoms(&#39;name OH2&#39;)      # better, see NOTE below!!</span>
+<span class="sd">          h = TAPtrajectory(trajectory=u.trajectory,group=water)</span>
+
+<span class="sd">        Load from a saved hopping trajectory (in dcd format with dummy psf)</span>
+
+<span class="sd">          h = TAPtrajectory(dcd=&#39;TAP.trajectory&#39;,psf=&#39;TAP.psf&#39;)</span>
+
+<span class="sd">        The given atom group is filtered according to the Time-Averaged Positon</span>
+<span class="sd">        algorithm (Henchman and McCammon, J Comp Chem 23 (2002), 861). Original</span>
+<span class="sd">        positions are replaced by their TAPs: A particles last position (TAP)</span>
+<span class="sd">        is retained unless it has moved farther than TAPradius from its TAP</span>
+<span class="sd">        measured by its root mean square distance over the last TAPsteps</span>
+<span class="sd">        frames.</span>
+
+<span class="sd">        One can use a TAP filtered trajectory &#39;on-the-fly&#39; to build the density:</span>
+
+<span class="sd">          u = Universe(psf,dcd)</span>
+<span class="sd">          oxy = u.selectAtoms(&#39;name OH2&#39;)</span>
+<span class="sd">          TAP = TAPtrajectory(u.trajectory,oxy)</span>
+<span class="sd">          u.trajectory = TAP.trajectory    # &lt;--- replace orig dcd with TAP !!</span>
+<span class="sd">          dens = hop.sitemap.density_from_Universe(u,atomselection=&#39;name OH2&#39;)</span>
+
+<span class="sd">        NOTE: In the current implementation residues are often ripped apart</span>
+<span class="sd">        because all coordinates are processed independently. It is recommended</span>
+<span class="sd">        to only do TAP on the water oxygens (for speed). This will create a</span>
+<span class="sd">        trajectory in which hydrogens are always ripped from the oxygen but</span>
+<span class="sd">        this trajectory is ONLY being used for creating a density from those</span>
+<span class="sd">        oxygen using hop.sitemap.build_density().</span>
+
+<span class="sd">        (This could be fixed at the cost of speed; in this case TAP would be done</span>
+<span class="sd">        on the centre of mass and the whole residue would be translated.)</span>
+
+<span class="sd">        :Arguments:</span>
+
+<span class="sd">        trajectory       MDAnalysis.trajectory trajectory instance</span>
+<span class="sd">        group            MDAnalysis.group instance (from the same Universe as trajectory)</span>
+<span class="sd">        TAPradius        particles are considered to be on the TAP as long as they</span>
+<span class="sd">                         haven&#39;t moved farther than TAPradius over the last TAPsteps frames</span>
+<span class="sd">        TAPsteps         RMS distance of particle from TAP over TAPsteps is compared</span>
+<span class="sd">                         to TAPradius</span>
+<span class="sd">        dcd              dcd written by write()</span>
+<span class="sd">        psf              psf written by write() (or write_psf())</span>
+<span class="sd">        filename         or simply provide one filename prefix for psf and dcd</span>
+
+<span class="sd">        fixtrajectory    dictionary with attributes of a dcd object and new</span>
+<span class="sd">                         values; used to provide correct values after using</span>
+<span class="sd">                         a catdcd-generated trajectory (hack!), e.g.</span>
+<span class="sd">                         fixtrajectory = {&#39;delta&#39;:10.22741474887299}</span>
+
+<span class="sd">        verbosity        show status messages for &gt;= 3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbosity</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">trajectory</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traj</span>  <span class="o">=</span> <span class="n">trajectory</span>                      <span class="c"># MDAnalysis.Universe.trajectory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span> <span class="o">=</span> <span class="n">group</span>                          <span class="c"># atom selection for trajectory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tgroup_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">indices</span><span class="p">()</span>  <span class="c"># cache indices</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="p">,</span><span class="n">MDAnalysis</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">AtomGroup</span><span class="o">.</span><span class="n">AtomGroup</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;group must be a &lt;AtomGroup&gt;, eg MDAnalyis.Universe.selectAtoms().&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">universe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">universe</span>  <span class="c"># Universe of dcd and group (hackish..)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fixtrajectory</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">attr</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">fixtrajectory</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span><span class="n">attr</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;fixtrajectory: dcd object does not have attribute &quot;&#39;</span>\
+                                             <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+                    <span class="n">trajectory</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totaltime</span> <span class="o">=</span> <span class="n">totaltime</span><span class="p">(</span><span class="n">trajectory</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">rewind</span><span class="p">()</span>             <span class="c"># make sure to start from frame 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">ts</span>         <span class="c"># output will look like input (no copy, see _coord2TAP!)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span> <span class="o">=</span> <span class="bp">None</span>            <span class="c"># no TAP trajectory available</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPradius</span> <span class="o">=</span> <span class="n">TAPradius</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPsteps</span> <span class="o">=</span> <span class="n">TAPsteps</span>
+            <span class="c"># store last TAPsteps in __lastframes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__lastframes</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">Ringbuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAPsteps</span><span class="p">)</span>
+            <span class="c"># store the last TAP coordinates: initialized here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__currentTAP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c"># fake DCD object that can be slotted into another universe</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dcd_attributes</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dcdfilename&#39;</span><span class="p">,</span><span class="s">&#39;delta&#39;</span><span class="p">,</span><span class="s">&#39;filename&#39;</span><span class="p">,</span><span class="s">&#39;fixed&#39;</span><span class="p">,</span><span class="s">&#39;numframes&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;numatoms&#39;</span><span class="p">,</span><span class="s">&#39;periodic&#39;</span><span class="p">,</span><span class="s">&#39;remarks&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;skip&#39;</span><span class="p">,</span><span class="s">&#39;skip_timestep&#39;</span><span class="p">,</span><span class="s">&#39;start_timestep&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dcd_attributes</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span> <span class="o">=</span> <span class="n">ThinDCDReader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcd_attributes</span><span class="p">[</span><span class="s">&#39;numframes&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="n">dcd</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">psf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># read from dcd</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">psf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;psf&#39;</span><span class="p">)</span>
+                <span class="n">dcd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;dcd&#39;</span><span class="p">)</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span><span class="n">dcd</span><span class="p">)</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">selectAtoms</span><span class="p">(</span><span class="s">&#39;type *&#39;</span><span class="p">)</span>   <span class="c"># TODO: why do I need this?</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>      <span class="c"># group that refers to hopping trajectory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">trajectory</span>    <span class="c"># DCD trajectory object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="o">.</span><span class="n">ts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="o">.</span><span class="n">numframes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totaltime</span> <span class="o">=</span> <span class="n">totaltime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="p">)</span>
+            <span class="c"># DCD object that can be slotted into another universe</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">trajectory</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Not sufficient data to create a TAP trajectory.&#39;</span><span class="p">)</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">filename_function</span>
+
+<div class="viewcode-block" id="TAPtrajectory.next"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.TAPtrajectory.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Provides the next time step of a TAP trajectory.</span>
+
+<span class="sd">        ts = next()</span>
+
+<span class="sd">        If a TAP trajectory file exists then this is used. Otherwise,</span>
+<span class="sd">        the coordinate trajectory is mapped on the fly (which is</span>
+<span class="sd">        computationally more expensive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="p">:</span>
+            <span class="n">nextTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_next_timestep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nextTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_next_timestep</span>
+        <span class="k">return</span> <span class="n">nextTS</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">rewind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="o">.</span><span class="n">rewind</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">rewind</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_map_next_timestep</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next timestep from coordinate trajectory and set up the</span>
+<span class="sd">        TAP trajectory time step</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2TAP</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">next</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_read_next_timestep</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next time step from a TAP trajectory on disk&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TAPtrajectory.write"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.TAPtrajectory.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">load</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write hopping trajectory as standard dcd file.</span>
+
+<span class="sd">        write(&#39;TAP&#39;)</span>
+
+<span class="sd">        :Arguments:</span>
+
+<span class="sd">        load = True     Immediately loads the trajectory so that further</span>
+<span class="sd">                        calls to next() will use the computed</span>
+<span class="sd">                        trajectory and don&#39;t use expensive mapping.</span>
+
+<span class="sd">        Ignore the other options and leave them at the defaults. Currently,</span>
+<span class="sd">        only the whole trajectory is written. All atoms in the original</span>
+<span class="sd">        trajectory are written to the output so you should be able to use your</span>
+<span class="sd">        original psf file.</span>
+
+<span class="sd">        NOTE: Fixed atoms are possibly not accounted for properly.</span>
+
+<span class="sd">        Note that it is your responsibility to load the TAP trajectory and the</span>
+<span class="sd">        appropriate psf together as there is very limited information stored in</span>
+<span class="sd">        the dcd itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>  <span class="c"># this is stupid</span>
+
+        <span class="n">psfname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;psf&#39;</span><span class="p">)</span>
+        <span class="n">dcdname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;dcd&#39;</span><span class="p">)</span>
+
+        <span class="c"># see MDAnalysis/src/dcd/dcd.c for explanations</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">start_timestep</span> <span class="c"># starting time step for DCD file</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">skip_timestep</span>   <span class="c"># NSAVC (# ts between written DCD frames)</span>
+        <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">delta</span>          <span class="c"># length of ts (AKMA units)</span>
+
+        <span class="n">dcdwriter</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">DCD</span><span class="o">.</span><span class="n">DCDWriter</span><span class="p">(</span><span class="n">dcdname</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">numatoms</span><span class="p">,</span>
+                                             <span class="n">start</span><span class="p">,</span><span class="n">step</span><span class="p">,</span><span class="n">delta</span><span class="p">,</span>
+                                             <span class="n">remarks</span><span class="o">=</span><span class="s">&#39;TAP trajectory&#39;</span><span class="p">)</span>
+        <span class="n">pm</span> <span class="o">=</span> <span class="n">ProgressMeter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numframes</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                           <span class="n">format</span><span class="o">=</span><span class="s">&quot;Mapping TAP frame </span><span class="si">%(step)5d</span><span class="s">/</span><span class="si">%(numsteps)6d</span><span class="s">  [</span><span class="si">%(percentage)5.1f%%</span><span class="s">]</span><span class="se">\r</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_dcd</span><span class="p">():</span>
+            <span class="n">dcdwriter</span><span class="o">.</span><span class="n">write_next_timestep</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+            <span class="n">pm</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">frame</span><span class="p">)</span>
+        <span class="n">dcdwriter</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;TAPTrajectory.write(): wrote TAP traj </span><span class="si">%r</span><span class="s">.&quot;</span><span class="p">,</span> <span class="n">dcdname</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">load</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span> <span class="o">=</span> <span class="n">MDAnalysis</span><span class="o">.</span><span class="n">DCD</span><span class="o">.</span><span class="n">DCDReader</span><span class="p">(</span><span class="n">dcdname</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span>
+</div>
+<div class="viewcode-block" id="TAPtrajectory.map_dcd"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.TAPtrajectory.map_dcd">[docs]</a>    <span class="k">def</span> <span class="nf">map_dcd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">skip</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator to read the trajectory from start to stop and map</span>
+<span class="sd">        positions to TAP sites.</span>
+
+<span class="sd">        ts = map_dcd(**kwargs)</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">        start        starting frame number (None means first)</span>
+<span class="sd">        stop         last frame to read (exclusive) (None means last)</span>
+<span class="sd">                     (Those are arguments to dcd[start:stop].)</span>
+<span class="sd">        Iterator Returns:</span>
+<span class="sd">        ts           hopping trajectory timestep object (iterator)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># note: iterator + loop is slower than direct loop so I may</span>
+        <span class="c"># implement other functions directly with loops and leave the</span>
+        <span class="c"># iterator for the user</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span><span class="s">&#39;start/stop do not work on big trajectories&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numframes</span>
+
+        <span class="c">#for traj_ts in self.traj[start:stop]:</span>
+        <span class="k">for</span> <span class="n">traj_ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">:</span>              <span class="c"># no slicing for big trajectories(ERRORS!)</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2TAP</span><span class="p">(</span><span class="n">traj_ts</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_coord2TAP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate a single trajectory coordinate frame into a TAP</span>
+<span class="sd">        trajectory frame and update the TAP trajectory frame.</span>
+
+<span class="sd">        ts        MDAnalysis.trajectory.ts  time step object</span>
+
+<span class="sd">        Only the selection&#39;s coordinates are TAP-filtered.</span>
+<span class="sd">        :Returns:</span>
+
+<span class="sd">        hopping  ts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Modify the original frame in place and use it as the new frame. This</span>
+        <span class="c"># should work in most instances unless one wants to immediately compare old</span>
+        <span class="c"># and new frame.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">ts</span>          <span class="c"># update the TAP time step</span>
+
+        <span class="c"># only work on the selected coordinates (memory efficiency but</span>
+        <span class="c"># slower??)  (I didn&#39;t manage to always work on a reference to the</span>
+        <span class="c"># coords; this would avoid having to patch back the altered coordinates</span>
+        <span class="c"># into the whole coord set, see below.)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgroup</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>      <span class="c"># makes a new copy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__lastframes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span> <span class="c"># remember last TAPsteps frames</span>
+
+        <span class="c"># calculated RMS distance for last TAPsteps from current TAP for all coords</span>
+        <span class="c"># (current coords are part of the running average over __lastframes)</span>
+        <span class="c"># __currentTAP is initialized in __init__ to the first frame</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__lastframes</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">__currentTAP</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">onTAP</span> <span class="o">=</span> <span class="p">(</span><span class="n">d</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPradius</span><span class="p">)</span>              <span class="c"># particles that did not move far</span>
+        <span class="n">coords</span><span class="p">[</span><span class="n">onTAP</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__currentTAP</span><span class="p">[</span><span class="n">onTAP</span><span class="p">]</span>   <span class="c"># reset to TAP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__currentTAP</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">coords</span>              <span class="c"># remember TAP for next frame</span>
+        <span class="c"># patch  selected coordinates back into full coordinate set</span>
+        <span class="c">#    u.trajectory.ts._pos[w.indices()] = new_coord_array    # WORKS (no copy)</span>
+        <span class="c">#    x = u.trajectory.ts._pos[w.indices()]                  # FAILS (copy involved)</span>
+        <span class="c">#    x[:] = new_coord_array[:]                       #</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tgroup_indices</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__currentTAP</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts</span>
+
+    <span class="k">def</span> <span class="nf">iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAPtraj</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">ts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">traj_ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord2TAP</span><span class="p">(</span><span class="n">traj_ts</span><span class="p">)</span>
+
+
+
+
+
+<span class="c"># move to MDAnalysis &amp; make it work with 0.6.2</span></div>
+<div class="viewcode-block" id="ThinDCDReader"><a class="viewcode-back" href="../../hop/trajectory.html#hop.trajectory.ThinDCDReader">[docs]</a><span class="k">class</span> <span class="nc">ThinDCDReader</span><span class="p">(</span><span class="n">MDAnalysis</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">DCD</span><span class="o">.</span><span class="n">DCDReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;DCD-like object that supports a subsection of the DCDReader</span>
+<span class="sd">    interface such as iteration over frames and most attributes. The</span>
+<span class="sd">    important part is that the __iter__() method is overriden to</span>
+<span class="sd">    provide data from another source. This allows a filter architecture</span>
+<span class="sd">    for trajectories.&quot;&quot;&quot;</span>
+    <span class="c"># Right now specifically designed for TAPtrajectory class.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">datafeeder</span><span class="p">):</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">datafeeder</span>
+        <span class="c"># should have as attributes:</span>
+        <span class="c"># [&#39;dcdfilename&#39;,&#39;delta&#39;,&#39;filename&#39;,&#39;fixed&#39;,&#39;numframes&#39;, &#39;numatoms&#39;,&#39;periodic&#39;,</span>
+        <span class="c">#  &#39;remarks&#39;, &#39;skip&#39;,&#39;skip_timestep&#39;,&#39;start_timestep&#39;]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">dcd_attributes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dcdfile</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># no file is linked; with None, __del__ will be happy</span>
+        <span class="c"># use the classes/methods from the feeder class:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">ts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__iter__</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">__iter__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">next</span>  <span class="c"># feeder needs next()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rewind</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">rewind</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">frame</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Slow sequential &#39;read forward&#39; implementation.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ts</span><span class="o">.</span><span class="n">frame</span> <span class="o">==</span> <span class="n">frame</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>  <span class="c"># frames are 1-based</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">ts</span>
+    <span class="k">def</span> <span class="nf">timeseries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">correl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">close_trajectory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

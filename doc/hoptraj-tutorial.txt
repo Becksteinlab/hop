@@ -1,0 +1,33 @@
+To take your newly minted density and extract from him a trajectory, do as follows:
+
+1. The functionality of the module MDAnalysis is used to generate this trajectory. 
+
+Everything it does is referred to a universe, so you need to tell it what that universe is, 
+using the following command:
+
+u = MDAnalysis.Universe(topology, traj)
+
+Next you'll need to specify the names of your water molecules, which vary from forcefield to forcefield. 
+
+The following command identifies a group of atoms, which can then be manipulated by MDAnalysis, in this case water:
+
+group = u.selectAtoms("name water")
+
+You will need to use whatever name your forcefield uses for water, such as "name OW" or some such.
+
+Now that this is done, you can call the function which creates the trajectory. 
+
+You'll have to store the trajectory in a variable so you can manipulate it in ipython:
+
+hops = hop.trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
+
+This requires the density you generated previously. 
+
+**hopargs is a catch all allowing you to pass additional parameters, and can be neglected by all but advanced users.
+
+All you have is a trajectory stored in a variable. You will need to write it to a file for permanent storage:
+
+hops.write(filename)
+
+Enter the filename with single or double quotes as desired, and you're finished.
+

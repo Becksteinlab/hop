@@ -1,0 +1,809 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hop.MCMC &mdash; Hop 0.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Hop 0.3.3 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hop.MCMC</h1><div class="highlight"><pre>
+<span class="c"># $Id$</span>
+<span class="c"># Hop --- a framework to analyze solvation dynamics from MD simulations</span>
+<span class="c"># Copyright (c) 2009 Oliver Beckstein &lt;orbeckst@gmail.com&gt;</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;Markov Chain Monte Carlo on hopping graph.</span>
+
+<span class="sd">The hop.MCMC module uses the information encoded in a hopping graph to set up a</span>
+<span class="sd">Markov Chain Monte Carlo sampling procedure that allows one to rapidly generate</span>
+<span class="sd">site occupancy distributions that are distributed in the same way as the one</span>
+<span class="sd">sampled from MD.</span>
+
+<span class="sd">The most convenient entry point is the  function</span>
+
+<span class="sd">  M = MCMC.run(filename=&#39;hopgraph.pickle&#39;,Ntotal=&lt;int&gt;)</span>
+
+<span class="sd">It takes as input a stored hopgraph and immediately runs an MCMC run of Ntotal</span>
+<span class="sd">steps. The output is a MCMCsampler object. It contains the &#39;trajectory&#39; and</span>
+<span class="sd">useful analysis functions. (Use interactive introspection in ipython to explore</span>
+<span class="sd">the possibilities of the object.)</span>
+
+<span class="sd">Notes on the algorithm:</span>
+
+<span class="sd">* some sort of dynamic lattice Monte Carlo with very simple acceptance</span>
+<span class="sd">  probabilities (0 or 1, if there&#39;s no space on the site, and 1 if</span>
+<span class="sd">  there is)</span>
+
+<span class="sd">  ... is &#39;MCMC&#39; actually the proper description?</span>
+
+<span class="sd">* Extension to multiply occupied sites: use the site occupancy</span>
+<span class="sd">  distributions from siteanalysis, and replace the unconditional move</span>
+<span class="sd">  by an acceptance probability == s_i(n)</span>
+
+<span class="sd">* I am currently using time-forward (out-of) and time-backward (into)</span>
+<span class="sd">  site moves (the latter inspired by coupling from the past).</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">hop.graph</span>
+<span class="kn">from</span> <span class="nn">hop.constants</span> <span class="kn">import</span> <span class="n">SITELABEL</span>
+<span class="kn">import</span> <span class="nn">hop.utilities</span>
+<span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="n">msg</span><span class="p">,</span><span class="n">set_verbosity</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="n">Nequil_default</span> <span class="o">=</span> <span class="mi">10000</span>
+
+<div class="viewcode-block" id="MCMCsampler"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler">[docs]</a><span class="k">class</span> <span class="nc">MCMCsampler</span><span class="p">(</span><span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">Saveable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate an equilibrium distribution of states from a hop graph.&quot;&quot;&quot;</span>
+
+    <span class="n">_saved_attributes</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">min_hops_observed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Markov Chain Monte Carlo sample with a HoppingGraph.</span>
+
+<span class="sd">        M = MCMCsampler(HoppingGraph)</span>
+
+<span class="sd">        Build a Markov Chain model from a &lt;HoppingGraph&gt; (with edges deleted</span>
+<span class="sd">        that have less than &lt;min_hops_observed&gt; hops).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># standard init: setup everything from hopgraph</span>
+            <span class="kn">import</span> <span class="nn">copy</span>
+            <span class="c"># 1) compute transition probabilities between all nodes.</span>
+            <span class="c">#    represent T_ji (j--&gt;i) as a sparse matrix in dict of dict format        </span>
+            <span class="n">h</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Nmin&#39;</span><span class="p">:</span><span class="n">min_hops_observed</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">select_graph</span><span class="p">(</span><span class="n">use_filtered_graph</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">site_properties</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">site_properties</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">adj</span>   <span class="c"># adjacency matrix as dict-of-dicts; A[i][j] == j --&gt; i !!</span>
+            <span class="n">Nsites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span><span class="o">+</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Nsites</span><span class="p">,</span><span class="n">Nsites</span><span class="p">))</span>   <span class="c"># exit probabilities  T[j,i] = P(i -&gt; j|i)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Nsites</span><span class="p">,</span><span class="n">Nsites</span><span class="p">))</span>   <span class="c"># entry probabilities R[i,j] = P(j -&gt; i|i?) (?)</span>
+            <span class="c"># may look into sparse matrices... </span>
+
+            <span class="c"># fast lookup of neighbours</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">out_edges</span><span class="p">(</span><span class="n">i</span><span class="p">)]))</span> 
+                                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span>  <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">in_edges</span><span class="p">(</span><span class="n">i</span><span class="p">)]))</span>
+                                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span> <span class="p">)</span>
+
+            <span class="c"># probably slow but simple ... actually, fast enough so that I don&#39;t care</span>
+            <span class="c"># format of a edge in the graph:</span>
+            <span class="c"># i : { j1: {&#39;k&#39;:k, &#39;N&#39;:N, &#39;fit&#39;:fit_instance}, j2: {...}, ...}</span>
+            <span class="c"># i : {</span>
+            <span class="c"># {1: {&#39;k&#39;:0.100953823261, &#39;N&#39;:32, &#39;fit&#39;:&lt;fitExp2[ 0.95889814  0.10095382  0.00467457]&gt;}},</span>
+            <span class="c"># {12: {&#39;k&#39;:0.00272870618459, &#39;N&#39;:1, &#39;fit&#39;:&lt;fitExp [0.00272870618459]&gt;}}</span>
+            <span class="c"># }</span>
+
+            <span class="c"># probability to exit i to j = k(i-&gt;j)/Z with Z = Sum_l k(i--&gt;l)</span>
+            <span class="c"># or                           N_ji/Z&#39; with Z&#39; = Sum_l N_li</span>
+            <span class="c"># probability to enter i from j:</span>
+            <span class="c">#                              N_ij/Y with Y = Sum_l N_il</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="n">Nout</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="p">[</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="s">&#39;N&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="p">)</span>  <span class="c"># total exiting from i</span>
+                <span class="n">Nin</span>  <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="p">[</span><span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;N&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="p">)</span>   <span class="c"># total entering into i</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="s">&#39;N&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">Nout</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;N&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">Nin</span>
+
+            <span class="c"># cumulative prob. distrib. of exit nodes (could sort by decreasing</span>
+            <span class="c"># probability to optimize for more probable hits but then must sort</span>
+            <span class="c"># nodes as well)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exit_cdf</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">i</span><span class="p">]))</span> 
+                                   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">]</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entry_cdf</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]]))</span> 
+                                   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">]</span> <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_state</span><span class="p">()</span>
+
+            <span class="c"># obtain maxsite from volume of the site (assume waters are hard spheres)</span>
+            <span class="c"># max_occupancy = volume_site/volume_water + 1</span>
+            <span class="n">v_water</span> <span class="o">=</span> <span class="mf">4.</span><span class="o">/</span><span class="mf">3.</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hop</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">r_water</span><span class="o">**</span><span class="mi">3</span>
+            <span class="k">def</span> <span class="nf">max_occupancy</span><span class="p">(</span><span class="n">sitelabel</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">site_properties</span><span class="o">.</span><span class="n">volume</span><span class="p">[</span><span class="n">sitelabel</span><span class="p">]</span><span class="o">/</span><span class="n">v_water</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="n">max_occupancy</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">]</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e10</span><span class="p">)</span>   <span class="c"># no restrictions on bulk</span>
+
+            <span class="c"># Site probability p_i: probability to find site occupied by at least one particle.</span>
+            <span class="c"># p(i) = P(nu_i &gt;= 1) = 1 - P(nu_i = 0)</span>
+            <span class="c"># For max nu_i = 1: p(i) = &lt;nu_i&gt;/max nu_i</span>
+            <span class="c"># For max nu_i &gt; 1: worry about it later...</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">siteprobability</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">site_properties</span><span class="o">.</span><span class="n">occupancy_avg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> 
+                                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">]</span> <span class="p">)</span>
+            <span class="c"># Set bulk to a random value such as 1/2; it is not being used.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">siteprobability</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="k">elif</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># setup from pickled file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Either a hopgraph or a pickled file is needed.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MCMCsampler.init_state"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Nbulk</span><span class="o">=</span><span class="mf">1e4</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize state with 1 particle per standard site and Nbulk for the bulk site.&quot;&quot;&quot;</span>
+        <span class="c"># 2) initialize state vector</span>
+        <span class="c">#    (many on bulk and 1 on proper sites)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Nbulk</span><span class="p">)</span>       <span class="c"># large bulk reservoir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>                    <span class="c"># hold &#39;trajectory&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>                               <span class="c"># number of iterations up to/incl states[-1]</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.sample"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span><span class="n">record_iterations</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run &lt;max_iter&gt; Monte Carlo site moves. </span>
+
+<span class="sd">        sample(max_iter=10000)</span>
+
+<span class="sd">        Runs a batch of MCMC moves.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># 3) MCMC sampler</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="n">Nsites</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">Nsites</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_MCMCmove</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record_iterations</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">+=</span> <span class="n">max_iter</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.run"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Ntotal</span><span class="o">=</span><span class="mi">500000</span><span class="p">,</span><span class="n">Nskip</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;MCMC run multiple cycles of lebgth &lt;Nskip&gt; scans for a total of &lt;Ntotal&gt;.</span>
+
+<span class="sd">        run(Ntotal=500000,Nskip=1000)</span>
+
+<span class="sd">        Starts from the current configuration in state.</span>
+<span class="sd">        Creates the collection of configurations states: one state every Nskip steps</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_verbosity</span><span class="p">(</span><span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="n">Ntotal</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Ntotal</span><span class="p">)</span>
+        <span class="n">Nskip</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Nskip</span><span class="p">)</span>
+        <span class="n">Ncycle</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Ntotal</span><span class="o">/</span><span class="n">Nskip</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">runparameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Ntotal&#39;</span><span class="p">:</span><span class="n">Ntotal</span><span class="p">,</span><span class="s">&#39;Nskip&#39;</span><span class="p">:</span><span class="n">Nskip</span><span class="p">,</span><span class="s">&#39;Ncycle&#39;</span><span class="p">:</span><span class="n">Ncycle</span><span class="p">}</span>
+        <span class="n">state_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;Running MCMC:</span><span class="se">\n\t</span><span class="s">Ntotal = </span><span class="si">%(Ntotal)d</span><span class="se">\n\t</span><span class="s">Saving state every cycle of Nskip steps = </span><span class="si">%(Nskip)d</span><span class="se">\n\t</span><span class="s">&quot;</span>
+            <span class="s">&quot;Hence in total Ncycle cycles = </span><span class="si">%(Ncycle)d</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">Ncycle</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;cycle </span><span class="si">%(i)4d</span><span class="s">/</span><span class="si">%(Ncycle)4d</span><span class="se">\r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">Nskip</span><span class="p">)</span>
+            <span class="n">state_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">)</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">state_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s">&quot;Extending states from </span><span class="si">%d</span><span class="s"> configurations by </span><span class="si">%d</span><span class="s"> new ones.&quot;</span> \
+                    <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_list</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">state_list</span><span class="p">)))</span>
+</div>
+    <span class="k">def</span> <span class="nf">_MCMCmove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">siteprobability</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="c"># try entry move (add one particle to site)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="c"># only transfer if there&#39;s space on node</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="n">jnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>       <span class="c"># all entry nodes</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">jnodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>                 <span class="c"># isolated node  </span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>        <span class="c"># random number for deciding exit channel</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">jnodes</span><span class="p">[</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_cdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c"># j for which p(j-1) &lt; x &lt;= p(j) (&#39;=&#39; necessary to catch x==1)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>       <span class="c"># no particles to transfer from source site</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># try exit move (remove one particle from site)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>                     <span class="c"># no water to move</span>
+            <span class="n">jnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>      <span class="c"># all exit nodes</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">jnodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>                 <span class="c"># isolated node  </span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>        <span class="c"># random number for deciding exit channel</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">jnodes</span><span class="p">[</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_cdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c"># first jnode for which x &gt; prob (&#39;=&#39; necessary to catch x==1)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span> <span class="c"># only transfer if there&#39;s space on node</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+<div class="viewcode-block" id="MCMCsampler.occupancy"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.occupancy">[docs]</a>    <span class="k">def</span> <span class="nf">occupancy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Ensemble averaged occupancy (over ALL states incl bulk) and fluctuation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.mean"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mean for each site (excl bulk).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">firstsiteindex</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.std"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.std">[docs]</a>    <span class="k">def</span> <span class="nf">std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Standard deviation for each site.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">firstsiteindex</span><span class="p">:]</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.mean_std"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.mean_std">[docs]</a>    <span class="k">def</span> <span class="nf">mean_std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Returns site labels, mean, and standard deviation for each site (excl bulk).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">firstsiteindex</span><span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.firstsiteindex"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.firstsiteindex">[docs]</a>    <span class="k">def</span> <span class="nf">firstsiteindex</span><span class="p">():</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;State array index of the first site after bulk.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">fget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2index</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">locals</span><span class="p">()</span></div>
+    <span class="n">firstsiteindex</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">firstsiteindex</span><span class="p">())</span>
+    
+<div class="viewcode-block" id="MCMCsampler.statevector"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.statevector">[docs]</a>    <span class="k">def</span> <span class="nf">statevector</span><span class="p">():</span>
+        <span class="n">doc</span> <span class="o">=</span>  <span class="s">&quot;&quot;&quot;State as a numpy array; the corresponding nodes are state.keys()&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">fget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">def</span> <span class="nf">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;statevector cannot be assigned; modify state.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">locals</span><span class="p">()</span></div>
+    <span class="n">statevector</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">statevector</span><span class="p">())</span>
+
+<div class="viewcode-block" id="MCMCsampler.node2index"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.node2index">[docs]</a>    <span class="k">def</span> <span class="nf">node2index</span><span class="p">():</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;Translates node label (in graph) to the sequential array index.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">fget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c"># NOTE: if self.graph is changed manually then this will be wrong</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__node2index</span>  <span class="c"># use cached dictionary</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__node2index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">n</span><span class="p">,</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())]</span> <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__node2index</span>
+        <span class="k">return</span> <span class="nb">locals</span><span class="p">()</span></div>
+    <span class="n">node2index</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">node2index</span><span class="p">())</span>
+
+<div class="viewcode-block" id="MCMCsampler.index2node"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.index2node">[docs]</a>    <span class="k">def</span> <span class="nf">index2node</span><span class="p">():</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;Translates sequential array index to node label (in graph).&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">fget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c"># NOTE: if self.graph is changed manually then this will be wrong</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__index2node</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__index2node</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__index2node</span>
+        <span class="k">return</span> <span class="nb">locals</span><span class="p">()</span></div>
+    <span class="n">index2node</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="o">**</span><span class="n">index2node</span><span class="p">())</span>
+    <span class="n">sites</span> <span class="o">=</span> <span class="n">index2node</span>
+
+<div class="viewcode-block" id="MCMCsampler.plot"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">plot_skip</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot density plot of the saved configurations in states[].&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No configurations computed yet. Execute &#39;run()&#39; first.&quot;</span><span class="p">)</span>
+
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="k">if</span> <span class="n">plot_skip</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">plot_skip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runparameters</span><span class="p">[</span><span class="s">&#39;Nskip&#39;</span><span class="p">]</span>
+        <span class="n">plot_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plot_skip</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">runparameters</span><span class="p">[</span><span class="s">&#39;Nskip&#39;</span><span class="p">])</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">plot_step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">plot_skip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runparameters</span><span class="p">[</span><span class="s">&#39;Nskip&#39;</span><span class="p">]</span>
+
+        <span class="n">site_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">firstsiteindex</span><span class="p">:]</span>  <span class="c"># ignore 0 (bulk)</span>
+        <span class="n">maxsite</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">maxstate</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> \
+                                 <span class="k">if</span> <span class="n">site</span> <span class="o">&lt;&gt;</span> <span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]])</span>
+
+        <span class="c"># pylab.clf()</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">site_states</span><span class="p">[::</span><span class="n">plot_step</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+                           <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">pylab</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">hot</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;auto&#39;</span><span class="p">)</span>        
+        <span class="n">pylab</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">ticks</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">maxsite</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="n">shrink</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Number of water molecules per site&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;MCMC iteration/</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">plot_skip</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;site (sequentially enumerated)&#39;</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">draw_if_interactive</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">pylab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.plot_occupancy"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.plot_occupancy">[docs]</a>    <span class="k">def</span> <span class="nf">plot_occupancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot site label vs &lt;N&gt; +/- std(N).</span>
+
+<span class="sd">        legend      True: add legend, False: return (line,description)</span>
+<span class="sd">        **kwargs    additional arguments for errbar plot such as color=&#39;k&#39;, fmt=&#39;o&#39;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="n">plotargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;fmt&#39;</span><span class="p">:</span><span class="s">&#39;ko&#39;</span><span class="p">,</span> <span class="s">&#39;color&#39;</span><span class="p">:</span><span class="s">&#39;black&#39;</span><span class="p">}</span>
+        <span class="n">plotargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index2node</span>
+        <span class="n">o_mean</span><span class="p">,</span> <span class="n">o_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupancy</span><span class="p">()</span>
+        <span class="n">firstsiteindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2index</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="c"># upper graph: mean + stdev bar</span>
+        <span class="c">##pylab.subplot(211,frameon=False)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;occupancy&#39;</span> <span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">r&#39;$&lt;n_i&gt;$&#39;</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">sites</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:],</span>
+                               <span class="n">y</span><span class="o">=</span><span class="n">o_mean</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:],</span>
+                               <span class="n">yerr</span><span class="o">=</span><span class="n">o_std</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:],</span>
+                               <span class="o">**</span><span class="n">plotargs</span><span class="p">)</span>
+        <span class="n">labelstring</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>   <span class="c"># no legend</span>
+        <span class="c">#labelstring = r&#39;$N=%g$&#39; % self.runparameters[&#39;Ntotal&#39;]</span>
+        <span class="c">#if legend:</span>
+        <span class="c">#    pylab.legend((lines[0],),(labelstring,),</span>
+        <span class="c">#                 loc=&#39;upper right&#39;,numpoints=1,shadow=True)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;site label&#39;</span><span class="p">)</span>
+
+        <span class="c"># lower graph: stdev</span>
+        <span class="c">##pylab.subplot(212,frameon=False)</span>
+        <span class="c">##pylab.xlabel(&#39;site label&#39;)</span>
+        <span class="c">##pylab.ylabel(r&#39;$\sigma(\nu_i)$&#39;)</span>
+        <span class="c">##pylab.plot(sites[firstsiteindx:],</span>
+        <span class="c">##           o_std[firstsiteindx:],&#39;o&#39;,</span>
+        <span class="c">##           color=plotargs[&#39;color&#39;])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">legend</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">labelstring</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.occupancy_mean_correl"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.occupancy_mean_correl">[docs]</a>    <span class="k">def</span> <span class="nf">occupancy_mean_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the correlation coefficient between simulation and MCMC occupancies.&quot;&quot;&quot;</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_occupancies_mean</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">corr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.occupancy_std_correl"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.occupancy_std_correl">[docs]</a>    <span class="k">def</span> <span class="nf">occupancy_std_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the correlation coefficient between simulation and MCMC occupancy fluctuations.&quot;&quot;&quot;</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_occupancies_std</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">corr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="MCMCsampler.plot_correl"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.plot_correl">[docs]</a>    <span class="k">def</span> <span class="nf">plot_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the occupancy from the MD simulation vs the MCMC one.&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+
+        <span class="n">occ_MD</span><span class="p">,</span><span class="n">occ_MCMC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_occupancies_mean</span><span class="p">()</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupancy_mean_correl</span><span class="p">()</span>
+        <span class="n">labelstring</span> <span class="o">=</span> <span class="s">r&#39;$C=</span><span class="si">%g</span><span class="s">$&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">occ_MD</span><span class="p">,</span> <span class="n">occ_MCMC</span><span class="p">,</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">labelstring</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c"># straight line fit</span>
+        <span class="kn">import</span> <span class="nn">hop.graph</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">fitlin</span><span class="p">(</span><span class="n">occ_MD</span><span class="p">,</span><span class="n">occ_MCMC</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="s">&#39;--&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;MD occupancy&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;MCMC occupancy&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+            <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;best&#39;</span><span class="p">,</span><span class="n">numpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                         <span class="n">prop</span><span class="o">=</span><span class="n">pylab</span><span class="o">.</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">font_manager</span><span class="o">.</span><span class="n">FontProperties</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="s">&#39;smaller&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">legend</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">labelstring</span><span class="p">)</span>        
+        <span class="k">return</span> <span class="bp">None</span>
+</div>
+    <span class="k">def</span> <span class="nf">_occupancies_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the mean occupancy from MD and MCMC.&quot;&quot;&quot;</span>
+        <span class="n">occ_MD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_properties</span><span class="o">.</span><span class="n">occupancy_avg</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index2node</span><span class="p">]</span>
+        <span class="n">occ_MCMC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupancy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">firstsiteindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2index</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">occ_MD</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:],</span> <span class="n">occ_MCMC</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:]</span>
+
+    <span class="k">def</span> <span class="nf">_occupancies_std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the fluctuation (stdev) in the occupancy from MD and MCMC.&quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;MD Occupancy must be read from SiteAnalysisArray.&#39;</span><span class="p">)</span>
+
+        <span class="n">occ_MD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_properties</span><span class="o">.</span><span class="n">occupancy_std</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index2node</span><span class="p">]</span>
+        <span class="n">occ_MCMC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupancy</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">firstsiteindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2index</span><span class="p">[</span><span class="n">SITELABEL</span><span class="p">[</span><span class="s">&#39;bulk&#39;</span><span class="p">]]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">occ_MD</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:],</span> <span class="n">occ_MCMC</span><span class="p">[</span><span class="n">firstsiteindx</span><span class="p">:]</span>
+
+<div class="viewcode-block" id="MCMCsampler.autocorrelation"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.autocorrelation">[docs]</a>    <span class="k">def</span> <span class="nf">autocorrelation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the auto correlation function for all site trajectories.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="n">autocorrelation_fft</span> <span class="k">as</span> <span class="n">ACF</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ACF</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">:</span><span class="n">step</span><span class="p">]])</span>
+</div>
+<div class="viewcode-block" id="MCMCsampler.averaged_autocorrelation"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MCMCsampler.averaged_autocorrelation">[docs]</a>    <span class="k">def</span> <span class="nf">averaged_autocorrelation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the ACF or each site by resampling from the whole trajectory.</span>
+
+<span class="sd">        mean(acf), standardev(acf) = averaged_autocorrelation(**kwargs)</span>
+
+<span class="sd">        :Arguments:</span>
+<span class="sd">        step            only take every &lt;step&gt; from the trajectory (None == 1)</span>
+<span class="sd">                        ??? step &gt; 1 seems to take LONGER ???</span>
+<span class="sd">        length          length (in frames) of the ACF (default: 1/2*len(series))</span>
+<span class="sd">        sliding_window  repeat ACF calculation every N frames (default: len(series)/100)</span>
+
+<span class="sd">        :Returns:</span>
+<span class="sd">        mean_acf        average over all resampled acfs per site,  shape = (Nsites,length)</span>
+<span class="sd">        std_acf         standard deviation or the resampled acfs,  shape = (Nsites,length)</span>
+
+<span class="sd">        See also for kwargs:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">hop.utilities</span> <span class="kn">import</span> <span class="n">averaged_autocorrelation</span> <span class="k">as</span> <span class="n">avACF</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">avACF</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">T</span><span class="p">[:,::</span><span class="n">step</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">tmp</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">tmp</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;hopgraph.pickle&#39;</span><span class="p">,</span><span class="n">Ntotal</span><span class="o">=</span><span class="mi">500000</span><span class="p">,</span><span class="n">Nskip</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">Nequil</span><span class="o">=</span><span class="n">Nequil_default</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Perform Markov Chain Monte Carlo on a model derived from the hopping graph.&quot;&quot;&quot;</span>
+
+    <span class="n">h</span> <span class="o">=</span> <span class="n">hop</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">HoppingGraph</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">MCMCsampler</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="n">msg</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;MCMCsampler() for </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Nequil</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c"># burn in/flooding</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;Running </span><span class="si">%(Nequil)d</span><span class="s"> steps for equilibration...</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">())</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">Nequil</span><span class="p">,</span><span class="n">record_iterations</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c"># MCMC run</span>
+    <span class="n">M</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Ntotal</span><span class="o">=</span><span class="n">Ntotal</span><span class="p">,</span><span class="n">Nskip</span><span class="o">=</span><span class="n">Nskip</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">M</span>
+</div>
+<div class="viewcode-block" id="Pscan"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan">[docs]</a><span class="k">class</span> <span class="nc">Pscan</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run a MCMC sampler for a number of parameter values.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parameter</span><span class="p">,</span><span class="n">pvalues</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;hopgraph.pickle&#39;</span><span class="p">,</span>
+                 <span class="n">Ntotal</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample on hopping graph for different values of &lt;parameter&gt; = p. </span>
+
+<span class="sd">        P = Pscan(parameter=&lt;string&gt;,pvalues=&lt;sequence&gt;,filename=&lt;filename&gt;,**kwargs)</span>
+
+<span class="sd">        &lt;parameter&gt; must be a keyword argument to hop.MCMC.run();</span>
+<span class="sd">        the parameter overrides any default values that may have been</span>
+<span class="sd">        set. For instance, &lt;parameter&gt; can be &#39;Ntotal&#39; or &#39;filename&#39;.</span>
+
+<span class="sd">        kwargs: all other kwargs are directly passed on to MCMC.run().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">=</span> <span class="n">parameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pvalues</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ntotal</span> <span class="o">=</span> <span class="n">Ntotal</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pvalues</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;parameter </span><span class="si">%s</span><span class="s"> = </span><span class="si">%g</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">parameter</span><span class="p">,</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">parameter</span><span class="p">]</span><span class="o">=</span><span class="n">p</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;Ntotal&#39;</span><span class="p">,</span><span class="n">Ntotal</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;filename&#39;</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="k">del</span> <span class="n">M</span>
+
+<div class="viewcode-block" id="Pscan.occupancy_mean_correl"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan.occupancy_mean_correl">[docs]</a>    <span class="k">def</span> <span class="nf">occupancy_mean_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns X=pvalues, Y=occupancy_mean_correlations.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">),</span> 
+                <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">occupancy_mean_correl</span><span class="p">()</span> 
+                             <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">]))</span>
+</div>
+    <span class="k">def</span> <span class="nf">plot_occupancy_mean_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;ko-&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupancy_mean_correl</span><span class="p">()</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">linestyle</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;total MCMC steps&#39;</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;correlation coefficient with MD&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Pscan.plot_states"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan.plot_states">[docs]</a>    <span class="k">def</span> <span class="nf">plot_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">maxcolumns</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot all state &#39;trajectories&#39; as a tiled plot.&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="n">pvalues</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">Nmax</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pvalues</span><span class="p">)</span>
+        <span class="n">maxrows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Nmax</span><span class="o">*</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">maxcolumns</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">nplot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">irow</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">maxrows</span><span class="p">):</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">irow</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">icolumn</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">maxcolumns</span><span class="p">):</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">icolumn</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">nplot</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">iplot</span> <span class="o">=</span> <span class="n">nplot</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">pvalues</span><span class="p">[</span><span class="n">iplot</span><span class="p">]</span>
+                <span class="n">pylab</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">maxrows</span><span class="p">,</span><span class="n">maxcolumns</span><span class="p">,</span><span class="n">nplot</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+                <span class="n">ax</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">is_first_col</span><span class="p">():</span>
+                    <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;site #&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">is_last_row</span><span class="p">():</span>
+                    <span class="k">pass</span> <span class="c"># keep the original label</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">r&#39;</span><span class="si">%s</span><span class="s">=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span><span class="n">p</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="Pscan.plot_occupancy"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan.plot_occupancy">[docs]</a>    <span class="k">def</span> <span class="nf">plot_occupancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot &lt;n_i&gt; (site occupancy from MCMC) for all parameter values.</span>
+<span class="sd">        </span>
+<span class="sd">        (See _plotter())&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plotter</span><span class="p">(</span><span class="s">&#39;plot_occupancy&#39;</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="s">&#39;o&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Pscan.plot_occupancy_mean_correl"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan.plot_occupancy_mean_correl">[docs]</a>    <span class="k">def</span> <span class="nf">plot_occupancy_mean_correl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot MD occupancy vs MCMC occupancy.</span>
+
+<span class="sd">        plot_correl(colorscale=&#39;linear&#39;|&#39;log&#39;)</span>
+
+<span class="sd">        (See _plotter())&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plotter</span><span class="p">(</span><span class="s">&#39;plot_correl&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;k-.&#39;</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_plotter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">func</span><span class="p">,</span><span class="n">colorscale</span><span class="o">=</span><span class="s">&#39;linear&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">fargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot func for all MCMCsamplers in the collection.</span>
+
+<span class="sd">        _plotter(&#39;&lt;functionname&gt;&#39;,colorscale=&#39;linear&#39;|&#39;log&#39;,**fargs)</span>
+
+<span class="sd">        &#39;&lt;functionname&gt;&#39;      string, names a plotting method such as &#39;plot_correl&#39;</span>
+<span class="sd">        colorscale            scale color based on the parameter value (&#39;linear&#39; or &#39;log&#39;;</span>
+<span class="sd">                              note that &#39;log&#39; can only be used with numerical data &gt; 0)</span>
+<span class="sd">        **fargs               additional arguments that the function may need</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="c"># currently, pvalues must be numerical; if not then one should use the enumeration</span>
+        <span class="c"># instead of the pvalues list</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">isreal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">)):</span>
+            <span class="n">p_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">))</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalues</span><span class="p">)]</span> <span class="p">)</span>
+
+        <span class="n">_scalings</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;linear&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">,</span> 
+                     <span class="s">&#39;log&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">_scalings</span><span class="p">[</span><span class="n">colorscale</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;&lt;colorscale&gt; must be one of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">_scalings</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">pnormalize</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">scale</span><span class="p">(</span><span class="n">p_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+                                     <span class="n">vmax</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">scale</span><span class="p">(</span><span class="n">p_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">descriptions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span><span class="p">):</span>
+            <span class="n">p_num</span> <span class="o">=</span> <span class="n">p_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+            <span class="n">plot_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MCMCsamplers</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">line</span><span class="p">,</span><span class="n">correl_legend</span><span class="p">)</span> <span class="o">=</span> <span class="n">plot_func</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">pylab</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">(</span><span class="n">pnormalize</span><span class="p">(</span><span class="n">scale</span><span class="p">(</span><span class="n">p_num</span><span class="p">))),</span>
+                                         <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">fargs</span><span class="p">)</span>
+            <span class="n">descr</span> <span class="o">=</span> <span class="s">r&#39;$</span><span class="si">%s</span><span class="s">\ </span><span class="si">%s</span><span class="s">$&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">correl_legend</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">r&#39;$&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span>   <span class="c"># minimalistic legend</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">descriptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span><span class="n">descriptions</span><span class="p">,</span><span class="n">numpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">shadow</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">prop</span><span class="o">=</span><span class="n">pylab</span><span class="o">.</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">font_manager</span><span class="o">.</span><span class="n">FontProperties</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="s">&#39;smaller&#39;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Pscan.save"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.Pscan.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;pscan.pickle&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save pscan object to pickle file.</span>
+
+<span class="sd">        save(pscan.pickle)</span>
+
+<span class="sd">        Load with</span>
+
+<span class="sd">            import cPickle</span>
+<span class="sd">            myPscan = cPickle.load(open(&#39;pscan.pickle&#39;))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">cPickle</span>
+        <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cPickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fh</span><span class="p">,</span><span class="n">cPickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">msg</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s">&quot;Wrote Pscan object to &#39;</span><span class="si">%s</span><span class="s">&#39;.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="MultiPscan"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.MultiPscan">[docs]</a><span class="k">class</span> <span class="nc">MultiPscan</span><span class="p">(</span><span class="n">hop</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">Saveable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run Pscan(**pscanargs) &lt;repeat&gt; times and collect all Pscan objects in list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">_saved_attributes</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">repeat</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="o">**</span><span class="n">pscanargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;pscans = MultiPscan(repeat=10, parameter=&#39;Ntotal&#39;, pvalues=[1e4,2.5e4,....], ...)</span>
+<span class="sd">        See Pscan() for description of pscanargs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="p">[</span><span class="n">Pscan</span><span class="p">(</span><span class="o">**</span><span class="n">pscanargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">repeat</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">multi_plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">,</span><span class="n">plottype</span><span class="o">=</span><span class="s">&#39;whisker&#39;</span><span class="p">,</span><span class="n">funcname</span><span class="o">=</span><span class="s">&#39;occupancy_mean_correl&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="multi_plot"><a class="viewcode-back" href="../../hop/MCMC.html#hop.MCMC.multi_plot">[docs]</a><span class="k">def</span> <span class="nf">multi_plot</span><span class="p">(</span><span class="n">plist</span><span class="p">,</span><span class="n">plottype</span><span class="o">=</span><span class="s">&#39;whisker&#39;</span><span class="p">,</span><span class="n">Nequil</span><span class="o">=</span><span class="n">Nequil_default</span><span class="p">,</span><span class="n">funcname</span><span class="o">=</span><span class="s">&#39;occupancy_mean_correl&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Display a collection of functions.</span>
+
+<span class="sd">    multi_plot(plist,plottype=&#39;whisker&#39;,Nequil=10000,funcname=&#39;occupancy_mean_correl&#39;,**kwargs)</span>
+<span class="sd">    </span>
+<span class="sd">    The function is obtained from a method call on the objects in plist. The</span>
+<span class="sd">    assumption is that these are functions of Ntotal (if not, set Nequil=0; Nequil is</span>
+<span class="sd">    added to x). Each object is a different realization, e.g. multiple MCMC runs.</span>
+
+<span class="sd">    plottype       &#39;whisker&#39; (whisker plot), &#39;standard&#39; (average and standard deviations)</span>
+<span class="sd">    Nequil         correction, added to x    </span>
+<span class="sd">    funcname       string; a method of the objects in plist that does EXACTLY the following:</span>
+<span class="sd">                   x,y = obj.funcname()</span>
+<span class="sd">                   where x and y are numpy arrays of equal length</span>
+<span class="sd">    **kwargs       color, boxcolor, mediancolor, capsize</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">pylab</span>
+
+    <span class="n">plottypes</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;whisker&#39;</span><span class="p">,</span><span class="s">&#39;standard&#39;</span><span class="p">)</span>
+
+    <span class="c"># sanity checks</span>
+    <span class="k">if</span> <span class="n">plottype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plottypes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Only plottypes from </span><span class="si">%(plottypes)r</span><span class="s">, not </span><span class="si">%(plottype)s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">())</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">funcname</span><span class="p">)()</span>   <span class="c"># How do I handle old-style classes? Check __getattr__?</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;funcname=&#39;</span><span class="si">%(funcname)r</span><span class="s">&#39; has the wrong signature or is not a method &quot;</span>
+                         <span class="s">&quot;of the objects in plist.&quot;</span> <span class="o">%</span> <span class="nb">locals</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">xy_from</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">funcname</span><span class="p">)()</span>
+    <span class="k">def</span> <span class="nf">x_from</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">xy_from</span><span class="p">(</span><span class="n">obj</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">y_from</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">xy_from</span><span class="p">(</span><span class="n">obj</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;color&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">)</span>           <span class="c"># main color</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;capsize&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x_from</span><span class="p">(</span><span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">Nequil</span>
+    <span class="n">all_y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">y_from</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">plist</span><span class="p">])</span>
+    <span class="n">ymean</span> <span class="o">=</span> <span class="n">all_y</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">yerr</span> <span class="o">=</span> <span class="n">all_y</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plottype</span> <span class="o">==</span> <span class="s">&#39;standard&#39;</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">ymean</span><span class="p">,</span><span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="s">&#39;o&#39;</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;-&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">plist</span><span class="p">:</span>
+            <span class="n">px</span><span class="p">,</span><span class="n">py</span> <span class="o">=</span> <span class="n">xy_from</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">px</span> <span class="o">+=</span> <span class="n">Nequil</span>
+            <span class="n">components</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">px</span><span class="p">,</span><span class="n">py</span><span class="p">,</span><span class="s">&#39;o&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;color&#39;</span><span class="p">],</span><span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">plottype</span> <span class="o">==</span> <span class="s">&#39;whisker&#39;</span><span class="p">:</span>
+        <span class="c"># widths that look the same in a log plot</span>
+        <span class="k">def</span> <span class="nf">logwidth</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">delta</span><span class="p">):</span>            
+            <span class="sd">&quot;&quot;&quot;Return linear widths at x that, logarithmically scaled, appear to be delta wide.&quot;&quot;&quot;</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">q</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;mediancolor&#39;</span><span class="p">,</span><span class="s">&#39;k&#39;</span><span class="p">)</span>     <span class="c"># for median in whiskerplot</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;boxcolor&#39;</span><span class="p">,</span><span class="s">&#39;darkgray&#39;</span><span class="p">)</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">ymean</span><span class="p">,</span><span class="s">&#39;o-&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;color&#39;</span><span class="p">],</span><span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">all_y</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+                                   <span class="n">widths</span><span class="o">=</span><span class="n">logwidth</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;widths&#39;</span><span class="p">,</span><span class="mf">0.15</span><span class="p">)))</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s">&#39;linear&#39;</span><span class="p">)</span>
+        <span class="c"># must modify components for customisation</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="s">&#39;boxes&#39;</span><span class="p">]:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;boxcolor&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="s">&#39;whiskers&#39;</span><span class="p">]:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;color&#39;</span><span class="p">])</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_linestyle</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="s">&#39;caps&#39;</span><span class="p">]:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;color&#39;</span><span class="p">])</span>            
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="s">&#39;medians&#39;</span><span class="p">]:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;mediancolor&#39;</span><span class="p">])</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_linewidth</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="s">&#39;fliers&#39;</span><span class="p">]:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;color&#39;</span><span class="p">])</span>
+
+        <span class="n">pylab</span><span class="o">.</span><span class="n">draw_if_interactive</span><span class="p">()</span>
+
+    <span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;total MCMC steps&#39;</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;correlation coefficient with MD&#39;</span><span class="p">)</span>
+    <span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;convergence of occupancy correlation with MD&#39;</span><span class="p">)</span>
+    
+    <span class="c">#return x,ymean,yerr</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Hop 0.3.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas B. Woolf, Oliver Beckstein.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
