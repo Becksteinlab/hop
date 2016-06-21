@@ -1,0 +1,12 @@
+numpy>=1.0.3
+scipy
+networkx>=1.11
+MDAnalysis>0.15.0
+GridDataFormats>=0.1.1
+
+[heatmap]
+rpy
+
+[plotting]
+matplotlib>=0.91.3
+pygraphviz

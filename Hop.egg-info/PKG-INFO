@@ -1,0 +1,17 @@
+Metadata-Version: 1.0
+Name: Hop
+Version: 0.3.5
+Summary: Hop analyses solvent dynamics in molecular dynamics trajectories
+Home-page: https://github.com/Becksteinlab/hop
+Author: Oliver Beckstein
+Author-email: orbeckst@gmail.com
+License: GPLv3
+Description: Hop performs a 'hopping analysis' of molecules in molecular dynamics
+        (MD) trajectories. Typically, these molecules are water molecules. The
+        movement of all waters is tracked as they move between hydration
+        sites. Hydration sites are interpreted as vertices in a graph, while
+        movement (or 'hops') between them are taken as edges. In this way
+        hydration is characterized at a coarse grained level as a network of
+        hops with rate constants and fluxes derived from the MD simulations.
+Keywords: science 'molecular dynamics' analysis hydration water
+Platform: UNKNOWN

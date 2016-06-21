@@ -1,2 +1,0 @@
-.. automodule:: hop.external
-   :members:
