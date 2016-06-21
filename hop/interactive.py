@@ -219,20 +219,14 @@ Functions
 ---------
 
 """
-from __future__ import absolute_import
 
-import os
-import logging
-
-import numpy
+import hop.sitemap, hop.trajectory, hop.graph, hop.constants
+import hop.density
 import MDAnalysis
+import numpy
+import os
 
-from . import sitemap
-from . import trajectory
-from . import graph
-from . import constants
-from .density import DensityCreator
-
+import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.interactive")
 
 def generate_densities(*args, **kwargs):
@@ -291,7 +285,7 @@ def generate_densities(*args, **kwargs):
     bulk_threshold = kwargs.pop('bulk_threshold', numpy.exp(-0.5))
     density_unit = kwargs.pop('density_unit', "water")
     kwargs['mode'] = "all"
-    DC = DensityCreator(*args, **kwargs)
+    DC = hop.density.DensityCreator(*args, **kwargs)
     densities = DC.create()
     # save the precious files right away
     densities['bulk'].save(bulkname)
@@ -352,11 +346,11 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
 
     """
     if backend == 'MDAnalysis':
-        density = sitemap.density_from_trajectory(
+        density = hop.sitemap.density_from_trajectory(
             psf,dcd,delta=delta,atomselection=atomselection,
             verbosity=3,**kwargs)
     elif backend == 'VMD':
-        density = sitemap.density_from_volmap(
+        density = hop.sitemap.density_from_volmap(
             psf,dcd,delta=delta,atomselection=atomselection,
             verbosity=3,**kwargs)
     else:
@@ -396,7 +390,7 @@ def analyze_density(density,figure='sitestats'):
     #import os
 
     # convert density to the chosen density unit (typically, relative to bulk water)
-    factor = constants.get_conversion_factor('density',
+    factor = hop.constants.get_conversion_factor('density',
                                             density.unit['length'],density.unit['density'])
 
     x,N,DN = density.site_occupancy(include='sites')
@@ -461,8 +455,8 @@ def make_hoppingtraj(density,filename,**hopargs):
         raise ValueError(errmsg)
 
     u = MDAnalysis.Universe(density.metadata['psf'],density.metadata['dcd'])
-    group = u.select_atoms(density.metadata['atomselection'])
-    hops = trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
+    group = u.selectAtoms(density.metadata['atomselection'])
+    hops = hop.trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
     hops.write(filename)
     return hops
 
@@ -479,7 +473,7 @@ def build_hoppinggraph(hoppingtrajectory,density):
 
     :Returns:  tgraph, a :class:`hop.graph.TransportNetwork` object
     """
-    tgraph = graph.TransportNetwork(hoppingtrajectory,density)
+    tgraph = hop.graph.TransportNetwork(hoppingtrajectory,density)
     tgraph.compute_residency_times()
     return tgraph
 
@@ -495,8 +489,8 @@ def build_hoppinggraph_fromfiles(hoppingtrajectory_filename,density_filename):
     Output:
     tn                           hop.graph.TransportNetwork object (qv)
     """
-    hoppingtrajectory = trajectory.HoppingTrajectory(filename=hoppingtrajectory_filename)
-    density = sitemap.Density(filename=density_filename)
+    hoppingtrajectory = hop.trajectory.HoppingTrajectory(filename=hoppingtrajectory_filename)
+    density = hop.sitemap.Density(filename=density_filename)
     return build_hoppinggraph(hoppingtrajectory,density)
 
 def hopgraph_basic_analysis(h, density, filename):

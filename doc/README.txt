@@ -48,6 +48,6 @@ the hopping analysis.
 Any patches and improvements (including the docs) are very welcome.
 
 
-.. _MDAnalysis: http://www.mdanalysis.org
+.. _MDAnalysis: http://mdanalysis.googlecode.com
 .. _Cytoscape: http://www.cytoscape.org/
    

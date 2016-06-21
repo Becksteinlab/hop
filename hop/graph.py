@@ -1,3 +1,4 @@
+# $Id$
 # Hop --- a framework to analyze solvation dynamics from MD simulations
 # Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
 #
@@ -40,27 +41,20 @@ documentation for further analysis methods.
 Classes and functions
 ---------------------
 """
-from __future__ import absolute_import
 
+import hop.constants, hop.trajectory
+from hop.constants import SITELABEL
+import hop.utilities
+from hop.utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
+import networkx as NX
+import numpy
 import sys
 import cPickle
 import os.path
 import warnings
+import MDAnalysis
 
-import networkx as NX
-import numpy
-from MDAnalysis.lib.log import ProgressMeter
-
-from . import constants
-from . import sitemap
-from . import trajectory
-from .constants import SITELABEL
-from .exceptions import MissingDataError, MissingDataWarning
-from . import utilities
-from .utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMeter
-
-
-
+from MDAnalysis.core.log import ProgressMeter
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.graph")
@@ -75,7 +69,7 @@ class TransportNetwork(object):
     the :meth:`TransportNetwork.HoppingGraph` method.
     """
 
-    def __init__(self, traj, density=None, sitelabels=None):
+    def __init__(self,trajectory,density=None,sitelabels=None):
         """Setup a transport graph from a hopping trajectory instance.
 
         ::
@@ -83,19 +77,19 @@ class TransportNetwork(object):
             tn = TransportNetwork(hops)
         """
         self._cache = dict()
-        if not isinstance(traj, trajectory.HoppingTrajectory):
-            errmsg = "'traj' must be a <hop.trajectory.HoppingTrajectory> instance."
+        if not isinstance(trajectory,hop.trajectory.HoppingTrajectory):
+            errmsg = "'trajectory' must be a <hop.trajectory.HoppingTrajectory> instance."
             logger.fatal(errmsg)
             raise TypeError(errmsg)
-        self.traj = traj
-        self.n_atoms = self.traj.hoptraj.n_atoms
+        self.traj = trajectory
+        self.numatoms = self.traj.hoptraj.numatoms
         # TODO: use MDAnalysis unit conversion here
         self.dt = round(self.traj.hoptraj.delta * self.traj.hoptraj.skip_timestep \
-                        * constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
+                        * hop.constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
         self.totaltime = self.traj.totaltime
         self.graph = NX.DiGraph(name='Transport network between sites')
 
-        if not density is None and not isinstance(density, sitemap.Density):
+        if not density is None and not isinstance(density,hop.sitemap.Density):
             raise TypeError('density must be a <hop.sitemap.Density> instance.')
         self.density = density  # only needed to pass down site_properties to hopgraph
 
@@ -194,10 +188,9 @@ class TransportNetwork(object):
         # (A flat natoms x 5 int array may be faster but for the time being I need
         # clean-ish code...)
         # (could use a numpy.rec --- would do exactly what I want)
-        state = numpy.empty(self.n_atoms,dtype=dict)
-        state[:] = [{'s0':s[iatom], 't0': self.traj.ts.frame, 't1': None}
-                    for iatom in xrange(self.n_atoms)]
-        pm = ProgressMeter(self.traj.n_frames, interval=100,
+        state = numpy.empty(self.numatoms,dtype=dict)
+        state[:] = [{'s0':s[iatom], 't0': self.traj.ts.frame, 't1': None} for iatom in xrange(self.numatoms)]
+        pm = ProgressMeter(self.traj.numframes, interval=100,
                            format="Analyzing hops: frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
 
         for ts in hops:
@@ -210,7 +203,7 @@ class TransportNetwork(object):
             #    explicitly filtered when building the CombinedGraph
             #  * Dan Willenbring reports that also (-1, N) show up.
             #  * code is ugly and not optimized: should be possible to do this on all atoms at once
-            for iatom in xrange(self.n_atoms):
+            for iatom in xrange(self.numatoms):
                 if s[iatom] == SITELABEL['outlier']:
                     # outliers: count them as whence they came (typically, interstitial or bulk)
                     s[iatom] = slast[iatom]
@@ -247,7 +240,7 @@ class TransportNetwork(object):
         # mop up last frame: we can't compute rates but at least use
         # the residency time for anything that still sits on a site or
         # sat on a site and is now back in the interstitial
-        for iatom in xrange(self.n_atoms):
+        for iatom in xrange(self.numatoms):
             if state[iatom]['s0'] == SITELABEL['interstitial']:
                 continue
             node = state[iatom]['s0']          # last site visited
@@ -305,7 +298,7 @@ class TransportNetwork(object):
         try:
             props = self.hopgraph.properties
         except AttributeError:
-            raise MissingDataError("No hopgraph found. Run 'compute_residency_times()' first.")
+            raise hop.MissingDataError("No hopgraph found. Run 'compute_residency_times()' first.")
         self.theta = dict()        # dict of arrays
         for edge in props:
             if type(edge) is tuple:
@@ -622,10 +615,9 @@ class HoppingGraph(object):
             a,k1,k2 = f.parameters
             ## select rate that contributes more:
             ##if a*k1 > (1-a)*k2:
-            if a > 0.5:
-                k = k1
-            else:
-                k = k2
+            #Above is old; take a weighted average instead
+            k = a*k1 + (1-a)*k2
+            
         else:
             raise ValueError('Unknown waitingtime fit, '+str(f))
         return 1000 * k   # 1/ps --> 1/ns
@@ -776,7 +768,7 @@ class HoppingGraph(object):
         del h
 
     # XXX: monkey patching, should do this with inheritance/mixin class
-    filename = utilities.filename_function
+    filename = hop.utilities.filename_function
 
     def filter(self,exclude=None):
         """Create a filtered version of the graph.
@@ -873,7 +865,7 @@ class HoppingGraph(object):
         import os,errno
 
         import matplotlib
-        from .utilities import matplotlib_interactive
+        from hop.utilities import matplotlib_interactive
         matplotlib_interactive(interactive)
         import matplotlib.pyplot as plt
 
@@ -921,12 +913,6 @@ class HoppingGraph(object):
         nplots = G.number_of_edges()
         npage = nrow * ncol
         nfig = int(math.ceil(1.0*nplots/npage))
-
-        if nplots == 0:
-            msg = "Filtered graph contains no transitions: no plots available"
-            warnings.warn(msg, category=MissingDataWarning)
-            logger.warn(msg)
-            return
 
         # erase all figures first
         # (important in interactive sessions with figure pollution)
@@ -1167,7 +1153,7 @@ class HoppingGraph(object):
             # site_properties not fully defined; should perhaps raise...
             warnings.warn('site_properties not complete: %s misses equivalence site data' %
                           self.filename(),       # let's hope filename is set...
-                          category=MissingDataWarning)
+                          category=hop.MissingDataWarning)
             stats['site_N_equivalence_sites'] = 0
             stats['site_N_subsites'] = 0
 
@@ -1243,7 +1229,7 @@ class HoppingGraph(object):
         N_tot = N_in + N_out
         ratedict={'k_tot':k_tot,'k_in':k_in,'k_out':k_out,
                 'N_tot':N_tot,'N_in':N_in,'N_out':N_out}
-        return  ratedict
+	return  ratedict
 
     def show_site(self,sites,use_filtered_graph=True):
         """Display data about sites (list of site labels or single site)."""
@@ -1480,7 +1466,9 @@ class HoppingGraph(object):
                      'distance':centerdistance[site],
                      'has_bulkconnection':self.is_connected(site,SITELABEL['bulk']),
                      'rates':self.rates(site)['N_tot'],
-                        }
+                    # 'z_pos':self.pos[node]['z'],
+                     
+			}
             if xattr['equivalence_label']:
                 xml.write("""\t<node id="%(id)d" label="%(label)s/%(equivalence_label)s">\n""" % xattr)
             else:
@@ -1489,9 +1477,10 @@ class HoppingGraph(object):
             xml.write("""\t\t<att type="real" name="occupancy" value="%(occupancy_avg)g"/>\n""" % xattr)
             xml.write("""\t\t<att type="real" name="distance" value="%(distance)g"/>\n"""  % xattr)
             xml.write("""\t\t<att type="integer" name="has_bulkconnection" value="%(has_bulkconnection)d"/>\n""" % xattr)
-
+          #  xml.write("""\t\t<att type="real" name="z_pos" value="%(z_pos)g"/>\n""" % xattr)
+            
             xml.write("""\t\t<att type="real" name="rates" value="%(rates)r"/>\n""" % xattr)
-            ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
+	    ### xml.write("""\t\t<att type="" name="" value=""/>\n""")
             xml.write("""\t</node>\n""")
         for e in G.edges(data=True):
             u,v = self.from_site(e), self.to_site(e)   # === u,v = e[:2]
@@ -1601,6 +1590,216 @@ class HoppingGraph(object):
         pdbfile = self.filename(filename,'pdb')
         io.save(pdbfile)
 
+    def write_tcl(self,filename='hopgraph',color='blue',sphere_radius="1",highlight_nodes=[],highlight_col='yellow',color_weight=False,partition=8,node_subset=[],use_node_subset=False,rate_cutoff=0):
+        """
+        Writes out a tcl file which can then be visualized. Optionally, you can pass a set of 
+        nodes to be highlighted with a color of your choice. Alternatively, you can try to 
+        weight the edge color by node rate. The weighting is not implemented properly.
+        """
+
+        out=open(filename+".tcl","w")
+        graph=self.filtered_graph
+        props=self.site_properties
+        def draw_nodes(graph):
+            for node in graph:
+                if node in highlight_nodes:
+                    out.write(" draw color " + highlight_col + "\n")
+                    pos = props[node].center
+                    vol = props[node].volume
+                    occ = props[node].occupancy_avg
+                    degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+                    commonlabel = props.equivalence_name[node].strip()
+                    out.write(" draw sphere" +" {"+ str(pos[0]) +" "+ str(pos[1])+
+                    " " +str(pos[2])+ "}" + " radius"+" " + sphere_radius + " resolution 16\n")
+                    for i in graph[node]:
+                        if graph[node][i]['k']>rate_cutoff:
+                            pos_nbr=props[i].center
+                            out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+
+                            str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+
+                            str(pos_nbr[2])+ " }"+ " radius 0.1" + " resolution 16\n")
+                else:
+                    pos = props[node].center
+                    vol = props[node].volume
+                    occ = props[node].occupancy_avg
+                    degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+                    commonlabel = props.equivalence_name[node].strip()
+                    out.write(" draw sphere" +" {"+ str(pos[0]) +" "+ str(pos[1])+" " +
+                    str(pos[2])+ "}" + " radius"+" " + sphere_radius + " resolution 16\n")
+                
+
+                    for i in graph[node]:
+                        if color_weight==True:
+                            if graph[node][i]['k']*10> 1:
+                                for j in xrange(int(1024/partition)):
+                                    if partition*(j+1)< graph[node][i]['k']*100 and graph[node][i]['k']*100  < partition*(j+2):
+                                        out.write(" draw color " + str(partition*(j+2)+100) + "\n")
+                                        break
+                            elif graph[node][i]['k']*10<1: 
+                                for j in xrange(int(1024/partition)):
+                                    if partition*(j+1)< graph[node][i]['k']*1000 and graph[node][i]['k']*1000  < partition*(j+2):
+                                        out.write(" draw color " + str(partition*(j+2)) + "\n")
+                                        break
+                        pos_nbr=props[i].center
+                        if graph[node][i]['k']>rate_cutoff:
+                            out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+
+                            str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+
+                            str(pos_nbr[2])+ " }"+ " radius 0.1" + " resolution 16\n")
+                            out.write(" draw color " + color + "\n")
+            out.close()                                         
+        if use_node_subset==True:
+            draw_nodes(node_subset)
+        else:
+            draw_nodes(graph)
+
+    def write_tcl_cutoff(self,filename='hopgraph',sphere_radius="1",cutoff=1,cutoff_radius='5',cutoff_color='red'):
+        """
+        A redundant function with the above, it is simply a variant which will be merged or will
+        supplant write_tcl, although it could also simply be retained along side it or included
+        as an option. A cutoff rate is specified by the user, and edges above the cutoff are 
+        made thicker as well as colored differently from those below to highlight fast or slow
+        edges.
+        """
+
+        out=open(filename+".tcl","w")
+        graph=self.filtered_graph
+        props=self.site_properties
+        for node in graph:
+            pos = props[node].center
+            vol = props[node].volume
+            occ = props[node].occupancy_avg
+            degree = graph.degree(node)           ## TODO w/filtered (may be off by 1)
+            commonlabel = props.equivalence_name[node].strip()
+            out.write(" draw color white \n ")
+            out.write(" draw sphere" +" {"+ str(pos[0]) +" "+ str(pos[1])+" " +str(pos[2])+ "}" + " radius"+" " + sphere_radius + " resolution 16\n")
+            for i in graph[node]: 
+                pos_nbr=props[i].center
+                if graph[node][i]['k']<cutoff:
+                    out.write(" draw color white \n ")
+                    out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+str(pos_nbr[2])+ " }"+ " radius 0.1" + " resolution 16\n")
+                else:
+                   # out.write(" color change rgb 18  1 " + str(graph[node][i]['k']) + " " + str(graph[node][i]['k']) + "\n")
+                    out.write(" draw color red \n")
+                    out.write(" draw cylinder" + " {" +str(pos[0]) +" "+str(pos[1])+" "+str(pos[2])+ "}" + " {" +str(pos_nbr[0]) +" "+str(pos_nbr[1])+" "+str(pos_nbr[2])+ " }"+ " radius "+ cutoff_radius + " resolution 16\n")
+        out.close()                                         
+
+    def translate(self, translation_vector):
+        for i in xrange(len(self.site_properties.center)):
+            self.site_properties.center[i]+=translation_vector
+
+    def rotate(self, rotation_matrix):
+        for i in xrange(len(self.site_properties.center)):
+            self.site_properties.center[i]=numpy.reshape(numpy.array(numpy.dot(rotation_matrix,self.site_properties.center[i])),(3,))
+
+    def write_psf(self,graph,props,filename=None):
+        """
+        Pseudo psf with nodes as atoms and edges as bonds
+        """
+        # Standard no CHEQ format for a Charmm PSF file:
+        psf_ATOM_format = '%(iatom)8d %(segid)4s %(resid)-4d %(resname)4s '+\
+                          '%(name)-4s %(type)4s %(charge)-14.6f%(mass)-14.4f%(imove)8d\n'
+
+        psffilename = self.filename(filename,'psf')
+        psf = open(psffilename,'w')
+        psf.write('PSF\n\n')
+        psf.write('%7d !NTITLE\n' % 2)
+        psf.write('* Graph topology written by\n'+\
+                  '* $Id$\n')
+        psf.write('\n')
+
+        # ATOMS
+        psf.write('%6d !NATOM\n' % graph.number_of_nodes())
+        segid = 'GRPH'     # choose the same identifiers as in pdb
+        resname = 'NOD'    # choose the same identifiers as in pdb
+        charge = 0
+        mass = 1.0
+        imove = 0            # no fixed 'atoms'
+        node2iatom = dict()  # needed for BONDS
+        for iatom,node in enumerate(graph.nodes_iter()):
+            # atom numbering starts at 1, so iatom+1
+            iatom += 1
+            node2iatom[node] = iatom
+            # write common atoms as N, different as CA (HACK...)
+            commonlabel = props.equivalence_name[node].strip()
+            if commonlabel:
+                identity = 1.0
+                aname = 'N'
+                atype = 'N'
+            else:
+                identity = 0.0
+                aname = 'CA'       # choose the same identifiers as in pdb
+                atype = 'CA'       # choose the same identifiers as in pdb
+            psf.write(psf_ATOM_format %
+                      {'iatom':iatom, 'segid':segid, 'resid':node,
+                       'resname':resname, 'name':aname, 'type':atype,
+                       'charge':charge, 'mass':mass,'imove':imove} )
+        # BONDS: fortran fmt03='(8I8)'
+        # (note: write directed bonds and one atom per residue/node)
+        psf.write('%6d !NBOND: bonds\n' % graph.number_of_edges())
+        for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
+            psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
+            if (n+1) % 4 == 0: psf.write('\n')
+            if (n+1) % 4 != 0: psf.write('\n')
+
+        # ignore all the other sections (don't make sense anyway)
+        psf.close()
+
+    def rate_distribution(self,bins=10,alpha=0.5,log=False):
+        import matplotlib.pyplot as plt
+    
+        self.filter(exclude={'bulk':True,'unconnected':True,'outliers':True})
+        rates=[]
+        for i in self.filtered_graph:
+            for j in self.filtered_graph[i]:
+                rates.append(self.filtered_graph[i][j]['k'])
+    
+        plt.hist(rates,bins,alpha=alpha,log=log)
+
+    def select_graph(self,use_filtered_graph):
+        """Returns filtered graph for True argument, or the raw graph otherwise)"""
+        if use_filtered_graph:
+            # Is there a filtered graph we should be using?
+            try:
+                graph = self.filtered_graph
+                graph.number_of_nodes()
+            except AttributeError:
+                raise ValueError('No filtered graph defined; create one with %s.filter().' %
+                                 self.__class__.__name__)
+        else:
+            graph = self.graph
+        return graph
+
+    def _rate(self,taus,method='survivalfunction',block_w=200):
+        """Compute the rate i--> j, k_ji, from the hopping times tau_ji.
+
+        :Returns: dict(kij=*kji*, N=*N*, fit=*fit*)
+
+                  - *kji* : rate constant in 1/ps
+                  - *N* : number of events
+                  - *fit* : instance of :class:`fit_func`
+
+        :Arguments:
+            *taus*
+                array of all waiting times
+            *method*
+               'survivalfunction'
+                    compute as a fit of a*exp(-k1*t)+(1-a)*exp(-k2*t) or exp(-k*t)
+                    to the survival function S(t); the double exp is tried first
+                    and then decided heuristically if a single exp is a better choice.
+                    Heuristics: Use single exp if
+
+                    * number of data points is <= 10
+                    * double exp asymmetry abs(0.5-a) > 0.49
+                    * k1<0 or k2<0
+
+        :Bugs:
+          - Does not switch to single exponential if double exponential fit fails
+            to converge.
+
+        .. Notes:: Should probably use the integral of the double-exponential fit as an
+          approximation for the rate constant instead of just using the slower
+          one (G. Hummer, pers. comm.)
+        """
+
     def write_psf(self,graph,props,filename=None):
         """Pseudo psf with nodes as atoms and edges as bonds"""
         # Standard no CHEQ format for a Charmm PSF file:
@@ -1647,6 +1846,7 @@ class HoppingGraph(object):
         for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
+            if (n+1) % 4 != 0: psf.write('\n')
 
         # ignore all the other sections (don't make sense anyway)
         psf.close()
@@ -2013,7 +2213,7 @@ class CombinedGraph(HoppingGraph):
         # separately but using the positions of the nodes of the
         # combined graph layout.
         import pylab
-        from .utilities import matplotlib_interactive
+        from hop.utilities import matplotlib_interactive
         matplotlib_interactive(interactive)
 
         if label_sites is None:

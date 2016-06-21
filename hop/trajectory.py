@@ -29,20 +29,27 @@ Classes
 -------
 
 """
-from __future__ import absolute_import
-
-import warnings
-
 import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
 from MDAnalysis.core.log import ProgressMeter
+# used to be here, migrated to MDAnalysis
+import warnings
+try:
+    from MDAnalysis.analysis.align import rms_fit_trj, fasta2select
+    def RMS_fit_trj(*args, **kwargs):
+        warnings.warn("RMS_fit_trj is deprecated and will be removed. Use rms_fit_trj",
+                  category=DeprecationWarning)
+        return rms_fit_trj(*args, **kwargs)
+    RMS_fit_trj.__doc__ = rms_fit_trj.__doc__
+except ImportError:
+    pass
 
-from .exceptions import SelectionError
-from .constants import SITELABEL
-from . import utilities
-from .utilities import msg, set_verbosity
-
+import hop.constants
+from hop.constants import SITELABEL
+import hop.utilities
+from hop.utilities import msg,set_verbosity
+from hop import SelectionError
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
@@ -72,7 +79,7 @@ class HoppingTrajectory(object):
     :Attributes:
 
     ts               MDAnalysis.Timestep object
-    n_frames        number of frames in hopping trajectory
+    numframes        number of frames in hopping trajectory
     group            AtomGroup of atoms that are tracked
 
 
@@ -103,7 +110,7 @@ class HoppingTrajectory(object):
         Create from a coordinate trajectory of a group of atoms and a site map:
 
           u = MDAnalysis.Universe(psf,dcd)
-          water = u.select_atoms('name OH2')
+          water = u.selectAtoms('name OH2')
           h = HoppingTrajectory(trajectory=u.trajectory,group=water,density=water_density)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
@@ -133,10 +140,8 @@ class HoppingTrajectory(object):
         if not (trajectory is None or group is None or density is None):
             self.traj  = trajectory        # MDAnalysis.Universe.trajectory
             self.tgroup = group            # atom selection for trajectory
-            if len(group) == 0:
-                raise ValueError("Group contains 0 particles, should be >0")
             if not isinstance(self.tgroup, MDAnalysis.core.AtomGroup.AtomGroup):
-                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
+                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
                     if not hasattr(trajectory,attr):
@@ -175,7 +180,7 @@ class HoppingTrajectory(object):
             self.ts._unitcell = numpy.array((numlabels,90, numlabels,90, 90,1),dtype=numpy.float32)
             # current hopping trajectory frame is in ts._pos[]
             # _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0
-            self.n_frames = self.traj.n_frames    # total numer of frames
+            self.numframes = self.traj.numframes    # total numer of frames
             self._init_coord2hop()                  # init for _map_next_timestep()
             self._map_next_timestep()               # initialize with first timestep
             self.hoptraj = None                     # no hopping trajectory available
@@ -189,18 +194,16 @@ class HoppingTrajectory(object):
                 hoppsf = self.filename(filename,'psf')
                 hopdcd = self.filename(filename,'dcd')
             u = MDAnalysis.Universe(hoppsf,hopdcd)
-            group = u.atoms
-            if u.atoms.n_atoms == 0:
-                raise ValueError("Hop trajectory contains 0 particles.")
+            group = u.selectAtoms('type *')
             self.group = group      # group that refers to hopping trajectory
             self.hoptraj = u.trajectory    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
-            self.n_frames = self.hoptraj.n_frames
+            self.numframes = self.hoptraj.numframes
             self.totaltime = totaltime(self.hoptraj)
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
 
-    filename = utilities.filename_function
+    filename = hop.utilities.filename_function
 
     def next(self):
         """Provides the next time step of a hopping trajectory.
@@ -272,15 +275,15 @@ class HoppingTrajectory(object):
             delta_ps = self.traj.convert_time_from_native(self.traj.delta)  # length of ts in ps
             delta = get_conversion_factor('time', 'ps', 'AKMA') * delta_ps
 
-        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.n_atoms,
+        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='Hopping trajectory: x=site y=orbit_site z=0')
-        pm = ProgressMeter(self.n_frames, interval=10,
+        pm = ProgressMeter(self.numframes, interval=10,
                            format="Mapping frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
             pm.echo(ts.frame)
-        dcdwriter.close()
+	    dcdwriter.close()
         logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
@@ -350,7 +353,7 @@ class HoppingTrajectory(object):
         psf.write('PSF EXT\n\n')
         psf.write('%7d !NTITLE\n' % 3)
         psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
-                  '* See http://github.com/Becksteinlab/hop\n'
+                  '* See http://github.com/orbeckst/hop\n'
                   '* This is NOT a fully functional psf but should work for visualization.\n')
         psf.write('\n')
 
@@ -360,14 +363,14 @@ class HoppingTrajectory(object):
             for atom in self.tgroup:
                 # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
                 psf.write(psf_EXT_ATOM_format %
-                          {'iatom':atom.index+1, 'segid':atom.segid[:8], 'resid':atom.resid,
+                          {'iatom':atom.number+1, 'segid':atom.segid[:8], 'resid':atom.resid,
                            'resname':atom.resname[:8], 'name':atom.name[:8], 'type':atom.type,
                            'charge':atom.charge, 'mass':atom.mass,'imove':imove} )
                 # emergency stop if we cannot handle the size of the system
-                if atom.resid >= 10**8 or atom.index+1 >= 10**10:
+                if atom.resid >= 10**8 or atom.number+1 >= 10**10:
                     raise NotImplementedError("Sorry, too many atoms (%d) or resids (%d) for the standard "
-                                              "PSF format. File a bug at http://github.com/Becksteinlab/hop/issues"
-                                              % (atom.index+1, atom.resid))
+                                              "PSF format. File a bug at http://github.com/orbeckst/hop/issues"
+                                              % (atom.number+1, atom.resid))
             # ignore all the other sections (enough for MDAnalysis, VMD, and me)
         finally:
             psf.close()
@@ -393,20 +396,20 @@ class HoppingTrajectory(object):
         if start is None:
             start = 0
         if stop is None:
-            stop = self.n_frames
+            stop = self.numframes
 
         self._init_coord2hop()
         #for traj_ts in self.traj[start:stop]:
-        for traj_ts in self.traj:              # no slicing for big trajectories
+	for traj_ts in self.traj:              # no slicing for big trajectories
             yield self._coord2hop(traj_ts)
 
     def _init_coord2hop(self):
         """Allocate helper arrays for _coord2hop()"""
         # initialization with 'interstitial' is CRUCIAL: throws away first frame
         # and makes sure that we don't keep spurious sites from 1st frame around
-        self._sites_last = SITELABEL['interstitial'] * numpy.ones(self.tgroup.n_atoms)
-        self._offsites = numpy.empty(self.tgroup.n_atoms,dtype=bool)
-
+        self._sites_last = SITELABEL['interstitial'] * numpy.ones(self.tgroup.numberOfAtoms())
+        self._offsites = numpy.empty(self.tgroup.numberOfAtoms(),dtype=bool)
+    
     def _coord2hop(self,ts):
         """Translate a single trajectory coordinate frame into a hopping
         trajectory frame and updates the hopping trajectory frame.
@@ -461,9 +464,9 @@ class HoppingTrajectory(object):
         #
         # pos[:,0] = site(t), pos[:,1] = orbit site, pos[:,2] = 0 (unused)
         pos = self.ts._pos     # assign slices to avoid loop (thanks to Naveen)
-        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]] \
+        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]]\
                     for iatom in xrange(N)]
-        s = pos[:,0]
+	s = pos[:,0]
         self._offsites[:] = (s == SITELABEL['interstitial']) | (s == SITELABEL['outlier'])
         pos[:,1] = s      # particles in interstital and outliers are assigned their previous site
         pos[self._offsites,1] = self._sites_last[self._offsites]
@@ -472,8 +475,8 @@ class HoppingTrajectory(object):
         # _sites_last[] was initialized to 'interstitial': this ensures proper accounting
         # for all later steps (because 'interstitial' is thrown away at the analysis stage)
         self._sites_last[:] = pos[:,1]  # save orbit sites for next step
-        return self.ts
-
+	return self.ts
+    
     def iterator(self):
         return self.__iter__()
 
@@ -494,7 +497,7 @@ class TAPtrajectory(object):
 
     :Attributes:
     ts               MDAnalysis.Timestep object
-    n_frames        number of frames in TAP trajectory
+    numframes        number of frames in TAP trajectory
     group            AtomGroup of atoms that are tracked
 
 
@@ -518,8 +521,8 @@ class TAPtrajectory(object):
         Create from a coordinate trajectory of a group of water residues:
 
           u = MDAnalysis.Universe(psf,dcd)
-          water = u.select_atoms('resname TIP*')  # see NOTE below!!
-          water = u.select_atoms('name OH2')      # better, see NOTE below!!
+          water = u.selectAtoms('resname TIP*')  # see NOTE below!!
+          water = u.selectAtoms('name OH2')      # better, see NOTE below!!
           h = TAPtrajectory(trajectory=u.trajectory,group=water)
 
         Load from a saved hopping trajectory (in dcd format with dummy psf)
@@ -536,7 +539,7 @@ class TAPtrajectory(object):
         One can use a TAP filtered trajectory 'on-the-fly' to build the density:
 
           u = Universe(psf,dcd)
-          oxy = u.select_atoms('name OH2')
+          oxy = u.selectAtoms('name OH2')
           TAP = TAPtrajectory(u.trajectory,oxy)
           u.trajectory = TAP.trajectory    # <--- replace orig dcd with TAP !!
           dens = hop.sitemap.density_from_Universe(u,atomselection='name OH2')
@@ -578,7 +581,7 @@ class TAPtrajectory(object):
             self.tgroup = group                          # atom selection for trajectory
             self.tgroup_indices = self.tgroup.indices()  # cache indices
             if not isinstance(self.tgroup,MDAnalysis.core.AtomGroup.AtomGroup):
-                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
+                raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.selectAtoms().')
             self.universe = self.tgroup.atoms[0].universe  # Universe of dcd and group (hackish..)
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
@@ -593,17 +596,17 @@ class TAPtrajectory(object):
             self.TAPradius = TAPradius
             self.TAPsteps = TAPsteps
             # store last TAPsteps in __lastframes
-            self.__lastframes = utilities.Ringbuffer(self.TAPsteps)
+            self.__lastframes = hop.utilities.Ringbuffer(self.TAPsteps)
             # store the last TAP coordinates: initialized here
             self.__currentTAP = self.tgroup.coordinates().copy()
             # fake DCD object that can be slotted into another universe
             self.dcd_attributes = {}
-            for k in ['delta','filename','fixed','n_frames',
-                      'n_atoms','periodic','remarks',
+            for k in ['dcdfilename','delta','filename','fixed','numframes',
+                      'numatoms','periodic','remarks',
                       'skip','skip_timestep','start_timestep']:
                 self.dcd_attributes[k] = self.traj.__dict__[k]
             self.trajectory = ThinDCDReader(self)
-            self.n_frames = self.dcd_attributes['n_frames']
+            self.numframes = self.dcd_attributes['numframes']
         elif not (dcd is None or psf is None) or filename is not None:
             # read from dcd
             try:
@@ -614,18 +617,18 @@ class TAPtrajectory(object):
                 psf = self.filename(filename,'psf')
                 dcd = self.filename(filename,'dcd')
             u = MDAnalysis.Universe(psf,dcd)
-            group = u.select_atoms('type *')   # TODO: why do I need this?
+            group = u.selectAtoms('type *')   # TODO: why do I need this?
             self.group = group      # group that refers to hopping trajectory
             self.TAPtraj = u.trajectory    # DCD trajectory object
             self.ts = self.TAPtraj.ts
-            self.n_frames = self.TAPtraj.n_frames
+            self.numframes = self.TAPtraj.numframes
             self.totaltime = totaltime(self.TAPtraj)
             # DCD object that can be slotted into another universe
             self.trajectory = u.trajectory
         else:
             raise ValueError('Not sufficient data to create a TAP trajectory.')
 
-    filename = utilities.filename_function
+    filename = hop.utilities.filename_function
 
     def next(self):
         """Provides the next time step of a TAP trajectory.
@@ -640,7 +643,7 @@ class TAPtrajectory(object):
             nextTS = self._read_next_timestep
         else:
             nextTS = self._map_next_timestep
-        return nextTS()
+	return nextTS()
 
     def rewind(self):
         if self.TAPtraj:
@@ -693,10 +696,10 @@ class TAPtrajectory(object):
         if delta is None:
             delta = self.traj.delta          # length of ts (AKMA units)
 
-        dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.n_atoms,
+        dcdwriter = MDAnalysis.DCD.DCDWriter(dcdname,self.ts.numatoms,
                                              start,step,delta,
                                              remarks='TAP trajectory')
-        pm = ProgressMeter(self.n_frames, interval=10,
+        pm = ProgressMeter(self.numframes, interval=10,
                            format="Mapping TAP frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
         for ts in self.map_dcd():
             dcdwriter.write_next_timestep(ts)
@@ -729,7 +732,7 @@ class TAPtrajectory(object):
         if start is None:
             start = 0
         if stop is None:
-            stop = self.n_frames
+            stop = self.numframes
 
         #for traj_ts in self.traj[start:stop]:
         for traj_ts in self.traj:              # no slicing for big trajectories(ERRORS!)
@@ -801,7 +804,7 @@ class ThinDCDReader(MDAnalysis.coordinates.DCD.DCDReader):
     def __init__(self,datafeeder):
         D = datafeeder
         # should have as attributes:
-        # ['dcdfilename','delta','filename','fixed','n_frames', 'numatoms','periodic',
+        # ['dcdfilename','delta','filename','fixed','numframes', 'numatoms','periodic',
         #  'remarks', 'skip','skip_timestep','start_timestep']
         self.__dict__.update(D.dcd_attributes)
         self.dcdfile = None  # no file is linked; with None, __del__ will be happy

@@ -3,17 +3,24 @@
 # Released under the GNU Public License 3 (or higher, your choice)
 # See the file COPYING for details.
 
+from ez_setup import use_setuptools
+use_setuptools()
 from setuptools import setup, find_packages
 
 import sys
-if sys.version_info[:2] < (2, 7):
-    print "HOP requires Python 2.7 or better.  Python %d.%d detected" % \
+if sys.version_info[:2] < (2, 5):
+    print "HOP requires Python 2.5 or better.  Python %d.%d detected" % \
         sys.version_info[:2]
     print "Please upgrade your version of python."
     sys.exit(-1)
+if sys.version_info[:2] >= (2, 6):
+    networkx_requirements = 'networkx>1.9.1'
+else:
+    # networkx 1.3 only works with 2.6+ so we fiddle the requirements
+    networkx_requirements = 'networkx==1.9.1'
 
 setup(name="Hop",
-      version="0.3.5",
+      version="0.3.4",
       description="Hop analyses solvent dynamics in molecular dynamics trajectories",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
@@ -27,7 +34,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       author="Oliver Beckstein",
       author_email="orbeckst@gmail.com",
       license="GPLv3",
-      url="https://github.com/Becksteinlab/hop",
+      url=None,
       keywords="science 'molecular dynamics' analysis hydration water",
       scripts = ['scripts/hop-generate-densities.py',
                  'scripts/hop-generate-hopgraph.py',
@@ -36,9 +43,9 @@ hops with rate constants and fluxes derived from the MD simulations.\
       package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
-                        'networkx>=1.11',
-                        'MDAnalysis>0.15.0',
-                        'GridDataFormats>=0.1.1', # http://github.com/MDAnalysis/GridDataFormats
+                        networkx_requirements,
+                        'MDAnalysis>0.7.4',
+                        'GridDataFormats>=0.1.1', # http://github.com/orbeckst/GridDataFormats
                         ],
       extras_require={
           'plotting': ['matplotlib>=0.91.3', # probably already installed

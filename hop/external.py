@@ -27,11 +27,10 @@ to run the volmap plugin, and finally pick up the dx file.
 
 """
 
-import os, os.path
-import errno
+import os,os.path, errno
 import vmd
 
-class VMD(object):
+class VMD:
     """Launch VMD in text mode and start a simple server, then send
     commands to the server to run the volmap plugin, and finally pick up
     the dx file."""

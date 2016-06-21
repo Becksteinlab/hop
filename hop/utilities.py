@@ -1,3 +1,4 @@
+# $Id$
 # Hop --- a framework to analyze solvation dynamics from MD simulations
 # Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
 #
@@ -24,17 +25,12 @@ For messages I should probably use python's logger module but this is
 working so far (even though it's pretty crappy).
 
 """
-from __future__ import absolute_import
 
 import sys
-import os
-import errno
+import os, errno
 import cPickle
 import warnings
-
-import MDAnalysis.core.log
-
-from .exceptions import MissingDataWarning
+import hop
 
 def unlink_f(path):
     """Unlink path but do not complain if file does not exist."""
@@ -115,6 +111,60 @@ def fileextension(filename,default=None):
     else:
         return default
 
+# load() and save() are unbound plugin methods for other classes
+# (Once the code has been cleaned up they will ONLY exist as methods of Saveable)
+def XXXsave(self,filename=None):
+    """Save as a pickled python object."""
+    if not self._saved_attributes:
+        warnings.warn("No data save: the object declared empty '_saved_attributes'.")
+        return
+    # TODO: need to properly design this whole pickling stuff
+    data = {}
+    if self._saved_attributes == 'all':
+        # HACK: manually filter out some attributes such as type('method-wrapper')
+        #       objects that cannot be pickled
+        saved_attributes = [x for x in self.__dict__.keys() if x not in self._excluded_attributes]
+    else:
+        saved_attributes = self._saved_attributes
+    for attr in saved_attributes:
+        try:
+            data[attr] = self.__dict__[attr]
+        except KeyError:
+            warnings.warn("Attribute '"+attr+"' has not been computed and will not be saved.",
+                          category=hop.MissingDataWarning)
+    fh = open(self.filename(filename,'pickle',set_default=True),'wb')  # 2.5: with open(..) as fh:
+    try:
+        cPickle.dump(data,fh,cPickle.HIGHEST_PROTOCOL)
+    finally:
+        fh.close()
+    del data
+
+def XXXload(self,filename=None,merge=False):
+    """Reinstantiate class from a pickled file (produced with save())."""
+    if not self._saved_attributes:
+        warnings.warn("No data loaded: the object declared empty '_saved_attributes'.")
+        return
+    fh = open(self.filename(filename,'pickle',set_default=True),'rb')  # 2.5: with open(..) as fh:
+    try:
+        data = cPickle.load(fh)
+    finally:
+        fh.close()
+    if self._saved_attributes == 'all':
+        saved_attributes = data.keys()
+    else:
+        saved_attributes = self._saved_attributes
+    # restore attributes from the temporary instance (works but not elegant...)
+    for attr in saved_attributes:
+        try:
+            if merge and attr in _merge_attributes: # only works for type(attr)==dict
+                self.__dict__[attr].update(data[attr])
+            else:
+                self.__dict__[attr] = data[attr]
+        except KeyError:
+            warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.",
+                          category=hop.MissingDataWarning)
+    del data
+
 
 class Saveable(object):
     """Baseclass that supports save()ing and load()ing.
@@ -167,7 +217,7 @@ class Saveable(object):
                 data[attr] = self.__dict__[attr]
             except KeyError:
                 warnings.warn("Attribute '"+attr+"' has not been computed and will not be saved.",
-                              category=MissingDataWarning)
+                              category=hop.MissingDataWarning)
         return data
 
     def __setstate__(self,data):
@@ -242,7 +292,7 @@ class Saveable(object):
         # restore attributes from the temporary instance
         if not self._saved_attributes:
             warnings.warn("No data loaded: the object declared empty '_saved_attributes'.",
-                          category=MissingDataWarning)
+                          category=hop.MissingDataWarning)
             return False
         if self._saved_attributes == 'all':
             saved_attributes = [x for x in data.keys() if x not in self._excluded_attributes]
@@ -256,7 +306,7 @@ class Saveable(object):
                     self.__dict__[attr] = data[attr]
             except KeyError:
                 warnings.warn("Expected attribute '"+attr+"' was not found in saved file '"+filename+"'.",
-                              category=MissingDataWarning)
+                              category=hop.MissingDataWarning)
         del data
         return True
 
@@ -791,6 +841,7 @@ class IntrospectiveDict(dict):
             self.__setattr__(k,v)
 
 
+import MDAnalysis.core.log
 class CustomProgressMeter(MDAnalysis.core.log.ProgressMeter):
     """ProgressMeter that uses addition '%(other)s' in format string.
 
