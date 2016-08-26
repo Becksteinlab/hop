@@ -1506,7 +1506,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         # belonging to sites (x1,y1,z1), (...)
         sidx = map(tuple,
                    numpy.array(numpy.where(self.grid >= self.P['threshold'])).T)
-        sidx.sort()          # comes sorted but just make sure (important!)
+        #sidx.sort()          # comes sorted but just make sure (important!)
         for site in sidx:    # TODO: Optimize these loops!
             for neighbour in self._shell(site):
                 try:
