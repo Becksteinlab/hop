@@ -29,6 +29,7 @@ import sys
 import os, os.path
 import errno
 import cPickle
+import pickle
 import warnings
 
 import numpy                   # need v >= 1.0
@@ -1555,7 +1556,10 @@ puts "Labels can be deleted with 'delsitelabels'."
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
-        print(self.sites)
+        file=open('selfSites.pickle','w+')
+        pickle.dump(self.sites,file)
+        file.close()
+        
 
     def _draw_map_from_sites(self):
         """Label cells in the map based on the site list.
