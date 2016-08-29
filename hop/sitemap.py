@@ -1551,10 +1551,11 @@ puts "Labels can be deleted with 'delsitelabels'."
         components = list(NX.connected_components(self.graph))  # this does the hard work
         for component in components:
             self.sites.append(list(component))
-        self.sites.sort()
+    #    self.sites.sort()
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
+        print(self.sites)
 
     def _draw_map_from_sites(self):
         """Label cells in the map based on the site list.
