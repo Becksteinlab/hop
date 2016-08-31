@@ -43,7 +43,7 @@ from .exceptions import (MissingDataError, MissingDataWarning,
 from . import utilities
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable
-
+from itertools import izip
 
 class Grid(utilities.Saveable):
     """Class to manage a multidimensional grid object.
@@ -1550,18 +1550,16 @@ puts "Labels can be deleted with 'delsitelabels'."
         """
         self.sites = []
         components = list(NX.connected_components(self.graph))  # this does the hard work
-        file=open('nx_connected_components.pickle','w+')
-        pickle.dump(self.graph,file)
-        file.close()
         for component in components:
             self.sites.append(list(component))
-    #    self.sites.sort()
+        volume_list=map(len,self.sites) #pull all of the 'volumes'
+        volume_sites_list=list(izip(volume_list,self.sites)) #crudely zip the volumes with the site lists for sorting
+        volume_sites_list.sort() #should sort by the first element, the "volume"
+        volume_sites_list.reverse()
+        self.sites = [site[1] for site in volume_sites_list] #hopefully returns the sorted sites
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
-        file=open('selfSites.pickle','w+')
-        pickle.dump(self.sites,file)
-        file.close()
         
 
     def _draw_map_from_sites(self):
