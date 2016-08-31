@@ -1550,6 +1550,9 @@ puts "Labels can be deleted with 'delsitelabels'."
         """
         self.sites = []
         components = list(NX.connected_components(self.graph))  # this does the hard work
+        file=open('nx_connected_components.pickle','w+')
+        pickle.dump(self.graph,file)
+        file.close()
         for component in components:
             self.sites.append(list(component))
     #    self.sites.sort()
