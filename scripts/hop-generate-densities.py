@@ -35,7 +35,7 @@ logger = logging.getLogger('MDAnalysis.app')
 
 
 def generate_densities_locally(topology, trajectory, localcopy=False, **kwargs):
-    # default values in hop.density.DensityCreator
+    # default values in hop.density.DensityGenerator
     def _generate_densities(traj):
         return hop.interactive.generate_densities(topology, traj, **kwargs)
     if localcopy:
