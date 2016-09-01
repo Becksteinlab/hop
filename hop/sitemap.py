@@ -29,6 +29,7 @@ import sys
 import os, os.path
 import errno
 import cPickle
+import pickle
 import warnings
 
 import numpy                   # need v >= 1.0
@@ -42,7 +43,7 @@ from .exceptions import (MissingDataError, MissingDataWarning,
 from . import utilities
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable
-
+from itertools import izip
 
 class Grid(utilities.Saveable):
     """Class to manage a multidimensional grid object.
@@ -100,7 +101,7 @@ class Grid(utilities.Saveable):
 
         If the input histogram consists of counts per cell then the
         make_density() method converts the grid to a physical
-        density. For a probability density, divide it by grid.sum(0 or
+        density. For a probability density, divide it by grid.sum() or
         use normed=True right away in histogramdd().
 
         If grid, edges, AND filename are given then the
@@ -250,7 +251,7 @@ class Grid(utilities.Saveable):
         There may be some undesirable cross-interactions with convert_length...
         """
         if not self.P['isDensity']:
-            raise RuntimeError('The grid is not a density so converty_density(0 makes no sense.')
+            raise RuntimeError('The grid is not a density so convert_density() makes no sense.')
         if unit == self.unit['density']:
             return
         self.grid *= constants.get_conversion_factor('density',self.unit['density'],unit)
@@ -1167,7 +1168,7 @@ class Density(Grid):
         ebunch = [map(tuple,e) for e in edges]  # make nodes hashable tuples
         g = NX.Graph()
         g.add_edges_from(ebunch)
-        commonsites = NX.connected_components(g)  # each item: collection of equivalent sites
+        commonsites = [i for i in NX.connected_components(g)]  # each item: collection of equivalent sites
 
         # liz overlap
         overlap = find_overlap_coeff(densities[SELF],densities[REF])
@@ -1547,10 +1548,20 @@ puts "Labels can be deleted with 'delsitelabels'."
         marking up the map with -1 and then looking for the -1 at the
         end of this function.)
         """
-        self.sites = list(NX.connected_components(self.graph))  # this does the hard work
+
+        self.sites = []
+        components = list(NX.connected_components(self.graph))  # this does the hard work
+        for component in components:
+            self.sites.append(list(component))
+        volume_list=map(len,self.sites) #pull all of the 'volumes'
+        volume_sites_list=list(izip(volume_list,self.sites)) #crudely zip the volumes with the site lists for sorting
+        volume_sites_list.sort() #should sort by the first element, the "volume"
+        volume_sites_list.reverse()
+        self.sites = [site[1] for site in volume_sites_list] #hopefully returns the sorted sites
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
+        
 
     def _draw_map_from_sites(self):
         """Label cells in the map based on the site list.
