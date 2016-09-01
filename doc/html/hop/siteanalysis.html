@@ -77,7 +77,7 @@ atom in the hopping trajectory (or the selection must be identical to the
 hopping selection); also load the corresponding hopping trajectory:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>C = Collection(selection=universe.selectAtoms(&#8216;name OH2&#8217;),</dt>
+<dt>C = Collection(selection=universe.select_atoms(&#8216;name OH2&#8217;),</dt>
 <dd>hoptraj=HoppingTrajectory(filename=&#8217;hoptraj&#8217;),
 density=Density(filename=&#8217;water.pickle&#8217;))</dd>
 </dl>
@@ -148,8 +148,8 @@ kwargs      keyword arguments specifying additional parameters for the particula
 </tbody>
 </table>
 <p>observables   list of names of observables to compute; None means &#8216;all&#8217;
-start         0...numframes-1  NOTE: 0-based frame indexing
-stop          1...numframes
+start         0...n_frames-1  NOTE: 0-based frame indexing
+stop          1...n_frames
 step          1
 progress_interval   10 (print progress every &lt;interval&gt; steps)</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -317,7 +317,7 @@ max_site     the highest site label that occurs in the trajectory
 idcd2ihop    translation between dcd indices to hop indices</p>
 <blockquote>
 <div>sites[self.idcd2ihop[[2,3,5]] -&gt; sites of dcd 2,3,5</div></blockquote>
-<p>data_indices == MDAnalysis.selectAtoms(...).indices() (atom indices of selected atoms)
+<p>data_indices == MDAnalysis.select_atoms(...).indices() (atom indices of selected atoms)
 data_ts      (pointer to) the data trajectory time step instance
 hop_ts       (pointer to) the hop trajectory time step instance</p>
 <p>(from __init__)
@@ -659,7 +659,7 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
 <dl class="attribute">
 <dt id="hop.siteanalysis.SiteTrajectoryArray.data">
 <tt class="descname">data</tt><a class="headerlink" href="#hop.siteanalysis.SiteTrajectoryArray.data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Numpy array with N sites on axis 0 and numframes values on axis 1</p>
+<dd><p>Numpy array with N sites on axis 0 and n_frames values on axis 1</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -677,7 +677,7 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
 <dl class="method">
 <dt id="hop.siteanalysis.SiteTrajectoryArray.site_data">
 <tt class="descname">site_data</tt><big>(</big><em>sites</em><big>)</big><a class="headerlink" href="#hop.siteanalysis.SiteTrajectoryArray.site_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns numpy array with N sites on axis 0 and numframes values on axis 1; indexed by the site label</p>
+<dd><p>Returns numpy array with N sites on axis 0 and n_frames values on axis 1; indexed by the site label</p>
 </dd></dl>
 
 <dl class="method">
@@ -689,13 +689,13 @@ std_acf         standard deviation or the resampled acfs,  shape = (Nsites,lengt
 <dl class="method">
 <dt id="hop.siteanalysis.SiteTrajectoryArray.site_trajectory">
 <tt class="descname">site_trajectory</tt><big>(</big><em>sites</em><big>)</big><a class="reference internal" href="../_modules/hop/siteanalysis.html#SiteTrajectoryArray.site_trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.siteanalysis.SiteTrajectoryArray.site_trajectory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns numpy array with N sites on axis 0 and numframes values on axis 1; indexed by the site label</p>
+<dd><p>Returns numpy array with N sites on axis 0 and n_frames values on axis 1; indexed by the site label</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="hop.siteanalysis.SiteTrajectoryArray.trajectory">
 <tt class="descname">trajectory</tt><a class="reference internal" href="../_modules/hop/siteanalysis.html#SiteTrajectoryArray.trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hop.siteanalysis.SiteTrajectoryArray.trajectory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Numpy array with N sites on axis 0 and numframes values on axis 1</p>
+<dd><p>Numpy array with N sites on axis 0 and n_frames values on axis 1</p>
 </dd></dl>
 
 </dd></dl>

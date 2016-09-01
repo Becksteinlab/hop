@@ -4,10 +4,13 @@
 
 |zenodo|
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin
 **DEVELOPMENT VERSION of hop**: Please note that this is a beta
-version of the package. It is still in heavy development. Feedback is
-very welcome (see below).
+version of the package. It is still in heavy development. Feedback_ is
+very welcome.
 
 
 Hop: analyzing solvent in molecular dynamics trajectories
@@ -30,7 +33,11 @@ and reflecting the fact that a "hopping analysis" is performed).
 
 Hop requires MDAnalysis_.
 
+<<<<<<< HEAD
+.. _MDAnalysis: http://www.mdanalysis.org
+=======
 .. _MDAnalysis: http://www.mdanalysis.org/
+>>>>>>> origin
 
 
 Installation
@@ -51,20 +58,28 @@ Documentation
 
 Please see the contents of the ``doc/`` directory, in particular
 ``doc/overview.txt``, and the Python doc strings.
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin
 
 
-Bug reporting
-=============
-
+<<<<<<< HEAD
+Bug reporting and Contributing
+==============================
+=======
 Almost invariably, things will not work right away or it will be
 unclear how to accomplish a certain task. In order to keep track of
 feedback I ask you to use the Issue tracker at
 http://github.com/Becksteinlab/hop/issues 
+>>>>>>> origin
 
-It helps tremendously to have everything in one place. Of course, feel
-free to also additionally email me directly.
+Please raise issues in the `issue tracker`_. This includes
+problems or if you have suggestions how to improve the package or the
+documentation. Pull requests for changes and fixes are also warmly
+welcomed.
 
-Thanks!
+.. _issue tracker: https://github.com/Becksteinlab/hop/issues
 
 
 Citing
@@ -87,7 +102,13 @@ MDAnalysis):
 
 Thanks!
 
+.. |zenodo| image:: https://zenodo.org/badge/13219/Becksteinlab/hop.svg
+   :target: https://zenodo.org/badge/latestdoi/13219/Becksteinlab/hop
+   :alt: Zenodo DOI
 
+<<<<<<< HEAD
+.. _Feedback: https://github.com/Becksteinlab/hop/issues
+=======
 
 Contact
 =======
@@ -102,3 +123,4 @@ or if you have suggestions how to improve the package or these instructions.
             :target: http://dx.doi.org/10.5281/zenodo.18864
 
 
+>>>>>>> origin

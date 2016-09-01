@@ -33,7 +33,7 @@ def generate_hoptraj_locally(topology, trajectory, density, filename, atomselect
             logger.fatal(errmsg)
             raise ValueError(errmsg)
         u = MDAnalysis.Universe(topology, traj)
-        group = u.selectAtoms(atomselection)
+        group = u.select_atoms(atomselection)
         hops = hop.trajectory.HoppingTrajectory(u.trajectory,group,density,**hopargs)
         hops.write(filename)
         return hops

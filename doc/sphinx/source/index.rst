@@ -23,7 +23,7 @@ and reflecting the fact that a "hopping analysis" is performed).
 
 Hop is built with MDAnalysis_.
 
-.. _MDAnalysis: http://mdanalysis.googlecode.com/
+.. _MDAnalysis: http://www.mdanalysis.org
 
 
 Contents

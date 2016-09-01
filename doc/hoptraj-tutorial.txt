@@ -11,7 +11,7 @@ Next you'll need to specify the names of your water molecules, which vary from f
 
 The following command identifies a group of atoms, which can then be manipulated by MDAnalysis, in this case water:
 
-group = u.selectAtoms("name water")
+group = u.select_atoms("name water")
 
 You will need to use whatever name your forcefield uses for water, such as "name OW" or some such.
 

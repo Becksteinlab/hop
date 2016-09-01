@@ -102,8 +102,8 @@ import hop.trajectory
 print "Setting up the Universes..."
 ref = Universe(job.filenames['ref_psf'],pdbfilename=job.filenames['ref_pdb'])
 trj = Universe(job.filenames['trj_psf'],job.filenames['trj_pdb'])
-ref_resids    = [a.resid for a in ref.selectAtoms('name CA')]
-target_resids = [a.resid for a in trj.selectAtoms('name CA')]
+ref_resids    = [a.resid for a in ref.select_atoms('name CA')]
+target_resids = [a.resid for a in trj.select_atoms('name CA')]
 print "Alignment and selection string..."
 selection = hop.trajectory.fasta2select(job.filenames['sequence'],
                                         ref_resids=ref_resids,target_resids=target_resids,

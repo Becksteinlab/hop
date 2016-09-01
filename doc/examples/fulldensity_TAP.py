@@ -63,7 +63,7 @@ bulk.map_sites(V['rho_cut_bulk'])
 
 print "== TAP trajectory =="
 u = MDAnalysis.Universe(F['psf'],F['dcd'])
-woxy = u.selectAtoms(V['water_selection'])
+woxy = u.select_atoms(V['water_selection'])
 TAP = hop.trajectory.TAPtrajectory(trajectory=u.dcd,group=woxy,
                                    TAPradius=2.8,TAPsteps=3)
 TAP.write(F['TAP_dcd'])

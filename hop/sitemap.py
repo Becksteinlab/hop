@@ -23,29 +23,29 @@ grid. Calculate the density, change units (both of the grid and of the
 density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.
 """
+from __future__ import absolute_import
 
-import hop.constants
-from hop.constants import SITELABEL
-import hop.utilities
-from hop.utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
-     DefaultDict, fixedwidth_bins, iterable, asiterable
-import numpy  # need v >= 1.0
 import sys
-import os,os.path,errno
+import os, os.path
+import errno
 import cPickle
+import pickle
 import warnings
 
-from gridData import OpenDX    # http://github.com/orbeckst/GridDataFormats
+import numpy                   # need v >= 1.0
 import networkx as NX          # https://networkx.lanl.gov/
+from gridData import OpenDX    # http://github.com/Becksteinlab/GridDataFormats
 
-# set() for older versions of python (<2.4)
-try:
-    set([2,2])
-except NameError:
-    from sets import Set as set
+from . import constants
+from .constants import SITELABEL
+from .exceptions import (MissingDataError, MissingDataWarning,
+                         InconsistentDataWarning, OverwriteWarning)
+from . import utilities
+from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
+     DefaultDict, fixedwidth_bins, iterable, asiterable
+from itertools import izip
 
-
-class Grid(hop.utilities.Saveable):
+class Grid(utilities.Saveable):
     """Class to manage a multidimensional grid object.
 
     The grid (Grid.grid) can be manipulated as a standard numpy
@@ -175,7 +175,7 @@ class Grid(hop.utilities.Saveable):
                     self.unit[unit_type] = None
                     continue
                 try:
-                    hop.constants.conversion_factor[unit_type][value]
+                    constants.conversion_factor[unit_type][value]
                     self.unit[unit_type] = value
                 except KeyError:
                     raise ValueError('Unit '+str(value)+\
@@ -224,7 +224,7 @@ class Grid(hop.utilities.Saveable):
         """
         if unit == self.unit['length']:
             return
-        cvnfact = hop.constants.get_conversion_factor('length',self.unit['length'],unit)
+        cvnfact = constants.get_conversion_factor('length',self.unit['length'],unit)
         self.edges = [x * cvnfact for x in self.edges]
         self.unit['length'] = unit
         self._update()        # needed to recalculate midpoints and origin
@@ -254,7 +254,7 @@ class Grid(hop.utilities.Saveable):
             raise RuntimeError('The grid is not a density so convert_density() makes no sense.')
         if unit == self.unit['density']:
             return
-        self.grid *= hop.constants.get_conversion_factor('density',self.unit['density'],unit)
+        self.grid *= constants.get_conversion_factor('density',self.unit['density'],unit)
         self.unit['density'] = unit
 
     def centers(self):
@@ -590,7 +590,7 @@ class Density(Grid):
 
     # methods to calculate site_properties
     def _site_occupancies(self,labels):
-        factor = hop.constants.get_conversion_factor('density',self.unit['density'],
+        factor = constants.get_conversion_factor('density',self.unit['density'],
                                                      self.unit['length'])
         Vcell = factor * numpy.linalg.det(self.delta)
         def occupancy(site):
@@ -900,7 +900,7 @@ class Density(Grid):
             warnings.warn("The unit for the density (%s) is different from the unit "
                           "for the bulk density (%s).\n" %
                           (self.unit['threshold'], bulkdensity.unit['threshold']),
-                          category=hop.InconsistentDataWarning)
+                          category=InconsistentDataWarning)
         # do the hack & update
         self.sites.insert(SITELABEL['bulk'],bulkdensity.sites[bulklabel])
         self._draw_map_from_sites()
@@ -1145,7 +1145,7 @@ class Density(Grid):
             if density.equivalent_sites_index:
                 warnings.warn('Density '+str(density)+' already contains equivalent sites, '
                               'which will be overwritten.',
-                              category=hop.OverwriteWarning)
+                              category=OverwriteWarning)
                 density.remove_equivalence_sites()
         warn_and_remove(self)
         if not use_ref_equivalencesites:
@@ -1307,7 +1307,7 @@ class Density(Grid):
             stats['rho_cut'] = self.P['threshold']
             stats['rho_cut_bulk'] = self.P['bulk_threshold']
         except KeyError:
-            warnings.warn("No bulk site defined", category=hop.MissingDataWarning)
+            warnings.warn("No bulk site defined", category=MissingDataWarning)
         stats['N_sites'] = len(nodes)
         stats['N_equivalence_sites'] = len(self.site_labels(include='equivalencesites',exclude=None))
         stats['N_subsites'] = len(self.site_labels(include='subsites',exclude=None))
@@ -1548,10 +1548,20 @@ puts "Labels can be deleted with 'delsitelabels'."
         marking up the map with -1 and then looking for the -1 at the
         end of this function.)
         """
-        self.sites = [i for i in NX.connected_components(self.graph)]  # this does the hard work
+
+        self.sites = []
+        components = list(NX.connected_components(self.graph))  # this does the hard work
+        for component in components:
+            self.sites.append(list(component))
+        volume_list=map(len,self.sites) #pull all of the 'volumes'
+        volume_sites_list=list(izip(volume_list,self.sites)) #crudely zip the volumes with the site lists for sorting
+        volume_sites_list.sort() #should sort by the first element, the "volume"
+        volume_sites_list.reverse()
+        self.sites = [site[1] for site in volume_sites_list] #hopefully returns the sorted sites
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
+        
 
     def _draw_map_from_sites(self):
         """Label cells in the map based on the site list.
@@ -1664,7 +1674,7 @@ def remap_density(density,ref,verbosity=0):
 
     if not numpy.all(numpy.abs(ref.delta - density.delta) < 1e-4):
         warnings.warn('The grid spacings are not the same; this is probably WRONG.',
-                      category=hop.InconsistentDataWarning)
+                      category=InconsistentDataWarning)
 
     D=numpy.rank(ref.map)
     newgrid = numpy.zeros(ref.grid.shape)
@@ -1798,8 +1808,8 @@ def find_overlap_coeff(a,b):
         #b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
         sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
         sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
-        #f_a = hop.constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
-        #f_b = hop.constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
+        #f_a = constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
+        #f_b = constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
         #a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
         #b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
         #print a_cellvol, b_cellvol
@@ -1919,7 +1929,7 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     """
     try:
-        universe.selectAtoms('all')
+        universe.select_atoms('all')
         universe.trajectory.ts
     except AttributeError:
         raise TypeError("The universe must be a proper MDAnalysis.Universe instance.")
@@ -1930,13 +1940,13 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
         def current_coordinates():
             return notwithin_coordinates()
     else:
-        group = u.selectAtoms(atomselection)
+        group = u.select_atoms(atomselection)
         def current_coordinates():
             return group.coordinates()
 
     coord = current_coordinates()
     msg(3,"Selected %d atoms out of %d atoms (%s) from %d total.\n" %
-        (coord.shape[0],len(u.selectAtoms(atomselection)),atomselection,len(u.atoms)))
+        (coord.shape[0],len(u.select_atoms(atomselection)),atomselection,len(u.atoms)))
 
     # mild warning; typically this is run on RMS-fitted trajectories and
     # so the box information is rather meaningless
@@ -1965,24 +1975,24 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
 
     for ts in u.trajectory:
         msg(3,"Histograming %6d atoms in frame %5d/%d  [%5.1f%%]\r" % \
-            (len(coord), ts.frame,u.trajectory.numframes,100.0*ts.frame/u.trajectory.numframes))
+            (len(coord), ts.frame,u.trajectory.n_frames,100.0*ts.frame/u.trajectory.n_frames))
         coord = current_coordinates()
         if len(coord) == 0: continue
         h[:],edges[:] = numpy.histogramdd(coord, bins=bins, range=arange, normed=False)
         grid += h  # accumulate average histogram
-    numframes = u.trajectory.numframes / u.trajectory.skip
-    grid /= float(numframes)
+    n_frames = u.trajectory.n_frames / u.trajectory.skip
+    grid /= float(n_frames)
 
     # pick from kwargs
     metadata = kwargs.pop('metadata',{})
     metadata['psf'] = u.filename
     metadata['dcd'] = u.trajectory.filename
     metadata['atomselection'] = atomselection
-    metadata['numframes'] = numframes
-    metadata['totaltime'] = round(u.trajectory.numframes * u.trajectory.delta * u.trajectory.skip_timestep \
-                                  * hop.constants.get_conversion_factor('time','AKMA','ps'), 3)
+    metadata['n_frames'] = n_frames
+    metadata['totaltime'] = round(u.trajectory.n_frames * u.trajectory.delta * u.trajectory.skip_timestep \
+                                  * constants.get_conversion_factor('time','AKMA','ps'), 3)
     metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
-                     hop.constants.get_conversion_factor('time','AKMA','ps')
+                     constants.get_conversion_factor('time','AKMA','ps')
     metadata['time_unit'] = 'ps'
     metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
     metadata['dcd_delta'] = u.trajectory.delta         # in AKMA
@@ -2032,8 +2042,8 @@ def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, 
     # distance matrix    633        1          1           False
     # AROUND + kdtree    420        0.66       1.5         n/a ('name OH2 around 4 protein')
     # manual + kdtree    182        0.29       3.5         True
-    solvent = universe.selectAtoms(sel1)
-    protein = universe.selectAtoms(sel2)
+    solvent = universe.select_atoms(sel1)
+    protein = universe.select_atoms(sel2)
     if use_kdtree:
         # using faster hand-coded 'not within' selection with kd-tree
         import MDAnalysis.KDTree.NeighborSearch as NS
@@ -2274,7 +2284,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_xray)d in x-ray structure." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the xray -> psf translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='#')
 
     def _Wxray(self,resid_psf,format=False):
@@ -2284,7 +2294,7 @@ so one should (after computing a site map) also insert an empty bulk site:
         except KeyError:
             raise ValueError("No residue number %(resid_psf)d in psf." % vars())
         except AttributeError:
-            raise hop.MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
+            raise MissingDataError("Add the psf -> x-ray translation table with add_xray2psf() first.")
         return self._Wformatter(resid,format=format,typechar='W')
 
     def _Wformatter(self,resid,format=False,typechar=None):
@@ -2411,7 +2421,7 @@ class BfactorDensityCreator(object):
         from MDAnalysis import Universe
         set_verbosity(verbosity)  # set to 0 for no messages
         u = Universe(psf,pdbfilename=pdb)
-        group = u.selectAtoms(atomselection)
+        group = u.select_atoms(atomselection)
         coord = group.coordinates()
         msg(3,"Selected %d atoms (%s) out of %d total.\n" %
             (coord.shape[0],atomselection,len(u.atoms)))
@@ -2428,13 +2438,13 @@ class BfactorDensityCreator(object):
         self.delta = numpy.diag(map(lambda e: (e[-1] - e[0])/(len(e)-1), self.edges))
         self.midpoints = map(lambda e: 0.5 * (e[:-1] + e[1:]), self.edges)
         self.origin = map(lambda m: m[0], self.midpoints)
-        numframes = 1
+        n_frames = 1
 
         if sigma is None:
             # histogram individually, and smear out at the same time
             # with the appropriate B-factor
             if numpy.any(group.bfactors == 0.0):
-                warnings.warn("Some B-factors are Zero.",category=hop.MissingDataWarning)
+                warnings.warn("Some B-factors are Zero.",category=MissingDataWarning)
             rmsf = Bfactor2RMSF(group.bfactors)
             grid *= 0.0  # reset grid
             self.g = self._smear_rmsf(coord,grid,self.edges,rmsf)
@@ -2451,7 +2461,7 @@ class BfactorDensityCreator(object):
             metadata = dict(psf=psf)
         metadata['pdb'] = pdb
         metadata['atomselection'] = atomselection
-        metadata['numframes'] = numframes
+        metadata['n_frames'] = n_frames
         metadata['sigma'] = sigma
         self.metadata = metadata
 
@@ -2488,7 +2498,7 @@ class BfactorDensityCreator(object):
                           "Site <-> water matching will not work."
                           % (len(d._xray2psf),
                              len(d.site_labels('sites',exclude='equivalencesites'))),
-                          category=hop.InconsistentDataWarning)
+                          category=InconsistentDataWarning)
         return d
 
     def _smear_sigma(self,grid,sigma):

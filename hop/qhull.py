@@ -67,12 +67,14 @@ Insert a bulk density::
 
 """
 
-from __future__ import with_statement
+from __future__ import with_statement, absolute_import
 
-from subprocess import Popen
-import os, errno
+import os
+import errno
 import tempfile
 import shutil
+from subprocess import Popen
+
 import numpy
 
 #: Comparisons of distances less than EPSILON yield equal.
@@ -86,15 +88,15 @@ def points_from_selection(*args, **kwargs):
     :Arguments:
     - psf: Charmm topology file
     - pdb: coordinates
-    - selection: MDAnalysis selectAtoms() selection string [C-alpha atoms]
+    - selection: MDAnalysis select_atoms() selection string [C-alpha atoms]
     - filename: name of the output file; used as input for :class:`ConvexHull`
     - scale: scale points around the centre of geometry; values of 0.5 - 0.7 typically ensure that
       the convex hull is inside the protein; default is to not to scale, i.e. scale = 1.
     """
 
-    from MDAnalysis import asUniverse
-    u = asUniverse(*args, permissive=kwargs.pop('permissive', None))
-    coordinates = u.selectAtoms(kwargs.pop('selection', "name CA")).coordinates()
+    from MDAnalysis import as_Universe
+    u = as_Universe(*args, permissive=kwargs.pop('permissive', None))
+    coordinates = u.select_atoms(kwargs.pop('selection', "name CA")).coordinates()
     write_coordinates(kwargs.pop('filename', "points.dat"), coordinates, scale=kwargs.pop('scale',None))
 
 def write_coordinates(filename, points, scale=None):

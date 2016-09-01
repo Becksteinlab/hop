@@ -26,21 +26,24 @@ Classes and functions
 ---------------------
 
 """
+from __future__ import absolute_import
 
-import hop.graph, hop.sitemap, hop.utilities
-from hop.utilities import msg,set_verbosity,verbosity
-import numpy
+import os, os.path
 import cPickle
 import pprint
-import os, os.path
 
-from hop.utilities import sorted
+import numpy
+
+from . import graph
+from . import sitemap
+from . import utilities
+from .utilities import msg, set_verbosity, verbosity, sorted
 
 
 pp = pprint.PrettyPrinter(indent=4)
 
 
-class DensityAnalysis:
+class DensityAnalysis(object):
     def __init__(self,densities,reference,dir="./figs",
                  bulkdensities=None,refbulkdensity=None,
                  bulkname='bulk',verbosity=3):
@@ -65,8 +68,8 @@ class DensityAnalysis:
         """
         set_verbosity(verbosity)
 
-        self.densities = hop.utilities.easy_load(densities,hop.sitemap.Density,'stats')
-        self.reference = hop.utilities.easy_load(reference,hop.sitemap.Density,'stats')
+        self.densities = utilities.easy_load(densities,sitemap.Density,'stats')
+        self.reference = utilities.easy_load(reference,sitemap.Density,'stats')
         try:
             self.n = len(self.densities)   # densities are numbered 0 .. n-1
         except TypeError:
@@ -74,15 +77,15 @@ class DensityAnalysis:
             self.n = 1
 
         if bulkdensities and refbulkdensity:
-            self.bulkdensities = hop.utilities.easy_load(bulkdensities,hop.sitemap.Density,'stats')
-            self.refbulkdensity = hop.utilities.easy_load(refbulkdensity,hop.sitemap.Density,'stats')
+            self.bulkdensities = utilities.easy_load(bulkdensities,sitemap.Density,'stats')
+            self.refbulkdensity = utilities.easy_load(refbulkdensity,sitemap.Density,'stats')
         elif bulkname:
-            self.refbulkdensity = hop.utilities.easy_load(
+            self.refbulkdensity = utilities.easy_load(
                 os.path.join(os.path.dirname(self.reference.filename()),bulkname),
-                hop.sitemap.Density,'stats')
-            self.bulkdensities = [ hop.utilities.easy_load(
+                sitemap.Density,'stats')
+            self.bulkdensities = [ utilities.easy_load(
                     os.path.join(os.path.dirname(d.filename()),bulkname),
-                    hop.sitemap.Density,'stats') for d in self.densities ]
+                    sitemap.Density,'stats') for d in self.densities ]
         else:
             self.bulkdensities = None
             self.refbulkdensity = None
@@ -105,7 +108,7 @@ class DensityAnalysis:
         for k,v in self.pdf.items():
             self.pdf[k] = os.path.join(dir,v)
 
-    filename = hop.utilities.filename_function
+    filename = utilities.filename_function
 
     def all(self):
         self.show()
@@ -147,7 +150,7 @@ class DensityAnalysis:
             filename = self.pdf['scan']
         self.scanner.plot(filename,properties=properties,fignumber=fignumber)
 
-class DensityScanner(hop.utilities.Saveable):
+class DensityScanner(utilities.Saveable):
     # use scanstats for archival because it is more flexible than the record and can be easily updated
     _saved_attributes = ['scanstats']
     def __init__(self,densityAnalysis,with_densities=True):
@@ -197,7 +200,7 @@ class DensityScanner(hop.utilities.Saveable):
         for k,dens in enumerate(densityList):
             if dens.map.shape != self.reference.map.shape:
                 msg(1, "Must remap density "+str(dens)+" to the reference "+str(self.reference)+"\n")
-                dens_remapped = hop.sitemap.remap_density(dens,self.reference) # copy
+                dens_remapped = sitemap.remap_density(dens,self.reference) # copy
                 densityList[k] = dens_remapped    # assignment (no idea why it has to be that clumsy)
 
     def load(self,fn,merge=True):
@@ -342,7 +345,7 @@ class HopgraphAnalysis:
         histograms()   produce histograms
         """
         set_verbosity(verbosity)
-        h = hop.utilities.easy_load(hopgraph,hop.graph.HoppingGraph,'stats')
+        h = utilities.easy_load(hopgraph, graph.HoppingGraph,'stats')
         self.pdf = {'degree':'degree.pdf',
                     'occupancy':'occupancy.pdf',
                     'lifetime':'lifetime.pdf',
@@ -448,7 +451,7 @@ class HopgraphAnalysis:
         pylab.ylabel('count')
         pylab.savefig(self.pdf['occupancy'])
 
-class LegendContainer:
+class LegendContainer(object):
     """For each bar plot, record first lines instance and the label
     with
     >>> Legend = LegendContainer()
@@ -468,7 +471,7 @@ class LegendContainer:
         return tuple(self.lines), tuple(self.labels)
 
 
-class HeatmapAnalysis:
+class HeatmapAnalysis(object):
     """Combine Hopgraph statistics for a number of simulations into a grid,
     normalize each observable, and color. Clustering is performed if the R
     package is installed in the system. The idea is to quickly compare a number
@@ -553,7 +556,7 @@ class HeatmapAnalysis:
         # set up annotation
         self.annotation()
 
-    filename = hop.utilities.filename_function
+    filename = utilities.filename_function
 
     __normalization_methods = [None,"maxabs","zscore"]
 
@@ -638,7 +641,7 @@ class HeatmapAnalysis:
            pylab/matplotlib documentation.
         """
         if filename:
-            format = hop.utilities.fileextension(filename,default=format)
+            format = utilities.fileextension(filename,default=format)
         labels = self.labels()
         try:
             try:

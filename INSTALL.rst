@@ -9,21 +9,13 @@ should be installed before Hop and Hop's installation process. The
 latter should be painless because it only consists of pure python
 scripts at the moment.
 
-Please do not hesitate to contact Oliver Beckstein
-<orbeckst@gmail.com> if problems occur or if you have suggestions on
-how to improve the package or these instructions.
-
 
 Quick instructions
 ==================
 
-If you are familiar with `pip`_ or `easy_install`_ from setuptools_ then try ::
+If you are familiar with `pip`_ then try ::
 
   pip install Hop-0.3.3.tar.gz
-
-or ::
-
-  easy_install Hop-0.3.3.tar.gz
 
 or ::
 
@@ -33,16 +25,14 @@ or ::
 Otherwise read the `Requirements`_ and `Installation`_ instructions below.
 
 .. _pip: http://www.pip-installer.org/en/latest/
-.. _`easy_install`: http://pythonhosted.org/setuptools/easy_install.html
-.. _setuptools: http://pythonhosted.org/setuptools/
+
 
 Requirements
 ============
 
-If Hop is installed with `pip`_ or `easy_install`_ then some
-dependencies are handled automatically; if not you will have to
-install packages manually. This is always true for ``MDAnalysis`` at
-the moment.
+If Hop is installed with `pip`_ then some dependencies are handled
+automatically; if not you will have to install packages manually. This
+is always true for ``MDAnalysis`` at the moment.
 
 The ``GridDataFormats`` package can be obtained from my home page (see
 below) but in most cases the installation should be able to
@@ -67,15 +57,22 @@ Required python packages
    =============== ===================== ============================================================
    package         version               url
    =============== ===================== ============================================================
+<<<<<<< HEAD
+   MDAnalysis      >= 0.7.5              http://www.mdanalysis.org
+   numpy           >=1.0.3               http://numpy.scipy.org
+   NetworkX        >=1.0                 https://networkx.lanl.gov
+   GridDataFormats >= 0.1.1              https://github.com/MDAnalysis/GridDataFormats
+=======
    MDAnalysis      >= 0.7.5              http://mdanalysis.googlecode.com
    numpy           >=1.0.3               http://numpy.scipy.org/
    NetworkX        >=1.9.1                 https://networkx.lanl.gov/
    GridDataFormats >= 0.1.1              https://github.com/orbeckst/GridDataFormats/archives/master
+>>>>>>> origin
    =============== ===================== ============================================================
 
 MDAnalysis_ requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
-http://mdanalysis.googlecode.com/files/ or install it with ::
+http://downloads.mdanalysis.org or install it with ::
 
   pip install MDAnalysis
 
@@ -84,7 +81,7 @@ requires a python environment that is fully set up for scientific
 computing. The good news is that once this is done then Hop should be
 easy.
 
-.. _MDAnalysis:: http://mdanalysis.googlecode.com
+.. _MDAnalysis:: http://www.mdanalysis.org
 
 
 Optional packages
@@ -134,59 +131,16 @@ Hints on obtaining packages
 ---------------------------
 
 Many packages can be found through the local package manager (eg apt,
-fink, yum, rpm). networkx is available at the above URL or with the
-``easy_install`` command from python setuptools.
+fink, yum, rpm). ``networkx`` is available at the above URL or with
+the ``pip`` command.
 
 In Debian/Ubuntu::
 
    aptitude install python-setuptools pkg-config
 
    aptitude install graphviz graphviz-dev python-matplotlib
-   easy_install networkx
-   easy_install pygraphviz
-
-
-
-Installation
-============
-
-Standard EasyInstall installation
----------------------------------
-
-The Hop package can be installed with 'EasyInstall' which is part of
-``setuptools`` (http://peak.telecommunity.com/DevCenter/setuptools).
-
-If you have setuptools already installed you should be able to simply
-install with ::
-
-   easy_install Hop-0.3.3.tar.gz
-
-You can install ``setuptools`` by following the instructions at
-http://peak.telecommunity.com/DevCenter/EasyInstall#installation-instructions
-or on Linux distributions such as Debian or Ubuntu by a
-commandline similar to ::
-
-   aptitude install python-setuptools
-
-Note that ``easy_install`` tries to download additional packages via
-the internet if it cannot find them installed already.
-
-
-Installation in a custom location
----------------------------------
-
-If you want to install Hop somewhere else but the system default
-please have a look at
-http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations
-which describes custom installations.
-
-From python 2.6 onwards, an installation in a specific user directory
-is supported. It is recommended to install in the following manner::
-
-  cd Hop-0.3.3
-  python setup.py install --user
-
-
+   pip install networkx
+   pip install pygraphviz
 
 
 
