@@ -138,21 +138,9 @@ class DensityCollector(object):
             raise MissingDataError(errmsg)
         u = self.universe
         metadata = self.metadata
-        metadata['collector'] = self.name
-        metadata['collector_mode'] = self.mode
         metadata['psf'] = u.filename             # named psf for historical reasons: any topol
         metadata['dcd'] = u.trajectory.filename  # named dcd for historical reasons: any traj
         metadata['atomselection'] = self.atomselection
-        metadata['n_frames'] = u.trajectory.n_frames
-        metadata['dt'] = u.trajectory.dt    # in ps for default MDAnalysis
-        # totaltime should be in MDAnalysis!
-        metadata['totaltime'] = round(u.trajectory.n_frames * metadata['dt'] * u.trajectory.skip_timestep, 3)
-        metadata['time_unit'] = MDAnalysis.core.flags['time_unit']  # just to make sure we know it...
-        metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
-        metadata['dcd_delta'] = u.trajectory.delta         # in native units (?)
-        if self.mode == 'BULK':
-            metadata['soluteselection'] = self.soluteselection
-            metadata['cutoff'] = self.cutoff             # in Angstrom
 
         parameters = self.parameters
         parameters['isDensity'] = False             # must override
@@ -522,17 +510,6 @@ def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
     metadata['psf'] = u.filename              # named psf for historical reasons
     metadata['dcd'] = u.trajectory.filename   # named dcd for historical reasons
     metadata['atomselection'] = atomselection
-    metadata['n_frames'] = n_frames
-    metadata['totaltime'] = round(u.trajectory.n_frames * u.trajectory.delta * u.trajectory.skip_timestep \
-                                  * constants.get_conversion_factor('time','AKMA','ps'), 3)
-    metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
-                     constants.get_conversion_factor('time','AKMA','ps')
-    metadata['time_unit'] = 'ps'
-    metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
-    metadata['dcd_delta'] = u.trajectory.delta         # in AKMA
-    if cutoff > 0 and soluteselection is not None:
-        metadata['soluteselection'] = soluteselection
-        metadata['cutoff'] = cutoff             # in Angstrom
 
     parameters = kwargs.pop('parameters',{})
     parameters['isDensity'] = False             # must override
