@@ -29,7 +29,7 @@ and reflecting the fact that a "hopping analysis" is performed).
 
 Hop requires MDAnalysis_.
 
-.. _MDAnalysis: http://www.mdanalysis.org
+.. _MDAnalysis: https://www.mdanalysis.org
 
 
 Installation
@@ -71,15 +71,10 @@ If you use Hop in published work please cite (for the time being) the
 old abstract and the MDAnalysis paper (because Hop is built on top of
 MDAnalysis):
 
-* Oliver Beckstein, Naveen Michaud-Agrawal and Thomas
-  B. Woolf. Quantitative Analysis of Water Dynamics in and near
-  Proteins. Biophysical Journal 96 (2009), 601a.
-  doi:10.1016/j.bpj.2008.12.3147
+* Ian Welland and Oliver Beckstein, (2015, June 23). hop: hop 0.3.4. Zenodo. http://doi.org/10.5281/zenodo.18864
 
-* N Michaud-Agrawal, EJ Denning, TB Woolf, and O
-  Beckstein. MDAnalysis: A Toolkit for the Analysis of Molecular
-  Dynamics Simulations. J. Comput. Chem. 32 (2011), 2319--2327,
-  doi:10.1002/jcc.21787
+* N Michaud-Agrawal, EJ Denning, TB Woolf, and O Beckstein. MDAnalysis: A Toolkit for the Analysis of Molecular
+  Dynamics Simulations. J. Comput. Chem. 32 (2011), 2319--2327,  doi:10.1002/jcc.21787
 
 Thanks!
 
