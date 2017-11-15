@@ -1,0 +1,26 @@
+2016-08-22 13:26:43,756 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:26:43,756 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:30:34,007 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:30:34,008 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:31:09,748 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:32:47,941 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:32:47,942 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:33:23,899 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:35:45,698 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:35:45,698 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:36:20,178 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:36:59,958 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:36:59,959 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:39:05,979 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:39:05,979 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:41:37,260 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:41:37,260 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 13:45:07,670 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:45:07,755 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 14:00:35,267 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 14:00:35,268 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 14:03:15,684 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 14:03:15,684 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 14:04:45,902 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 14:04:45,903 MDAnalysis.app DEBUG    density   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/analysis/water.pickle'
+2016-08-22 14:05:21,043 MDAnalysis   INFO     MDAnalysis STOPPED logging

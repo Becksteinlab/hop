@@ -42,5 +42,5 @@ __all__ = ['constants','sitemap','trajectory','graph','interactive',
            'utilities','external','analysis','siteanalysis','MCMC',
            'qhull']
 
-__version__ = "0.3.5-dev"
+__version__ = "0.4.0-dev"
 

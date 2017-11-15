@@ -37,12 +37,10 @@ import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
 from MDAnalysis.core.log import ProgressMeter
-
 from .exceptions import SelectionError
 from .constants import SITELABEL
 from . import utilities
 from .utilities import msg, set_verbosity
-
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
@@ -249,6 +247,10 @@ class HoppingTrajectory(object):
         Note that it is your responsibility to load the hopping
         trajectory and the appropriate psf together as there is very
         limited information stored in the dcd itself.
+
+        .. versionchanged:: 0.4.0
+           delta and step are ignored; step is 1 and delta is always
+           computed from the original trajectory dt
         """
         set_verbosity(self.verbosity)  # this is stupid
 
@@ -262,25 +264,14 @@ class HoppingTrajectory(object):
                 start = self.traj.start_timestep # starting time step for DCD file
             except AttributeError:
                 start = 1
-        if step is None:
-            try:
-                step = self.traj.skip_timestep   # NSAVC (# ts between written DCD frames)
-            except AttributeError:
-                step = 1
-        if delta is None:
-            from MDAnalysis.core.units import get_conversion_factor
-            delta_ps = self.traj.convert_time_from_native(self.traj.delta)  # length of ts in ps
-            delta = get_conversion_factor('time', 'ps', 'AKMA') * delta_ps
-
-        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.n_atoms,
-                                             start,step,delta,
-                                             remarks='Hopping trajectory: x=site y=orbit_site z=0')
+        step = 1
         pm = ProgressMeter(self.n_frames, interval=10,
                            format="Mapping frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
-        for ts in self.map_dcd():
-            dcdwriter.write_next_timestep(ts)
-            pm.echo(ts.frame)
-        dcdwriter.close()
+        with MDAnalysis.Writer(dcdname,self.ts.n_atoms,start=start,step=step,dt=self.traj.dt) as dcdwriter:
+            for ts in self.map_dcd():
+                dcdwriter.write(ts)
+                pm.echo(ts.frame)
+
         logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
@@ -419,7 +410,7 @@ class HoppingTrajectory(object):
                    (also updates self.ts so that the HoppingTrajectory instance is uptodate.)
         """
         self.ts.frame = ts.frame   # update the hopping time step
-        coords = numpy.asarray(self.tgroup.coordinates())
+        coords = numpy.asarray(self.tgroup.positions)
         N,D = coords.shape
 
         # Basic nD histograming code from numpy.histogramdd:
@@ -461,7 +452,7 @@ class HoppingTrajectory(object):
         #
         # pos[:,0] = site(t), pos[:,1] = orbit site, pos[:,2] = 0 (unused)
         pos = self.ts._pos     # assign slices to avoid loop (thanks to Naveen)
-        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]] \
+        pos[:,0] = [self.buffered_map[indices[0][iatom],indices[1][iatom],indices[2][iatom]]\
                     for iatom in xrange(N)]
         s = pos[:,0]
         self._offsites[:] = (s == SITELABEL['interstitial']) | (s == SITELABEL['outlier'])
@@ -473,7 +464,7 @@ class HoppingTrajectory(object):
         # for all later steps (because 'interstitial' is thrown away at the analysis stage)
         self._sites_last[:] = pos[:,1]  # save orbit sites for next step
         return self.ts
-
+    
     def iterator(self):
         return self.__iter__()
 
@@ -640,7 +631,7 @@ class TAPtrajectory(object):
             nextTS = self._read_next_timestep
         else:
             nextTS = self._map_next_timestep
-        return nextTS()
+	return nextTS()
 
     def rewind(self):
         if self.TAPtraj:

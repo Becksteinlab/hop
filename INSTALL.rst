@@ -63,6 +63,7 @@ Required python packages
    GridDataFormats >= 0.1.1              https://github.com/MDAnalysis/GridDataFormats
    =============== ===================== ============================================================
 
+
 MDAnalysis_ requires additional modules; see the instructions at
 its home page. Get the latest snapshot from
 http://downloads.mdanalysis.org or install it with ::

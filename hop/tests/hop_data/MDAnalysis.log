@@ -1,0 +1,44 @@
+2016-08-18 17:00:18,990 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/hopdev/MD/md.pdb'
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/hopdev/MD/WORK/md_50ps.xtc'
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    atomselection     = name OW
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    solvent_threshold = 2.71828182846
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    delta             = 1.0
+2016-08-18 17:00:18,991 MDAnalysis.app DEBUG    cutoff            = 3.5
+2016-08-18 17:00:18,992 MDAnalysis.app DEBUG    soluteselection   = protein and not name H*
+2016-08-18 17:00:18,992 MDAnalysis.app DEBUG    Working in 'analysis'...
+2016-08-18 17:00:19,452 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/hopdev/MD/WORK/md_50ps.xtc...
+2016-08-18 17:00:36,789 MDAnalysis.analysis.hop.interactive INFO     generate_densities(): saved densities and exported dx files
+2016-08-18 17:00:36,791 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-18 17:00:55,193 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-18 17:00:55,652 MDAnalysis.app INFO     Generating hopping trajectory for density 'analysis/water.pickle'
+2016-08-18 17:00:55,653 MDAnalysis.app DEBUG    density    = 'analysis/water.pickle'
+2016-08-18 17:00:55,653 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/hopdev/MD/md.pdb'
+2016-08-18 17:00:55,653 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/hopdev/MD/WORK/md_50ps.xtc'
+2016-08-18 17:00:55,653 MDAnalysis.app DEBUG    selection  = 'name OW'
+2016-08-18 17:00:56,094 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/hopdev/MD/WORK/md_50ps.xtc...
+2016-08-18 17:00:56,775 MDAnalysis.analysis.hop.trajectory INFO     HoppingTrajectory.write(): wrote hoptraj 'hoptraj.dcd'.
+2016-08-18 17:00:56,845 MDAnalysis.analysis.hop.trajectory INFO     HoppingTrajectory.write(): wrote hoppsf 'hoptraj.psf'.
+2016-08-18 17:00:56,847 MDAnalysis.topology.PSF DEBUG    PSF file hoptraj.psf: format EXTENDED
+2016-08-18 17:00:56,996 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading hoptraj.dcd...
+2016-08-18 17:00:56,997 MDAnalysis.app INFO     Created hopping trajectory hoptraj.dcd with hoptraj.psf
+2016-08-18 17:00:56,998 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-18 17:01:43,030 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-18 17:01:43,031 MDAnalysis.app INFO     Generating hopping graph from trajectory '/nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.psf'/'/nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.dcd' ...
+2016-08-18 17:01:43,031 MDAnalysis.app DEBUG    density    = '/nfs/homes/ianw/Source/hopdev/test_files/fork/analysis/water.pickle'
+2016-08-18 17:01:43,031 MDAnalysis.app DEBUG    topology   = '/nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.psf'
+2016-08-18 17:01:43,031 MDAnalysis.app DEBUG    trajectory = '/nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.dcd'
+2016-08-18 17:01:43,487 MDAnalysis.topology.PSF DEBUG    PSF file /nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.psf: format EXTENDED
+2016-08-18 17:01:43,615 MDAnalysis.core.AtomGroup DEBUG    Universe.load_new(): loading /nfs/homes/ianw/Source/hopdev/test_files/fork/hoptraj.dcd...
+2016-08-18 17:01:44,496 MDAnalysis.analysis.hop.graph INFO     Building hopping graph with rate constants k1, k2 or k.
+2016-08-18 17:01:44,496 MDAnalysis.analysis.hop.graph INFO     (Ignore 'Warning: ... maxfev = 800': then a single k is chosen automatically.)
+2016-08-18 17:01:50,376 MDAnalysis.app INFO     Saved hopgraph as hopgraph.pickle
+2016-08-18 17:01:50,377 MDAnalysis.analysis.hop.interactive WARNING  Setting analysisdir = ''
+2016-08-18 17:01:53,645 MDAnalysis.analysis.hop.interactive INFO     Wrote all rates to 'rates.txt'.
+2016-08-18 17:01:55,278 MDAnalysis.analysis.hop.interactive INFO     Exported hopgraph as hopgraph.xgmml
+2016-08-18 17:01:55,278 MDAnalysis.analysis.hop.interactive INFO     Generating 3D graph hopgraph.psf/pdb
+2016-08-18 17:01:55,278 MDAnalysis.analysis.hop.interactive INFO     Note: bulk site omitted for clarity.
+2016-08-18 17:01:56,165 MDAnalysis.analysis.hop.interactive INFO     Generating survival times plots in 'survival_times'
+2016-08-18 17:01:56,165 MDAnalysis.analysis.hop.interactive INFO     This takes a while. Note: transitions to/from bulk are excluded, Nmin=5.
+2016-08-18 17:01:57,241 MDAnalysis.app INFO     Created hopping graph hopgraph.pickle and other files
+2016-08-18 17:01:57,241 MDAnalysis   INFO     MDAnalysis STOPPED logging

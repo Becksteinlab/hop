@@ -1,0 +1,18 @@
+2016-08-22 13:35:12,629 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:35:12,630 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 13:35:12,632 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:36:23,058 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:36:23,058 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 13:36:23,237 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:37:48,802 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:37:48,803 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 13:37:48,938 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:41:52,310 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:41:52,310 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 13:41:52,468 MDAnalysis   INFO     MDAnalysis STOPPED logging
+2016-08-22 13:42:33,160 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 13:42:33,161 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 14:10:02,943 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 14:10:02,944 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'
+2016-08-22 14:10:20,995 MDAnalysis   INFO     MDAnalysis 0.15.0 STARTED logging to 'MDAnalysis.log'
+2016-08-22 14:10:20,995 MDAnalysis.app DEBUG    graph   = '/nfs/homes/ianw/Source/hopdev/Hop_fork/hop/hop/tests/hop_data/hopgraph.pickle'

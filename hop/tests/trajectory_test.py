@@ -1,76 +1,109 @@
-# $Id$
-# Specific profiling and testing code (I-FABP equilibrium simulation in
-# /Users/oliver/Biop/Projects/WaterNetworks/testcases/1IFC )
+#!/usr/bin/env python
+"""%prog [options] -s TOPOL -f TRAJECTORY
 
-def _setup_testcase_fromdensity():
-    import MDAnalysis, hop.trajectory, hop.sitemap
-    u = MDAnalysis.Universe('./NPT/ifabp_water.psf','./NPT/ifabp_water_1.dcd')
-    group = u.select_atoms("name OH2")
-    wd = hop.sitemap.Density(filename='waterdensity') 
-    return hop.trajectory.HoppingTrajectory(u.dcd,group,wd)
+Generate densities (solvent and bulk) for the system specified by
+the structure file TOPOL and the MD TRAJECTORY. Any combination of
+TOPOL and TRAJECTORY that can be read by MDAnalysis is acceptable
+(e.g. a PSF/DCD or GRO/XTC combination).
 
-def _setup_testcase_fromdcd():
-    import hop.trajectory
-    return hop.trajectory.HoppingTrajectory(hoppsf='hop.psf',hopdcd='hop.dcd')
-            
-def _test0(stop=2):
-    """Check that the code is working"""
-    sh = _setup_testcase_fromdensity()
-    for ts in sh.map_dcd(0,stop):
-        msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-            (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
-        #print sh.frame
-    msg(3,'\nMapping completed\n')
-    return sh
+At the moment, default values are used for most settings (because this is a
+primitive script). In particular:
 
-def _test1(stop=5,repeat=5,N=4):
-    """Timing map_dcd() --- see _make_timer()
+ * The output files are always named "water.pickle" and "bulk.pickle" and they
+   are stored under the analysis dir.
+ * The density threshold for defining bulk is fixed at exp(-0.5) = 0.60...
 
-    Canonical timing test when using the defaults
+For more fine grained control, use hop.interactive.generate_densities()
+directly or file a enhancement request at http://github.com/orbeckst/hop/issues
 
-    16.2s   Id: sitehop.py 1135 2007-09-18 19:38:27Z oliver .. Heavy load?
-     5.0s   $Id$: directly yield in map_dcd (gives 0.2 s), 11.4s under load
+
+Some common selection strings:
+
+  * "name OW" for water in Gromacs
+  * "name OH2" for water in CHARMM
+"""
+
+import os.path, errno
+import numpy 
+import MDAnalysis
+import hop.interactive
+import hop.trajectory
+from hop.utilities import unlink_f, mkdir_p
+from six.moves import zip
+
+import logging
+logger = logging.getLogger('MDAnalysis.app')
+
+
+if __name__ == "__main__":
+    import sys
+    from optparse import OptionParser
+
+    parser = OptionParser(usage=__doc__)
+    parser.add_option("-f", "--trajdcd", dest="trajdcd",
+                      metavar="DCD",
+                      help="Trajectory dcd file [%default]")
+    parser.add_option('-s', '--trajpsf', dest="trajpsf",
+                     metavar="PSF",
+                     help="Trajectory psf file [%default]")
+    parser.add_option("-D", "--analysisdir", dest="analysisdir",
+                      metavar="DIRNAME",
+                      help="results will be stored under DIRNAME/(basename DIR)  [%default]")
+    parser.add_option("-t", "--analysistrajdcd", dest="analysistrajdcd",
+                      metavar="ADCD",
+                      help="Comparison trajectory dcd file  [%default]")
+    parser.add_option("-y", "--analysistrajpsf", dest="analysistrajpsf",
+                      metavar="APSF",
+                      help="Comparison trajectory psf file  [%default]")
+
+    opts,args = parser.parse_args()
+
+    analysisdir = os.path.join(opts.analysisdir)
+    
+    #new_trajectory = hop.trajectory.HoppingTrajectory(hopdcd=opts.trajdcd,hoppsf=opts.trajpsf)
+    #old_trajectory = hop.trajectory.HoppingTrajectory(filename=opts.analysistrajectory)
+    
+    new_trajectory = MDAnalysis.Universe(opts.trajpsf,opts.trajdcd)
+    old_trajectory = MDAnalysis.Universe(opts.analysistrajpsf,opts.analysistrajdcd)
+
+    MDAnalysis.start_logging()
+
+    if len(args) != 0:
+        logger.fatal("This command only accepts option arguments. See --help.")
+        sys.exit(1)
+
+    trajectorydcd = os.path.abspath(opts.trajdcd)
+    if not os.path.exists(trajectorydcd):
+        errmsg = "Trajectory dcd %(trajectorydcd)r not found; (use --trajdcd)" % vars()
+        logger.fatal(errmsg)
+        raise IOError(errno.ENOENT, errmsg)
+
+    trajectorypsf = os.path.abspath(opts.trajpsf)
+    if not os.path.exists(trajectorypsf):
+        errmsg = "Trajectory psf %(trajectorypsf)r not found; (use --trajpsf)" % vars()
+        logger.fatal(errmsg)
+        raise IOError(errno.ENOENT, errmsg)
+
+    analysistrajdcd = os.path.abspath(opts.analysistrajdcd)
+    if not os.path.exists(analysistrajdcd):
+        errmsg = "Analysis trajectory dcd %(analysistrajdcd)r not found; (use --analysistraj)" % vars()
+        logger.fatal(errmsg)
+        raise IOError(errno.ENOENT, errmsg)
+
+    analysistrajpsf = os.path.abspath(opts.analysistrajpsf)
+    if not os.path.exists(analysistrajpsf):
+        errmsg = "Analysis trajectory psf %(analysistrajpsf)r not found; (use --analysistraj)" % vars()
+        logger.fatal(errmsg)
+        raise IOError(errno.ENOENT, errmsg)
+    #logger.debug("trajectory   = %(trajectory)r", vars())
+
+    startdirectory = os.path.abspath(os.path.curdir)
      
-    """
-    import timeit
+    ref = old_trajectory
+    u = new_trajectory
+    
+    for ts_reference, ts_test in zip(ref.trajectory, u.trajectory):
+        numpy.testing.assert_array_almost_equal(ts_test.positions[:, 0], ts_test.positions[:, 0],
+                   err_msg="Hop trajectory sites do not agree at frame {0}".format(ts_reference.frame)) 
+MDAnalysis.stop_logging()
 
-    global _timer_mapdcd
-    def _timer_mapdcd(sh,stop):
-        for ts in sh.map_dcd(0,stop):
-            msg(3,"Mapping frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
-        msg(3,'\nMapping completed\n')
-
-
-    tt = timeit.Timer(stmt='_timer_mapdcd(sh,'+str(stop)+')',
-                      setup='from sitehop import _timer_mapdcd,_setup_testcase_fromdensity; '+\
-                      'sh = _setup_testcase_fromdensity()')
-    t = tt.repeat(N,repeat)
-    tmin = min(t)
-    print "All values: "+str(t)
-    print "Min: "+str(tmin)+"s"
-    return tmin
-
-def _test2(stop=None,repeat=5,N=4):
-    """Timing reading the trajectory
-
-    Canonical timing test when using the defaults
-    (Note: this reads the whole trajectorym not just 5 frames. stop is ignored)
-    """
-    import timeit
-
-    global _timer_readhops
-    def _timer_readhops(sh,stop):
-        for ts in sh:
-            msg(3,"Reading frame %5d/%d  [%5.1f%%]\r" % \
-                (ts.frame,sh.n_frames,100.0*ts.frame/sh.n_frames))
-        msg(3,'\nReading completed\n')
-        
-    tt = timeit.Timer(stmt='_timer_readhops(sh,'+str(stop)+')',
-                      setup='from sitehop import _timer_readhops,_setup_testcase_fromdcd; '+\
-                      'sh = _setup_testcase_fromdcd()')
-    t = tt.repeat(N,repeat)
-    tmin = min(t)
-    print "All values: "+str(t)
-    print "Min: "+str(tmin)+"s"
-    return tmin

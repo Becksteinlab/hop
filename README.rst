@@ -52,9 +52,6 @@ Please see the contents of the ``doc/`` directory, in particular
 ``doc/overview.txt``, and the Python doc strings.
 
 
-Bug reporting and Contributing
-==============================
-
 Please raise issues in the `issue tracker`_. This includes
 problems or if you have suggestions how to improve the package or the
 documentation. Pull requests for changes and fixes are also warmly
@@ -82,4 +79,3 @@ Thanks!
    :target: https://zenodo.org/badge/latestdoi/13219/Becksteinlab/hop
    :alt: Zenodo DOI
 
-.. _Feedback: https://github.com/Becksteinlab/hop/issues

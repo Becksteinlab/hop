@@ -1583,6 +1583,8 @@ puts "Labels can be deleted with 'delsitelabels'."
         # make sure that this also includes equivalence sites and their sub-sites
         labels = self.site_labels(include='all',exclude=None)
         occ_avg,occ_std = self._site_occupancies(labels).T[[0,1]]
+        occ_avg = numpy.sort(occ_avg) # Ensures that the occupancies are sorted least to greatest, since the site number is intended to reflect this
+        occ_std = numpy.sort(occ_avg) # Same reasoning as above
         equivalence_label = [0] * len(labels)
         equivalence_site = [0] * len(labels)       # link to 'equivalence_site', see find_equivalence_sites_with()
         ##equivalence_name = [' '*10] * len(labels)  # fieldwidth 10
