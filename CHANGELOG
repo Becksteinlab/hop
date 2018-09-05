@@ -2,10 +2,21 @@
  Changes in Hop
 ================
 
-0.3.5
+0.4.0
 
-   * requires MDAnalysis >= 0.15.0
    * requires Python 2.7
+   * requires MDAnalysis >= 0.18.0
+   * requires networkx >= 2.0 
+   * requires numpy >= 1.12.0
+   * compatibility fixes (to work with newer versions of dependencies
+     e.g., #33)
+   * code clean up, import code from MDAnalysis.analysis.density (#29)
+     and MDAnalysis.units (#30)
+   * removed code to call VMD's VolMap plugin as an external density
+     creator (#28)
+   * sites again sorted by volume (#23)
+   * docs available at https://hop.readthedocs.io/
+	
 
 0.3.4
 
