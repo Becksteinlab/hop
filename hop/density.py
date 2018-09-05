@@ -42,10 +42,8 @@ import numpy
 
 import MDAnalysis
 import MDAnalysis.analysis.density
-from MDAnalysis.analysis.density import (density_from_Universe,
-                                         notwithin_coordinates_factory, # needed?
-                                         Bfactor2RMSF, # needed?
-                                         )
+from MDAnalysis.analysis.density import notwithin_coordinates_factory
+
 
 from . import constants
 from .exceptions import MissingDataError, InconsistentDataWarning
@@ -357,8 +355,21 @@ class DensityCreator(object):
 
         return solvent
 
+def density_from_Universe(*args, **kwargs):
+    """Create a :class:`hop.sitemap.Density from a :class:`Universe`.
 
-def density_from_trajectory(*args,**kwargs):
+    .. SeeAlso::
+       :func:`MDAnalysis.analysis.density.density_from_Universe` for
+       all parameters and :func:`density_from_trajectory` for a
+       convenience wrapper.
+
+    """
+    D = MDAnalysis.analysis.density.density_from_Universe(*args, **kwargs)
+    return Density(grid=D.grid, edges=D.edges, units=D.units,
+                   parameters=D.parameters, metadata=D.metadata)
+
+
+def density_from_trajectory(*args, **kwargs):
     """Create a density grid from a trajectory.
 
        density_from_trajectory(PSF, DCD, delta=1.0, atomselection='name OH2', ...) --> density
@@ -411,7 +422,10 @@ def density_from_trajectory(*args,**kwargs):
         * metadata will be populated with psf, dcd, and a few other items.
           This allows more compact downstream processing.
 
-    .. SeeAlso:: docs for :func:`density_from_Universe` (defaults for kwargs are defined there).
+    .. SeeAlso:: docs for
+                 :func:`MDAnalysis.analysis.density.density_from_Universe`
+                 (defaults for kwargs are defined there).
+
     """
     return density_from_Universe(MDAnalysis.Universe(*args),**kwargs)
 
@@ -661,7 +675,7 @@ class BfactorDensityCreator(MDAnalysis.analysis.density.BfactorDensityCreator):
       clean and __init__ compatible with Density).
 
     .. SeeAlso::
-       * :class:`MDAnalysis.analysis.density`
+       * :mod:`MDAnalysis.analysis.density`
        * :class:`PDBDensity`
 
     """
