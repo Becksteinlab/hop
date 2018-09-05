@@ -29,7 +29,7 @@ Classes
 -------
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, with_statement
 
 import warnings
 
@@ -46,10 +46,6 @@ from .utilities import msg, set_verbosity
 
 import logging
 logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
-
-def totaltime(trajectory):
-    """Returns the total trajectory time from the DCDReader object."""
-    return trajectory.totaltime
 
 class HoppingTrajectory(object):
     """Provides a time-sequence of sites visited by individual molecules,
@@ -132,18 +128,32 @@ class HoppingTrajectory(object):
 
         if not (trajectory is None or group is None or density is None):
             self.traj  = trajectory        # MDAnalysis.Universe.trajectory
-            self.tgroup = group            # atom selection for trajectory
-            if len(group) == 0:
-                raise ValueError("Group contains 0 particles, should be >0")
-            if not isinstance(self.tgroup, MDAnalysis.core.AtomGroup.AtomGroup):
+            try:
+                self.tgroup = group.atoms            # atom selection for trajectory
+            except AttributeError:
                 raise TypeError('group must be a <AtomGroup>, eg MDAnalyis.Universe.select_atoms().')
+            if len(self.tgroup) == 0:
+                raise ValueError("Group contains 0 particles, should be >0")
+
+            # for writing a pseudo PSF we want atom attributes: mass, type, charge
+            u = self.tgroup.universe
+            if not hasattr(self.tgroup, "charges"):
+                u.add_TopologyAttr(
+                    MDAnalysis.core.topologyattrs.Charges(numpy.zeros(len(u.atoms))))
+            if not hasattr(self.tgroup, "masses"):
+                u.add_TopologyAttr(
+                    MDAnalysis.core.topologyattrs.Masses(numpy.ones(len(u.atoms))))
+            if not hasattr(self.tgroup, "types"):
+                u.add_TopologyAttr(
+                    MDAnalysis.core.topologyattrs.Types(numpy.array(['O'] * len(u.atoms))))
+
             if isinstance(fixtrajectory,dict):
                 for attr,val in fixtrajectory.items():
                     if not hasattr(trajectory,attr):
                         raise AttributeError('fixtrajectory: dcd object does not have attribute "'\
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val
-            self.totaltime = totaltime(trajectory)
+            self.totaltime = trajectory.totaltime
             self.traj.rewind()             # make sure to start from frame 0
             self._GD = density             # sitemap.Density object
             self.map   = self._GD.map                  # map of sites
@@ -167,12 +177,11 @@ class HoppingTrajectory(object):
                                 numpy.ones(tuple(numpy.asarray(self.map.shape) + 2))
 
             # Here we commit to writing a DCD hopping trajectory:
-            self.ts = MDAnalysis.coordinates.DCD.Timestep(Natoms)   # empty time step for N atoms
+            self.ts = MDAnalysis.coordinates.base.Timestep(Natoms)   # empty time step for N atoms
             self.ts.frame = self.traj.ts.frame          # current frame
             numlabels = float(self.map.max() - self.map.min() + 2) # naive... but not crucial
             # fake unit cell for visualization
-            # Layout of DCD unitcell is [A, alpha, B, beta, gamma, C] (sic!)
-            self.ts._unitcell = numpy.array((numlabels,90, numlabels,90, 90,1),dtype=numpy.float32)
+            self.ts.dimensions = [numlabels, numlabels, 1, 90, 90, 90]
             # current hopping trajectory frame is in ts._pos[]
             # _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0
             self.n_frames = self.traj.n_frames    # total numer of frames
@@ -196,7 +205,7 @@ class HoppingTrajectory(object):
             self.hoptraj = u.trajectory    # DCD(!) trajectory object
             self.ts = self.hoptraj.ts
             self.n_frames = self.hoptraj.n_frames
-            self.totaltime = totaltime(self.hoptraj)
+            self.totaltime = self.hoptraj.totaltime
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
 
@@ -255,32 +264,14 @@ class HoppingTrajectory(object):
         psfname = self.filename(filename,'psf')
         dcdname = self.filename(filename,'dcd')
 
-        # see MDAnalysis/src/dcd/dcd.c for explanations;
-        # other trajectories do not have certain values so we just fake them...
-        if start is None:
-            try:
-                start = self.traj.start_timestep # starting time step for DCD file
-            except AttributeError:
-                start = 1
-        if step is None:
-            try:
-                step = self.traj.skip_timestep   # NSAVC (# ts between written DCD frames)
-            except AttributeError:
-                step = 1
-        if delta is None:
-            from MDAnalysis.core.units import get_conversion_factor
-            delta_ps = self.traj.convert_time_from_native(self.traj.delta)  # length of ts in ps
-            delta = get_conversion_factor('time', 'ps', 'AKMA') * delta_ps
-
-        dcdwriter = MDAnalysis.coordinates.DCD.DCDWriter(dcdname,self.ts.n_atoms,
-                                             start,step,delta,
-                                             remarks='Hopping trajectory: x=site y=orbit_site z=0')
         pm = ProgressMeter(self.n_frames, interval=10,
                            format="Mapping frame %(step)5d/%(numsteps)6d  [%(percentage)5.1f%%]\r")
-        for ts in self.map_dcd():
-            dcdwriter.write_next_timestep(ts)
-            pm.echo(ts.frame)
-        dcdwriter.close()
+        with MDAnalysis.Writer(dcdname, n_atoms=self.ts.n_atoms,
+                               dt=self.traj.dt,
+                               remarks='Hopping trajectory: x=site y=orbit_site z=0') as dcdwriter:
+            for ts in self.map_dcd():
+                dcdwriter.write_next_timestep(ts)
+                pm.echo(ts.frame)
         logger.info("HoppingTrajectory.write(): wrote hoptraj %r.", dcdname)
 
         self.write_psf(psfname)
@@ -345,18 +336,16 @@ class HoppingTrajectory(object):
             '%(iatom)10d %(segid)8s %(resid)-8d %(resname)8s ' \
             '%(name)-8s %(type)4s %(charge)-14.6f%(mass)-14.4f%(imove)8d\n'
 
-        psf = open(filename,'w')
+        with open(filename,'w') as psf:
+            psf.write('PSF EXT\n\n')
+            psf.write('%7d !NTITLE\n' % 3)
+            psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
+                      '* See https://github.com/Becksteinlab/hop\n'
+                      '* This is NOT a fully functional psf but should work for visualization.\n')
+            psf.write('\n')
 
-        psf.write('PSF EXT\n\n')
-        psf.write('%7d !NTITLE\n' % 3)
-        psf.write('* Hopping trajectory written by hop.trajectory.HoppingTrajectory.write()\n'
-                  '* See http://github.com/Becksteinlab/hop\n'
-                  '* This is NOT a fully functional psf but should work for visualization.\n')
-        psf.write('\n')
-
-        psf.write('%10d !NATOM\n' % len(self.tgroup))
-        imove = 0    # no fixed atoms
-        try:
+            psf.write('%10d !NATOM\n' % len(self.tgroup))
+            imove = 0    # no fixed atoms
             for atom in self.tgroup:
                 # add +1 to atom.number (zero-index but Charmm is 1-indexed) (see PSFParser.py)
                 psf.write(psf_EXT_ATOM_format %
@@ -369,8 +358,7 @@ class HoppingTrajectory(object):
                                               "PSF format. File a bug at http://github.com/Becksteinlab/hop/issues"
                                               % (atom.index+1, atom.resid))
             # ignore all the other sections (enough for MDAnalysis, VMD, and me)
-        finally:
-            psf.close()
+
 
     def map_dcd(self,start=None,stop=None,skip=1):
         """Generator to read the trajectory from start to stop and map
@@ -586,7 +574,7 @@ class TAPtrajectory(object):
                         raise AttributeError('fixtrajectory: dcd object does not have attribute "'\
                                              +str(attr)+'"')
                     trajectory.__dict__[attr] = val
-            self.totaltime = totaltime(trajectory)
+            self.totaltime = trajectory.totaltime
             self.traj.rewind()             # make sure to start from frame 0
             self.ts = self.traj.ts         # output will look like input (no copy, see _coord2TAP!)
             self.TAPtraj = None            # no TAP trajectory available
@@ -619,7 +607,7 @@ class TAPtrajectory(object):
             self.TAPtraj = u.trajectory    # DCD trajectory object
             self.ts = self.TAPtraj.ts
             self.n_frames = self.TAPtraj.n_frames
-            self.totaltime = totaltime(self.TAPtraj)
+            self.totaltime = self.TAPtraj.totaltime
             # DCD object that can be slotted into another universe
             self.trajectory = u.trajectory
         else:
