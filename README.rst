@@ -42,7 +42,7 @@ installed beforehand.
 
 
 .. _Install.rst:
-   https://github.com/Becksteinlab/hop/blob/master/INSTALL.rst
+   https://github.com/Becksteinlab/hop/blob/develop/INSTALL.rst
 
 
 Documentation
