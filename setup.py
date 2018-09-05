@@ -36,7 +36,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
                  'scripts/hop-generate-hopgraph.py',
                  'scripts/hop-generate-hoptraj.py'],
       packages=find_packages(exclude=['tests','extras','doc/examples']),
-      install_requires=['numpy>=1.0.3',
+      install_requires=['numpy>=1.12.0',
                         'scipy',
                         'networkx>=1.11',
                         'MDAnalysis>=0.18.0',

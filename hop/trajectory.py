@@ -164,7 +164,7 @@ class HoppingTrajectory(object):
                     raise ValueError
             except (AttributeError,ValueError):
                 raise ValueError("The density object must have its site map computed.")
-            Dmap = numpy.rank(self.map)
+            Dmap = numpy.ndim(self.map)
             coord = numpy.asarray(self.tgroup.positions)
             Natoms,D = coord.shape
             if not D == Dmap:
