@@ -39,7 +39,7 @@ use the module.
 """
 
 __all__ = ['constants','sitemap','trajectory','graph','interactive',
-           'utilities','external','analysis','siteanalysis','MCMC',
+           'utilities','analysis','siteanalysis','MCMC',
            'qhull']
 
 __version__ = "0.3.5-dev"

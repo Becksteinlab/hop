@@ -33,7 +33,6 @@ hops with rate constants and fluxes derived from the MD simulations.\
                  'scripts/hop-generate-hopgraph.py',
                  'scripts/hop-generate-hoptraj.py'],
       packages=find_packages(exclude=['tests','extras','doc/examples']),
-      package_data = {'vmd': ['*.tcl']},
       install_requires=['numpy>=1.0.3',
                         'scipy',
                         'networkx>=1.11',
@@ -46,5 +45,4 @@ hops with rate constants and fluxes derived from the MD simulations.\
                        ],
           'heatmap': ['rpy'],                # optional,used for heatmaps; or use rpy2
           },
-      zip_safe=True,          # vmdcontrol uses pkg_resources to find vmd tcl script
 )
