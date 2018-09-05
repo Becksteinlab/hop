@@ -60,7 +60,9 @@ logger = logging.getLogger("hop.density")
 
 class DensityCollector(object):
     """Collect subsequent coordinate frames to build up a :class:`Density`."""
+
     use_kdtree = True
+
     def __init__(self, name, universe, **kwargs):
         self.name = name
         try:
@@ -87,7 +89,7 @@ class DensityCollector(object):
             self.mode = "BULK"
         else:
             group = u.select_atoms(self.atomselection)
-            self.current_coordinates = group.coordinates
+            self.current_coordinates = lambda : group.positions
             self.mode = "SOLVENT"
         coord = self.current_coordinates()
         logger.info("%-10s: Selected %d atoms out of %d atoms (%s) from %d total.",
@@ -150,11 +152,7 @@ class DensityCollector(object):
         metadata['atomselection'] = self.atomselection
         metadata['n_frames'] = u.trajectory.n_frames
         metadata['dt'] = u.trajectory.dt    # in ps for default MDAnalysis
-        # totaltime should be in MDAnalysis!
-        metadata['totaltime'] = round(u.trajectory.n_frames * metadata['dt'] * u.trajectory.skip_timestep, 3)
-        metadata['time_unit'] = MDAnalysis.core.flags['time_unit']  # just to make sure we know it...
-        metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
-        metadata['dcd_delta'] = u.trajectory.delta         # in native units (?)
+        metadata['totaltime'] = u.trajectory.totaltime
         if self.mode == 'BULK':
             metadata['soluteselection'] = self.soluteselection
             metadata['cutoff'] = self.cutoff             # in Angstrom
@@ -638,7 +636,7 @@ def print_combined_equivalence_sites(target,reference):
     ___()
 
 
-class BfactorDensityCreator(MDAnalysis.analysis.density):
+class BfactorDensityCreator(MDAnalysis.analysis.density.BfactorDensityCreator):
     """Create a density grid from a pdb file using MDAnalysis.
 
       dens = BfactorDensityCreator(psf,pdb,...).PDBDensity()

@@ -96,7 +96,7 @@ def points_from_selection(*args, **kwargs):
 
     from MDAnalysis import as_Universe
     u = as_Universe(*args, permissive=kwargs.pop('permissive', None))
-    coordinates = u.select_atoms(kwargs.pop('selection', "name CA")).coordinates()
+    coordinates = u.select_atoms(kwargs.pop('selection', "name CA")).positions
     write_coordinates(kwargs.pop('filename', "points.dat"), coordinates, scale=kwargs.pop('scale',None))
 
 def write_coordinates(filename, points, scale=None):

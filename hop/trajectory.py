@@ -155,7 +155,7 @@ class HoppingTrajectory(object):
             except (AttributeError,ValueError):
                 raise ValueError("The density object must have its site map computed.")
             Dmap = numpy.rank(self.map)
-            coord = numpy.asarray(self.tgroup.coordinates())
+            coord = numpy.asarray(self.tgroup.positions)
             Natoms,D = coord.shape
             if not D == Dmap:
                 raise ValueError("Coordinates and map have different dimensions.")
@@ -419,7 +419,7 @@ class HoppingTrajectory(object):
                    (also updates self.ts so that the HoppingTrajectory instance is uptodate.)
         """
         self.ts.frame = ts.frame   # update the hopping time step
-        coords = numpy.asarray(self.tgroup.coordinates())
+        coords = numpy.asarray(self.tgroup.positions)
         N,D = coords.shape
 
         # Basic nD histograming code from numpy.histogramdd:
@@ -595,7 +595,7 @@ class TAPtrajectory(object):
             # store last TAPsteps in __lastframes
             self.__lastframes = utilities.Ringbuffer(self.TAPsteps)
             # store the last TAP coordinates: initialized here
-            self.__currentTAP = self.tgroup.coordinates().copy()
+            self.__currentTAP = self.tgroup.positions.copy()
             # fake DCD object that can be slotted into another universe
             self.dcd_attributes = {}
             for k in ['delta','filename','fixed','n_frames',
@@ -755,7 +755,7 @@ class TAPtrajectory(object):
         # slower??)  (I didn't manage to always work on a reference to the
         # coords; this would avoid having to patch back the altered coordinates
         # into the whole coord set, see below.)
-        coords = self.tgroup.coordinates()      # makes a new copy
+        coords = self.tgroup.positions      # makes a new copy
         self.__lastframes.append(coords.copy()) # remember last TAPsteps frames
 
         # calculated RMS distance for last TAPsteps from current TAP for all coords

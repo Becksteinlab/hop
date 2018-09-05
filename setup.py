@@ -39,7 +39,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       install_requires=['numpy>=1.0.3',
                         'scipy',
                         'networkx>=1.11',
-                        'MDAnalysis>=0.15.0',
+                        'MDAnalysis>=0.18.0',
                         'GridDataFormats>=0.1.1',
                         ],
       extras_require={
