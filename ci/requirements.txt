@@ -1,0 +1,5 @@
+numpy
+scipy
+networkx
+GridDataFormats
+MDAnalysis
