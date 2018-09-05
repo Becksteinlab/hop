@@ -36,7 +36,7 @@ import warnings
 import numpy
 import MDAnalysis
 import MDAnalysis.coordinates
-from MDAnalysis.core.log import ProgressMeter
+from MDAnalysis.lib.log import ProgressMeter
 
 from .exceptions import SelectionError
 from .constants import SITELABEL

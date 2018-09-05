@@ -34,7 +34,7 @@ import warnings
 
 import numpy                   # need v >= 1.0
 import networkx as NX          # https://networkx.lanl.gov/
-from gridData import OpenDX    # http://github.com/Becksteinlab/GridDataFormats
+from gridData import OpenDX    # https://github.com/MDAnalysis/GridDataFormats
 
 from . import constants
 from .constants import SITELABEL
@@ -1561,7 +1561,7 @@ puts "Labels can be deleted with 'delsitelabels'."
         self.sites.insert(SITELABEL['interstitial'],[])   # placeholder for interstitial
         self._draw_map_from_sites()
         self._annotate_sites()
-        
+
 
     def _draw_map_from_sites(self):
         """Label cells in the map based on the site list.

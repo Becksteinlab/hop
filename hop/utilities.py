@@ -32,7 +32,7 @@ import errno
 import cPickle
 import warnings
 
-import MDAnalysis.core.log
+import MDAnalysis.lib.log
 
 from .exceptions import MissingDataWarning
 
@@ -791,10 +791,10 @@ class IntrospectiveDict(dict):
             self.__setattr__(k,v)
 
 
-class CustomProgressMeter(MDAnalysis.core.log.ProgressMeter):
+class CustomProgressMeter(MDAnalysis.lib.log.ProgressMeter):
     """ProgressMeter that uses addition '%(other)s' in format string.
 
-    .. SeeAlso:: :class:`MDAnalysis.core.log.ProgressMeter`
+    .. SeeAlso:: :class:`MDAnalysis.lib.log.ProgressMeter`
     """
     def echo(self, step, other):
         """Output status for *step* with additional information *other*."""

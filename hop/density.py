@@ -40,7 +40,6 @@ import warnings
 
 import numpy
 import MDAnalysis
-from gridData import OpenDX
 
 from . import constants
 from .exceptions import MissingDataError, InconsistentDataWarning

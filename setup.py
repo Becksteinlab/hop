@@ -38,10 +38,10 @@ hops with rate constants and fluxes derived from the MD simulations.\
                         'scipy',
                         'networkx>=1.11',
                         'MDAnalysis>=0.15.0',
-                        'GridDataFormats>=0.1.1', # http://github.com/MDAnalysis/GridDataFormats
+                        'GridDataFormats>=0.1.1',
                         ],
       extras_require={
-          'plotting': ['matplotlib>=0.91.3', # probably already installed
+          'plotting': ['matplotlib>=0.91.3',
                        'pygraphviz',         # only needed when plotting, not needed for graph building
                        ],
           'heatmap': ['rpy'],                # optional,used for heatmaps; or use rpy2
