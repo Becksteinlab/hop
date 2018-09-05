@@ -2,19 +2,22 @@
 # Copyright (c) 2007-2013 Oliver Beckstein <orbeckst@gmail.com>
 # Released under the GNU Public License 3 (or higher, your choice)
 # See the file COPYING for details.
+from __future__ import print_function
 
 from setuptools import setup, find_packages
+import versioneer
 
 import sys
-if sys.version_info[:2] < (2, 7):
-    print "HOP requires Python 2.7 or better.  Python %d.%d detected" % \
-        sys.version_info[:2]
-    print "Please upgrade your version of python."
+if sys.version_info[:2] < (2, 7) or sys.version_info[:1] >= (3,):
+    print("HOP requires Python 2.7 (Python 3 not supported, sorry).  Python %d.%d detected" % \
+        sys.version_info[:2])
+    print("Please upgrade your version of python.")
     sys.exit(-1)
 
 setup(name="Hop",
-      version="0.3.5-dev",
-      description="Hop analyses solvent dynamics in molecular dynamics trajectories",
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
+      description="Hop analyses solvent dynamics in molecular dynamics trajectories.",
       long_description="""\
 Hop performs a 'hopping analysis' of molecules in molecular dynamics
 (MD) trajectories. Typically, these molecules are water molecules. The

@@ -42,5 +42,6 @@ __all__ = ['constants','sitemap','trajectory','graph','interactive',
            'utilities','analysis','siteanalysis','MCMC',
            'qhull']
 
-__version__ = "0.3.5-dev"
-
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
