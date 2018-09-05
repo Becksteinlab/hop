@@ -1,24 +1,52 @@
-======================================
- Obtaining and installing the package
-======================================
+==============
+ Installation
+==============
 
-Please read the :doc:`README` that comes with the source code and
-follow the instructions in :doc:`INSTALL`.
 
 .. warning:: 
  
-   This is an **beta version** of the software. It is still in heavy
-   development. Feedback is very welcome through the `issue tracker`_.
+   This is legacy research code. It might not work at all. Use at your
+   own risk. Feedback is very welcome through the `issue tracker`_.
 
 
 .. _issue tracker: https://github.com/becksteinlab/hop/issues
 
+.. Note:: Only Python 2.7 is currently supported.
 
-Further Reading
-===============
 
-.. toctree::
-   :maxdepth: 1
+.. _source-install:
+	  
+Source installation
+-------------------
 
-   README
-   INSTALL
+At the moment, only source installation is supported. Use pip_. Download the
+tarball from https://github.com/Becksteinlab/hop/releases or do a
+web-install:
+
+.. code-block:: bash
+
+   		pip install https://github.com/Becksteinlab/hop/archive/release-0.4.0.tar.gz
+
+(This will also install all dependencies.)
+
+.. _pip: https://pip.pypa.io
+
+
+Conda
+-----
+
+At the moment, we do not have a conda package. However, it is easy to
+set up a working environment for *hop* and the do the :ref:`install from
+source <source-install>`_ described above.
+
+.. code-block:: bash
+
+		conda create -c conda-forge -n hop python=2.7 numpy scipy networkx MDAnalysis matplotlib pygraphviz GridDataFormats
+		source activate hop
+
+		pip install https://github.com/Becksteinlab/hop/archive/release-0.4.0.tar.gz
+  
+
+
+
+

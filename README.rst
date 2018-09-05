@@ -2,7 +2,7 @@
  README
 ========
 
-|zenodo|
+|docs| |zenodo|
 
 **DEVELOPMENT VERSION of hop**: Please note that this is a beta
 version of the package. It is still in heavy development. Feedback_ is
@@ -48,8 +48,12 @@ installed beforehand.
 Documentation
 =============
 
-Please see the contents of the ``doc/`` directory, in particular
-``doc/overview.txt``, and the Python doc strings.
+Please see the `online docs`_.
+
+There is also some contents in the ``doc/`` directory, in particular
+``doc/overview.txt``.
+
+.. _online docs: https://hop.readthedocs.io
 
 
 Bug reporting and Contributing
@@ -78,6 +82,10 @@ MDAnalysis):
 
 Thanks!
 
+.. |docs| image:: https://readthedocs.org/projects/hop/badge/?version=latest
+   :target: https://hop.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation
+      
 .. |zenodo| image:: https://zenodo.org/badge/13219/Becksteinlab/hop.svg
    :target: https://zenodo.org/badge/latestdoi/13219/Becksteinlab/hop
    :alt: Zenodo DOI
