@@ -89,9 +89,7 @@ class TransportNetwork(object):
             raise TypeError(errmsg)
         self.traj = traj
         self.n_atoms = self.traj.hoptraj.n_atoms
-        # TODO: use MDAnalysis unit conversion here
-        self.dt = round(self.traj.hoptraj.delta * self.traj.hoptraj.skip_timestep \
-                        * constants.get_conversion_factor('time','AKMA','ps'), 3) # ps
+        self.dt = self.traj.hoptraj.dt  # ps
         self.totaltime = self.traj.totaltime
         self.graph = NX.DiGraph(name='Transport network between sites')
 
@@ -123,7 +121,7 @@ class TransportNetwork(object):
         for ts in hops:
             self.graph.add_edges_from(izip(slast,s.astype(int)))
             slast = s.astype(int).copy()   # copy of the last frame
-        self._cache['sitelabels'] = self.graph.nodes()
+        self._cache['sitelabels'] = sorted(self.graph.nodes())
 
     def HoppingGraph(self,verbosity=3):
         """Compute the HoppingGraph from the data and return it."""
@@ -276,8 +274,7 @@ class TransportNetwork(object):
                 d['tbarrier'] = numpy.array(d['tbarrier'])
             # axis 0 in array is the event number: [tau,tbarrier,iatom,frame]
         if 'sitelabels' not in self._cache:          # update cache
-            self._cache['sitelabels'] = self.graph.nodes()
-            self._cache['sitelabels'].sort()
+            self._cache['sitelabels'] = sorted(self.graph.nodes())
 
     def compute_site_times(self,verbosity=3):
         """Compute the 'residency' time of each water molecule on each site.
@@ -596,11 +593,11 @@ class HoppingGraph(object):
         if not (graph is None or properties is None):
             self.graph = NX.DiGraph(name='Transitions between sites')
             self.properties = properties
-            self.graph.add_nodes_from(graph.nodes_iter())  # nodes for completeness
+            self.graph.add_nodes_from(graph.nodes)  # nodes for completeness
             #-------------------------------------------------------------------------------
             # Compute rates for each edge from list of tau (can take a while!);
             # here the format of an edge is defined: (from_site,to_site,rate_tuple)
-            ebunch = [(e[0],e[1],self._rate(properties[e]['tau'])) for e in graph.edges_iter()]
+            ebunch = [(e[0],e[1],self._rate(properties[e]['tau'])) for e in graph.edges]
             self.graph.add_edges_from(ebunch)  # leaves out any nodes that have no edges
             #-------------------------------------------------------------------------------
         elif filename is not None:
@@ -832,7 +829,7 @@ class HoppingGraph(object):
                     G.name += ', bulk site omitted'
             if 'unconnected' in exclude:
                 if exclude['unconnected']:
-                    delnodes = [n for n in G.nodes_iter() if G.degree(n) == 0]
+                    delnodes = [n for n in G.nodes if G.degree(n) == 0]
                     G.remove_nodes_from(delnodes)
                     G.name += ', %d sites omitted' % len(delnodes)
                     del delnodes
@@ -1398,7 +1395,7 @@ class HoppingGraph(object):
 
         G = pygraphviz.AGraph(directed=True)
         G.add_nodes_from(graph.nodes())
-        G.add_edges_from(graph.edges_iter()) # n1 n2
+        G.add_edges_from(graph.edges) # n1 n2
 
         # attributes: http://www.graphviz.org/doc/info/attrs.html
         # colors: http://www.graphviz.org/doc/info/colors.html
@@ -1623,7 +1620,7 @@ class HoppingGraph(object):
         mass = 1.0
         imove = 0            # no fixed 'atoms'
         node2iatom = dict()  # needed for BONDS
-        for iatom,node in enumerate(graph.nodes_iter()):
+        for iatom,node in enumerate(graph.nodes):
             # atom numbering starts at 1, so iatom+1
             iatom += 1
             node2iatom[node] = iatom
@@ -1644,7 +1641,7 @@ class HoppingGraph(object):
         # BONDS: fortran fmt03='(8I8)'
         # (note: write directed bonds and one atom per residue/node)
         psf.write('%6d !NBOND: bonds\n' % graph.number_of_edges())
-        for n,(i,j,p) in enumerate(graph.edges_iter(data=True)):
+        for n,(i,j,p) in enumerate(graph.edges(data=True)):
             psf.write('%8i%8i' % (node2iatom[i],node2iatom[j]))
             if (n+1) % 4 == 0: psf.write('\n')
 
@@ -1875,11 +1872,11 @@ class CombinedGraph(HoppingGraph):
                 # store the graph number in the NX 1.x edge dict as 'graph'
                 ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v),
                            _joined_dict(p, graph=ig))
-                          for u,v,p in g.graph.edges_iter(data=True)]
+                          for u,v,p in g.graph.edges(data=True)]
                 # original pre NX 1.x implementation: p' <-- p + (ig,)
                 # "(p'[3] == ig)"
                 #ebunch = [(self._graph2combined(ig,u), self._graph2combined(ig,v),
-                #          p+(ig,) )  for u,v,p in g.graph.edges_iter()]
+                #          p+(ig,) )  for u,v,p in g.graph.edges]
                 # Probably means that p[3] would always contain the graph number, p[:3]
                 # would be other stuff ... k,N,fit ? -- OB 2010-06-28
                 self.graph.add_edges_from(ebunch)
@@ -1890,7 +1887,7 @@ class CombinedGraph(HoppingGraph):
                 if not numpy.all([u0,v0,u1,v1]):  # get one or more None if node not common
                     return False
                 return self.graphs[0].graph.has_edge(u0,v0) and self.graphs[1].graph.has_edge(u1,v1)
-            for u,v,p in self.graph.edges_iter(data=True):
+            for u,v,p in self.graph.edges(data=True):
                 if self.edge_properties.has_key((u,v)):
                     self.edge_properties[(u,v)]['plist'].append(p['graph'])
                 else:
@@ -2030,16 +2027,16 @@ class CombinedGraph(HoppingGraph):
         graph = self.select_graph(use_filtered_graph)
 
         H = NX.MultiDiGraph(name=graph.name)  # need to clean up graph first --> H is tmp graph
-        H.add_nodes_from([n for n in graph.nodes_iter()])
+        H.add_nodes_from([n for n in graph.nodes])
         # XXX: NX 1.x: original (u,v,{'graph':str(p[3])}) -- is the following correct, what was p[3] ??
-        H.add_edges_from([(u,v,{'graph':str(p['graph'])}) for u,v,p in graph.edges_iter(data=True)]) # clean up; str!
+        H.add_edges_from([(u,v,{'graph':str(p['graph'])}) for u,v,p in graph.edges(data=True)]) # clean up; str!
 
         pos = NX.pygraphviz_layout(H,prog=prog)  # combined graph layout
 
         def subgraph(ig,H=H):
             G = NX.DiGraph()
-            G.add_nodes_from([n for n in H.nodes_iter() if self.node_properties[n].graphmask & 2**ig])
-            G.add_edges_from([(u,v,p) for u,v,p in H.edges_iter(data=True) if int(p['graph']) == ig])
+            G.add_nodes_from([n for n in H.nodes if self.node_properties[n].graphmask & 2**ig])
+            G.add_edges_from([(u,v,p) for u,v,p in H.edges(data=True) if int(p['graph']) == ig])
             return G
         G = [subgraph(ig) for ig in graphnumbers]
 
@@ -2056,7 +2053,7 @@ class CombinedGraph(HoppingGraph):
         vmin,vmax = self.site_properties.distance.min(),self.site_properties.distance.max()
         # shapes o = circle, d = diamond, s = square
         # only one per plot --> need to plot on top, not implemented yet
-        ##common_nodes = [n for n in H.nodes_iter() if self.node_properties[n].common]
+        ##common_nodes = [n for n in H.nodes if self.node_properties[n].common]
         ## #node_shape='o',nodelist=common_nodes,
 
         # for edge_color to work need networkx-0.37: https://networkx.lanl.gov/ticket/144
@@ -2101,7 +2098,7 @@ class CombinedGraph(HoppingGraph):
             node_color = self.site_properties.distance[G[ig].nodes()] # only keep the ones in graph
             gnodes = self._combined2graph(ig,G[ig].nodes())     # nodes in original graph
             occupancy = max_node_size * self.graphs[ig].occupancy_avg[gnodes]/occupancy_max
-            edge_color = [edgecolor(u,v) for u,v in G[ig].edges_iter()]
+            edge_color = [edgecolor(u,v) for u,v in G[ig].edges]
             return dict(pos=pos,
                         node_color=node_color,
                         cmap=cmap['node'],
@@ -2176,7 +2173,7 @@ class CombinedGraph(HoppingGraph):
 
         G = pygraphviz.AGraph(directed=True)   # no multi edges??
         G.add_nodes_from(graph.nodes())
-        G.add_edges_from([(e[0],e[1]) for e in graph.edges_iter()]) # n1 n2
+        G.add_edges_from([(e[0],e[1]) for e in graph.edges]) # n1 n2
 
         # attributes: http://www.graphviz.org/doc/info/attrs.html
         # colors: http://www.graphviz.org/doc/info/colors.html

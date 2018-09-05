@@ -38,7 +38,7 @@ hops with rate constants and fluxes derived from the MD simulations.\
       packages=find_packages(exclude=['tests','extras','doc/examples']),
       install_requires=['numpy>=1.12.0',
                         'scipy',
-                        'networkx>=1.11',
+                        'networkx>=2.0',
                         'MDAnalysis>=0.18.0',
                         'GridDataFormats>=0.1.1',
                         ],
