@@ -6,6 +6,9 @@
 Hop: analyzing solvent in molecular dynamics trajectories
 =========================================================
 
+:Release: |release|
+:Date: |today|
+
 This is a collection of python modules to analyze (primarily) water
 behaviour in MD simulations. The idea is to find regions with a
 density above a given threshold (hydration sites) and catalogue those
@@ -23,14 +26,15 @@ and reflecting the fact that a "hopping analysis" is performed).
 
 Hop is built with MDAnalysis_.
 
-.. _MDAnalysis: http://www.mdanalysis.org
+.. _MDAnalysis: https://www.mdanalysis.org
 
 
 Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :numbered:
+   :maxdepth: 1
 
    installation
    hop

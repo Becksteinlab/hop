@@ -26,7 +26,17 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.viewcode',
+              'alabaster']
+
+mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+
+# https://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
+autoclass_content = 'both'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -89,39 +99,83 @@ pygments_style = 'sphinx'
 
 
 # -- Options for HTML output ---------------------------------------------------
+# on ReadTheDocs: use their theme
+# https://read-the-docs.readthedocs.org/en/latest/faq.html#how-do-i-change-behavior-for-read-the-docs
+#on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+#if on_rtd:
+if False:
+    html_theme = 'default'
+else:
+    html_theme = 'alabaster'
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-html_theme = 'default'
+    # Theme options are theme-specific and customize the look and feel of a theme
+    # further.  For a list of options available for each theme, see the
+    # documentation.
+    #
+    # styles/fonts to match http://mdanalysis.org (see public/css)
+    #
+    # /* MDAnalysis orange: #FF9200 */
+    # /* MDAnalysis gray: #808080 */
+    # /* MDAnalysis white: #FFFFFF */
+    # /* MDAnalysis black: #000000 */
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#html_theme_options = {}
+    color = {'orange': '#FF9200',
+             'gray': '#808080',
+             'white': '#FFFFFF',
+             'black': '#000000',}
 
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+    html_theme_options = {
+        #'logo' : "logos/mdanalysis-hop-logo.png",
+        #'logo_name': True,
+        #'logo_text_align': "left",
+        'description': "Solvent analysis of MD simulations",
+        'github_user': "Becksteinlab",
+        'github_repo': "hop",
+        'github_button': False,
+        'github_banner': True,
+        'show_related': True,
+        'fixed_sidebar': False,
+        'sidebar_includehidden': True,
+        'sidebar_collapse': True,
+        # style
+        'link': color['orange'],
+        'link_hover': color['orange'],
+        'gray_1': color['gray'],
+        'narrow_sidebar_bg': color['gray'],
+        'narrow_sidebar_fg': color['white'],
+        # typography
+        #'font_size': 17,
+        'font_family': "'PT Sans', Helvetica, Arial, 'sans-serif'",
+        'head_font_family': "",
+        'code_font_size': "smaller",
+        'code_font_family': "Menlo, Monaco, 'Courier New', monospace",
+        'caption_font_size': "smaller",
+    }
 
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-#html_title = None
+    # Custom sidebar templates, maps document names to template names.
+    # alabaster sidebars
+    html_sidebars = {
+        '**': [
+            'about.html',
+            'navigation.html',
+            'relations.html',
+            'searchbox.html',
+        ]
+    }
 
-# A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-#html_logo = None
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-#html_favicon = None
+# options common to RTD and MDAnalysis theme
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large.
+html_favicon = "_static/logos/mdanalysis-logo.ico"
+
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -131,8 +185,6 @@ html_static_path = ['_static']
 # typographically correct entities.
 #html_use_smartypants = True
 
-# Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -159,7 +211,7 @@ html_static_path = ['_static']
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-#html_use_opensearch = ''
+html_use_opensearch = 'https://www.mdanalysis.org/GridDataFormats'
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = None
