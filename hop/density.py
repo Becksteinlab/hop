@@ -317,7 +317,7 @@ class DensityCreator(object):
         :Arguments:
           *density_unit*
               Measure density in multiples of this unit; possible values are
-              'Molar', 'nm', 'Angstrom', or the density at standard conditions
+              'Molar', 'nm^{-3}', 'Angstrom^{-3}', or the density at standard conditions
               of 'water' (experimental value), 'TIP3P', 'TIP4P', 'SPC' ['water']
           *solvent_threshold*
               Hydration sites are considered as regions of density > this

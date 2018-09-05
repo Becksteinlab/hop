@@ -23,7 +23,7 @@ grid. Calculate the density, change units (both of the grid and of the
 density), save the density, export into 3D visualization formats,
 manipulate the density as a numpy array.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import sys
 import os, os.path
@@ -44,6 +44,11 @@ from . import utilities
 from .utilities import msg,set_verbosity,get_verbosity, flatten, sorted, \
      DefaultDict, fixedwidth_bins, iterable, asiterable
 from itertools import izip
+
+# Grid/Density should be cleaned up:
+# - remove sitemap.Grid
+# - derive sitemap.Density from MDAnalysis.analysis.density.Density (which is derived from
+#   gridData.Grid) and add the missing methods
 
 class Grid(utilities.Saveable):
     """Class to manage a multidimensional grid object.
@@ -208,11 +213,10 @@ class Grid(utilities.Saveable):
             shape[i] = len(dedges[i])
             self.grid /= dedges[i].reshape(shape)
         self.P['isDensity'] = True
-        self.unit['density'] = self.unit['length']
+        self.unit['density'] = self.unit['length'] + "^{-3}"
 
     def convert_length(self,unit='Angstrom'):
         """Convert Grid object to the new unit:
-        Grid.convert_length(<unit>)
 
         unit       Angstrom, nm
 
@@ -229,20 +233,22 @@ class Grid(utilities.Saveable):
         self.unit['length'] = unit
         self._update()        # needed to recalculate midpoints and origin
 
-    def convert_density(self,unit='Angstrom'):
+    def convert_density(self,unit='Angstrom^{-3}'):
         """Convert the density to the physical units given by unit
 
-        Grid.convert_to(<unit>)
+        `unit` can be one of the following:
 
-        <unit> can be one of the following:
-
-        Angstrom     particles/A**3
-        nm           particles/nm**3
-        SPC          density of SPC water at standard conditions
-        TIP3P        ... see __water__['TIP3P']
-        TIP4P        ... ...
-        water        density of real water at standard conditions (0.997 g/cm**3)
-        Molar        mol/l
+        =============  ===============================================================
+        name           description of the unit
+        =============  ===============================================================
+        Angstrom^{-3}  particles/A**3
+        nm^{-3}        particles/nm**3
+        SPC            density of SPC water at standard conditions
+        TIP3P          ... see :data:`MDAnalysis.units.water`
+        TIP4P          ... see :data:`MDAnalysis.units.water`
+        water          density of real water at standard conditions (0.997 g/cm**3)
+        Molar          mol/l
+        =============  ===============================================================
 
         Note: (1) This only works if the initial length unit is provided.
               (2) Conversions always go back to unity so there can be rounding
@@ -372,7 +378,7 @@ class Density(Grid):
     up the units and the isDensity parameter:
 
     >>> g = Density(dxfile='bulk.dx',parameters={'isDensity':True,'MINsite':1},
-                    unit={'length':'Angstrom','density':'Angstrom'}, ....)
+                    unit={'length':'Angstrom','density':'Angstrom^{-3}'}, ....)
 
     Attributes:
 
@@ -440,7 +446,7 @@ class Density(Grid):
         dx file is a density:
 
         >>> g = Density(dxfile='bulk.dx',parameters={'isDensity':True},
-                    unit={'length':'Angstrom','density':'Angstrom'}, ....)
+                    unit={'length':'Angstrom','density':'Angstrom^{-3}'}, ....)
         """
 
         parameters = DefaultDict(self.parameters_default,parameters)
@@ -463,8 +469,9 @@ class Density(Grid):
         self.site_properties = None
         self.equivalent_sites_index = None
 
-        Grid.__init__(self,grid=grid,edges=edges,filename=filename,dxfile=dxfile,
-                      parameters=parameters,unit=unit,metadata=metadata)
+        super(Density, self).__init__(
+            grid=grid,edges=edges,filename=filename,dxfile=dxfile,
+            parameters=parameters,unit=unit,metadata=metadata)
 
         if not self.P['isDensity']:
             self.make_density()
@@ -593,7 +600,7 @@ class Density(Grid):
     # methods to calculate site_properties
     def _site_occupancies(self,labels):
         factor = constants.get_conversion_factor('density',self.unit['density'],
-                                                     self.unit['length'])
+                                                 self.unit['length'] + "^{-3}")
         Vcell = factor * numpy.linalg.det(self.delta)
         def occupancy(site):
             V = len(site) * Vcell
@@ -1806,24 +1813,16 @@ def find_overlap_coeff(a,b):
     oc = numpy.zeros(len(m[:,0]))
     for isite, i in enumerate(m):
         coeff = 0
-        #a_cellvol = a.delta[0][0]*a.delta[1][1]*a.delta[2][2]  # calc vol of grid cell for a
-        #b_cellvol = b.delta[0][0]*b.delta[1][1]*b.delta[2][2]  # calc vol of grid cell for b
         sum_a = a.grid[a.map > SITELABEL['bulk']].sum()
         sum_b = b.grid[b.map > SITELABEL['bulk']].sum()
-        #f_a = constants.get_conversion_factor('density', a.unit['length'], a.unit['density'])
-        #f_b = constants.get_conversion_factor('density', b.unit['length'], b.unit['density'])
-        #a_bulk_density = (a.site_occupancy()[1][0]/a.site_volume()[1][0]) * f_a
-        #b_bulk_density = (b.site_occupancy()[1][0]/b.site_volume()[1][0]) * f_b
-        #print a_cellvol, b_cellvol
         for j in a.sites[i[0]]:
                 for k in b.sites[i[1]]:
                         if j == k:
-                                #print a.grid[j], b.grid[k],j,i[0],i[1], a_bulk_density, b_bulk_density
                                 if a.grid[j] < b.grid[k]:
                                         # density of grid cell point normalized to bulk density in a single grid cell
-                                        coeff = coeff + (a.grid[j]/sum_a) #/a_bulk_density)
+                                        coeff = coeff + (a.grid[j]/sum_a)
                                 else:
-                                        coeff = coeff + (b.grid[k]/sum_b) #b_bulk_density)
+                                        coeff = coeff + (b.grid[k]/sum_b)
         oc[isite] = coeff
     return oc
 

@@ -253,7 +253,7 @@ def generate_densities(*args, **kwargs):
          bulk density
       density_unit
          unit of measurement for densities and thresholds
-         (Molar, nm, Angstrom, water, SPC, TIP3P, TIP4P)
+         (Molar, nm^{-3}, Angstrom^{-3}, water, SPC, TIP3P, TIP4P)
       solvent_threshold : exp(1) = 2.7182818284590451
          hydration sites when density > this threshold
       bulk_threshold : exp(-0.5) = 0.60653065971263342
@@ -380,7 +380,8 @@ def analyze_density(density,figure='sitestats'):
 
     # convert density to the chosen density unit (typically, relative to bulk water)
     factor = constants.get_conversion_factor('density',
-                                            density.unit['length'],density.unit['density'])
+                                             density.unit['length'] + "^{-3}",
+                                             density.unit['density'])
 
     x,N,DN = density.site_occupancy(include='sites')
     x,V = density.site_volume(include='sites')
