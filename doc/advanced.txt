@@ -249,7 +249,7 @@ Build the crystal water density
 -------------------------------
 
 ::
-   from hop.sitemap import density_from_pdb
+   from hop.density import density_from_pdb
    d = density_from_pdb('1opa_a_xtal.psf','1opa_a_xtal.pdb')
    d.convert_density('water')
    d.map_sites(1.2)           # test...

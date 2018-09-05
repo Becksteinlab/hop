@@ -47,9 +47,10 @@ it links to MDAnalysis_, which is GPL licensed).
 Documentation
 -------------
 
-Please see the `online docs`_.
+The primary documentation consists of the `online docs`_ (which you
+are reading).
 
-There is also some contents in the ``doc/`` directory, in particular
+There is also some content in the ``doc/`` directory, in particular
 ``doc/overview.txt``.
 
 .. _online docs: https://hop.readthedocs.io
@@ -60,14 +61,7 @@ Bug reporting
 
 Almost invariably, things will not work right away or it will be
 unclear how to accomplish a certain task. In order to keep track of
-feedback I ask you to use the Issue tracker at
-
-  http://github.com/Becksteinlab/hop/issues
-
-It helps tremendously to have everything in one place. Of course, feel
-free to also additionally email me directly.
-
-Thanks!
+feedback I ask you to use the Issue tracker at https://github.com/Becksteinlab/hop/issues
 
 
 Citing

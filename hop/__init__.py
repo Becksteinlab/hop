@@ -39,7 +39,7 @@ use the module.
 """
 
 __all__ = ['constants','sitemap','trajectory','graph','interactive',
-           'utilities','analysis','siteanalysis','MCMC',
+           'density','utilities','analysis','siteanalysis','MCMC',
            'qhull']
 
 from ._version import get_versions

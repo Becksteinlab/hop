@@ -12,7 +12,7 @@
 #$ -m e
 # $Id$
 """ Build a water density from crystal waters in the crystal structure."""
-        
+
 #from staging.SunGridEngine import Job
 from staging.Local import Job
 
@@ -32,7 +32,7 @@ import hop.utilities
 hop.utilities.matplotlib_interactive(False)
 import hop.sitemap
 
-dens = hop.sitemap.density_from_pdb(\
+dens = hop.density.density_from_pdb(\
     psf=F['psf'], pdb=F['xtalpdb'],
     atomselection='segid XWAT and name OH2',
     delta=1.0,padding=4.0)

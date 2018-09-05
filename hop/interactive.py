@@ -228,12 +228,13 @@ import numpy
 import MDAnalysis
 
 from . import sitemap
+from . import density
 from . import trajectory
 from . import graph
 from . import constants
 from .density import DensityCreator
 
-logger = logging.getLogger("MDAnalysis.analysis.hop.interactive")
+logger = logging.getLogger("hop.interactive")
 
 def generate_densities(*args, **kwargs):
     """Analyze the trajectory and generate solvent and bulk density.
@@ -310,7 +311,7 @@ def generate_densities(*args, **kwargs):
     return densities
 
 def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
-                 backend='MDAnalysis',**kwargs):
+                 **kwargs):
     """Build the density by histogramming all the water oxygens in a dcd.
 
     density = make_density(psf,dcd,filename,delta=1.0)
@@ -329,12 +330,8 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
          default filename for the density
       *delta*
          grid spacing Angstrom
-      *backend*
-         "MDAnalysis" or "VMD" to be used for histogramming the density
-         ["MDAnalysis"]
 
-      *kwargs* (depend on backend):
-         only for MDAnalysis:
+      *kwargs*:
             *padding*
                increase box dimensions for 3D histogramming by padding
             *soluteselection*
@@ -342,27 +339,13 @@ def make_density(psf,dcd,filename,delta=1.0,atomselection='name OH2',
                 for bulk density: setting both `soluteselection='protein and not name H*'`
                 and `cutoff=3.5` A selects *'<atomsel> NOT WITHIN <cutoff> OF <solutesel>'*
 
-         only for VMD:
-            *load_new*
-                `True`: load psf and dcd from file. `False`: use already loaded
-                psf and dcd
-
     :Returns: *density*, :class:`hop.sitemap.Density` object; the density is
               converted to a fraction of the density of bulk TIP3P water
 
     """
-    if backend == 'MDAnalysis':
-        density = sitemap.density_from_trajectory(
-            psf,dcd,delta=delta,atomselection=atomselection,
-            verbosity=3,**kwargs)
-    elif backend == 'VMD':
-        density = sitemap.density_from_volmap(
-            psf,dcd,delta=delta,atomselection=atomselection,
-            verbosity=3,**kwargs)
-    else:
-        errmsg = "Unknown backend '%s'." % backend
-        logger.fatal(errmsg)
-        raise ValueError(errmsg)
+    density = density.density_from_trajectory(
+        psf,dcd,delta=delta,atomselection=atomselection,
+        verbosity=3,**kwargs)
     density.convert_density('TIP3P')
     density.save(filename)
     density.export()

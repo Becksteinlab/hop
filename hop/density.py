@@ -39,7 +39,13 @@ import cPickle
 import warnings
 
 import numpy
+
 import MDAnalysis
+import MDAnalysis.analysis.density
+from MDAnalysis.analysis.density import (density_from_Universe,
+                                         notwithin_coordinates_factory, # needed?
+                                         Bfactor2RMSF, # needed?
+                                         )
 
 from . import constants
 from .exceptions import MissingDataError, InconsistentDataWarning
@@ -354,13 +360,6 @@ class DensityCreator(object):
         return solvent
 
 
-
-def density_from_dcd(*args,**kwargs):
-    import warnings
-    warnings.warn("density_from_dcd() is deprecated and will be removed. "
-                  "Use density_from_trajectory().", category=DeprecationWarning)
-    return density_from_trajectory(*args,**kwargs)
-
 def density_from_trajectory(*args,**kwargs):
     """Create a density grid from a trajectory.
 
@@ -416,214 +415,8 @@ def density_from_trajectory(*args,**kwargs):
 
     .. SeeAlso:: docs for :func:`density_from_Universe` (defaults for kwargs are defined there).
     """
-    import MDAnalysis
     return density_from_Universe(MDAnalysis.Universe(*args),**kwargs)
 
-def density_from_Universe(universe,delta=1.0,atomselection='name OH2',
-                          metadata=None,padding=2.0,cutoff=0,soluteselection=None,verbosity=3,
-                          use_kdtree=True, **kwargs):
-    """Create a density grid from a MDAnalysis.Universe object.
-
-      density_from_dcd(universe, delta=1.0, atomselection='name OH2', ...) --> density
-
-    :Arguments:
-      universe
-            :class:`MDAnalysis.Universe` object with a trajectory
-
-    :Keywords:
-      atomselection
-            selection string (MDAnalysis syntax) for the species to be analyzed
-            ["name OH2"]
-      delta
-            approximate bin size for the density grid in Angstroem (same in x,y,z)
-            (It is slightly adjusted when the box length is not an integer multiple
-            of delta.) [1.0]
-      metadata
-            dictionary of additional data to be saved with the object
-      padding
-            increase histogram dimensions by padding (on top of initial box size)
-            in Angstroem [2.0]
-      soluteselection
-            MDAnalysis selection for the solute, e.g. "protein" [``None``]
-      cutoff
-            With *cutoff*, select '<atomsel> NOT WITHIN <cutoff> OF <soluteselection>'
-            (Special routines that are faster than the standard AROUND selection) [0]
-      verbosity: int
-            level of chattiness; 0 is silent, 3 is verbose [3]
-      parameters
-            dict with some special parameters for :class:`~hop.sitemap.Density` (see doc)
-      kwargs
-            metadata, parameters are modified and passed on to :class:`~hop.sitemap.Density`
-
-    :Returns: :class:`hop.sitemap.Density`
-
-    """
-    try:
-        universe.select_atoms('all')
-        universe.trajectory.ts
-    except AttributeError:
-        errmsg = "density_from_Universe(): The universe must be a proper MDAnalysis.Universe instance."
-        logger.fatal(errmsg)
-        raise TypeError(errmsg)
-    u = universe
-    if cutoff > 0 and soluteselection is not None:
-        # special fast selection for '<atomsel> not within <cutoff> of <solutesel>'
-        notwithin_coordinates = notwithin_coordinates_factory(u,atomselection,soluteselection,cutoff,use_kdtree=use_kdtree)
-        def current_coordinates():
-            return notwithin_coordinates()
-    else:
-        group = u.select_atoms(atomselection)
-        def current_coordinates():
-            return group.coordinates()
-
-    coord = current_coordinates()
-    logger.info("Selected %d atoms out of %d atoms (%s) from %d total.",
-                coord.shape[0],len(u.select_atoms(atomselection)),atomselection,len(u.atoms))
-
-    # mild warning; typically this is run on RMS-fitted trajectories and
-    # so the box information is rather meaningless
-    box,angles = u.trajectory.ts.dimensions[:3], u.trajectory.ts.dimensions[3:]
-    if tuple(angles) <> (90.,90.,90.):
-        logger.warn("Non-orthorhombic unit-cell --- make sure that it has been remapped properly!")
-
-    # Make the box bigger to avoid as much as possible 'outlier'. This
-    # is important if the sites are defined at a high density: in this
-    # case the bulk regions don't have to be close to 1 * n0 but can
-    # be less. It's much more difficult to deal with outliers.  The
-    # ideal solution would use images: implement 'looking across the
-    # periodic boundaries' but that gets complicate when the box
-    # rotates due to RMS fitting.
-    smin = numpy.min(coord,axis=0) - padding
-    smax = numpy.max(coord,axis=0) + padding
-
-    BINS = fixedwidth_bins(delta, smin, smax)
-    arange = zip(BINS['min'],BINS['max'])
-    bins = BINS['Nbins']
-
-    # create empty grid with the right dimensions (and get the edges)
-    grid,edges = numpy.histogramdd(numpy.zeros((1,3)),bins=bins,range=arange,normed=False)
-    grid *= 0.0
-    h = grid.copy()
-
-    pm = CustomProgressMeter(u.trajectory.n_frames, interval=10,
-                             format="Histograming %(other)d atoms in frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
-    for ts in u.trajectory:
-        coord = current_coordinates()
-        if len(coord) == 0: continue
-        h[:],edges[:] = numpy.histogramdd(coord, bins=bins, range=arange, normed=False)
-        grid += h  # accumulate average histogram
-        pm.echo(ts.frame, len(coord))
-    n_frames = u.trajectory.n_frames / u.trajectory.skip
-    grid /= float(n_frames)
-
-    # pick from kwargs
-    metadata = kwargs.pop('metadata',{})
-    metadata['psf'] = u.filename              # named psf for historical reasons
-    metadata['dcd'] = u.trajectory.filename   # named dcd for historical reasons
-    metadata['atomselection'] = atomselection
-    metadata['n_frames'] = n_frames
-    metadata['totaltime'] = round(u.trajectory.n_frames * u.trajectory.delta * u.trajectory.skip_timestep \
-                                  * constants.get_conversion_factor('time','AKMA','ps'), 3)
-    metadata['dt'] = u.trajectory.delta * u.trajectory.skip_timestep * \
-                     constants.get_conversion_factor('time','AKMA','ps')
-    metadata['time_unit'] = 'ps'
-    metadata['dcd_skip'] = u.trajectory.skip_timestep  # frames
-    metadata['dcd_delta'] = u.trajectory.delta         # in AKMA
-    if cutoff > 0 and soluteselection is not None:
-        metadata['soluteselection'] = soluteselection
-        metadata['cutoff'] = cutoff             # in Angstrom
-
-    parameters = kwargs.pop('parameters',{})
-    parameters['isDensity'] = False             # must override
-
-    # all other kwargs are discarded
-
-    # Density automatically converts histogram to density for isDensity=False
-    g = Density(grid=grid,edges=edges,unit=dict(length='Angstrom'),
-                parameters=parameters,metadata=metadata)
-    logger.info("Histogram completed (initial density in Angstrom**-3)")
-
-    return g
-
-
-def notwithin_coordinates_factory(universe,sel1, sel2, cutoff, not_within=True, use_kdtree=True):
-    """Generate optimized selection for '*sel1* not within *cutoff* of *sel2*'
-
-    Example usage::
-      notwithin_coordinates = notwithin_coordinates_factory(universe, 'name OH2','protein and not name H*',3.5)
-      ...
-      coord = notwithin_coordinates()        # changes with time step
-      coord = notwithin_coordinates(cutoff2) # can use different cut off
-
-    :Keywords:
-      not_within
-         True: selection behaves as 'not within' (As described above)
-         False: selection is a <sel1> WITHIN <cutoff> OF <sel2>'
-      use_kdtree
-         True: use fast kd-tree based selections (requires new MDAnalysis >= 0.6)
-         False: use distance matrix approach
-
-    .. Note::
-        * Periodic boundary conditions are NOT taken into account: the naive
-          minimum image convention employed in the distance check is currently
-          not being applied to remap the coordinates themselves, and hence it
-          would lead to counts in the wrong region.
-        * The selections are static and do not change with time steps.
-    """
-    # Benchmark of FABP system (solvent 3400 OH2, protein 2100 atoms) on G4 powerbook, 500 frames
-    #                    cpu/s    relative   speedup       use_kdtree
-    # distance matrix    633        1          1           False
-    # AROUND + kdtree    420        0.66       1.5         n/a ('name OH2 around 4 protein')
-    # manual + kdtree    182        0.29       3.5         True
-    solvent = universe.select_atoms(sel1)
-    protein = universe.select_atoms(sel2)
-    if use_kdtree:
-        # using faster hand-coded 'not within' selection with kd-tree
-        from MDAnalysis.lib import NeighborSearch
-        import MDAnalysis.core.AtomGroup
-        set_solvent = set(solvent)     # need sets to do bulk = allsolvent - selection
-        if not_within is True:  # default
-            def notwithin_coordinates(cutoff=cutoff):
-                # must update every time step
-                ns_w = NeighborSearch.AtomNeighborSearch(solvent)  # build kd-tree on solvent (N_w > N_protein)
-                solvation_shell = ns_w.search(protein,cutoff)  # solvent within CUTOFF of protein
-                group = MDAnalysis.core.AtomGroup.AtomGroup(set_solvent - set(solvation_shell)) # bulk
-                return group.coordinates()
-        else:
-            def notwithin_coordinates(cutoff=cutoff):
-                # acts as '<solvent> WITHIN <cutoff> OF <protein>'
-                # must update every time step
-                ns_w = NeighborSearch.AtomNeighborSearch(solvent)  # build kd-tree on solvent (N_w > N_protein)
-                group = ns_w.search(protein,cutoff)  # solvent within CUTOFF of protein
-                return group.coordinates()
-    else:
-        # slower distance matrix based (calculate all with all distances first)
-        import MDAnalysis.lib.distances
-        dist = numpy.zeros((len(solvent),len(protein)),dtype=numpy.float64)
-        box = None  # as long as s_coor is not minimum-image remapped
-        if not_within is True:   # default
-            compare = numpy.greater
-            aggregatefunc = numpy.all
-        else:
-            compare = numpy.less_equal
-            aggregatefunc = numpy.any
-        def notwithin_coordinates(cutoff=cutoff):
-            s_coor = solvent.coordinates()
-            p_coor = protein.coordinates()
-            # Does water i satisfy d[i,j] > r for ALL j?
-            d = MDAnalysis.distances.distance_array(s_coor,p_coor,box=box,result=dist)
-            return s_coor[aggregatefunc(compare(d,cutoff), axis=1)]
-    return notwithin_coordinates
-
-def Bfactor2RMSF(B):
-    """Atomic root mean square fluctuation (in Angstrom) from the crystallographic B-factor
-
-    B = [(8*PI**2)/3] * (RMSF)**2
-
-    Willis & Pryor, Thermal vibrations in crystallography, Cambridge
-    Univ. Press, 1975
-    """
-    return numpy.sqrt(3.*B/8.)/numpy.pi
 
 class PDBDensity(Density):
     __doc__ = """Density with additional information about original crystal structure.
@@ -845,7 +638,7 @@ def print_combined_equivalence_sites(target,reference):
     ___()
 
 
-class BfactorDensityCreator(object):
+class BfactorDensityCreator(MDAnalysis.analysis.density):
     """Create a density grid from a pdb file using MDAnalysis.
 
       dens = BfactorDensityCreator(psf,pdb,...).PDBDensity()
@@ -868,88 +661,14 @@ class BfactorDensityCreator(object):
     * Using a temporary Creator class with the PDBDensity() helper
       method is clumsy (but was chosen as to keep the PDBDensity class
       clean and __init__ compatible with Density).
+
+    .. SeeAlso::
+       * :class:`MDAnalysis.analysis.density`
+       * :class:`PDBDensity`
+
     """
-    def __init__(self, psf,pdb,delta=1.0,atomselection='name OH2',
-                metadata=None,padding=4.0, sigma=None, verbosity=3):
-        """Construct the density from psf and pdb and the atomselection.
 
-        DC = BfactorDensityCreator(psf, pdb, delta=<delta>, atomselection=<MDAnalysis selection>,
-                                  metadata=<dict>, padding=2, sigma=None)
-        density = DC.PDBDensity()
-
-        psf     Charmm psf topology file
-        pdb     PDB file
-        atomselection
-                selection string (MDAnalysis syntax) for the species to be analyzed
-        delta   approximate bin size for the density grid (same in x,y,z)
-                (It is slightly adjusted when the box length is not an integer multiple
-                of delta.)
-        metadata
-                dictionary of additional data to be saved with the object
-        padding increase histogram dimensions by padding (on top of initial box size)
-        sigma   width (in Angstrom) of the gaussians that are used to build up the
-                density; if None then uses B-factors from pdb
-        verbosity=int  level of chattiness; 0 is silent, 3 is verbose
-
-        For assigning X-ray waters to MD densities one might have to use a sigma
-        of about 0.5 A to obtain a well-defined and resolved x-ray water density
-        that can be easily matched to a broader density distribution.
-
-        """
-        from MDAnalysis import Universe
-        set_verbosity(verbosity)  # set to 0 for no messages
-        u = Universe(psf,pdbfilename=pdb)
-        group = u.select_atoms(atomselection)
-        coord = group.coordinates()
-        logger.info("BfactorDensityCreator: Selected %d atoms (%s) out of %d total.",
-                    coord.shape[0],atomselection,len(u.atoms))
-        smin = numpy.min(coord,axis=0) - padding
-        smax = numpy.max(coord,axis=0) + padding
-
-        BINS = fixedwidth_bins(delta, smin, smax)
-        arange = zip(BINS['min'],BINS['max'])
-        bins = BINS['Nbins']
-
-        # get edges by doing a fake run
-        grid,self.edges = numpy.histogramdd(numpy.zeros((1,3)),
-                                            bins=bins,range=arange,normed=False)
-        self.delta = numpy.diag(map(lambda e: (e[-1] - e[0])/(len(e)-1), self.edges))
-        self.midpoints = map(lambda e: 0.5 * (e[:-1] + e[1:]), self.edges)
-        self.origin = map(lambda m: m[0], self.midpoints)
-        n_frames = 1
-
-        if sigma is None:
-            # histogram individually, and smear out at the same time
-            # with the appropriate B-factor
-            if numpy.any(group.bfactors == 0.0):
-                wmsg = "BfactorDensityCreator: Some B-factors are Zero."
-                warnings.warn(wmsg, category=MissingDataWarning)
-                logger.warn(wmsg)
-            rmsf = Bfactor2RMSF(group.bfactors)
-            grid *= 0.0  # reset grid
-            self.g = self._smear_rmsf(coord,grid,self.edges,rmsf)
-        else:
-            # histogram 'delta functions'
-            grid,self.edges = numpy.histogramdd(coord,bins=bins,range=arange,normed=False)
-            logger.info("Histogrammed %6d atoms from pdb.", len(group.atoms))
-            # just a convolution of the density with a Gaussian
-            self.g = self._smear_sigma(grid,sigma)
-
-        try:
-            metadata['psf'] = psf
-        except TypeError:
-            metadata = dict(psf=psf)
-        metadata['pdb'] = pdb
-        metadata['atomselection'] = atomselection
-        metadata['n_frames'] = n_frames
-        metadata['sigma'] = sigma
-        self.metadata = metadata
-
-        # Density automatically converts histogram to density for isDensity=False
-        logger.info("BfactorDensityCreator: Histogram completed (initial density in Angstrom**-3)\n")
-
-
-    def PDBDensity(self,threshold=None):
+    def PDBDensity(self, threshold=None):
         """Returns a PDBDensity object.
 
         The PDBDensity is a Density with a xray2psf translation table;
@@ -982,50 +701,5 @@ class BfactorDensityCreator(object):
             warnings.warn(wmsg, category=InconsistentDataWarning)
         return d
 
-    def _smear_sigma(self,grid,sigma):
-        # smear out points
-        # (not optimized -- just to test the principle; faster approach could use
-        # convolution of the whole density with a single Gaussian via FFTs:
-        # rho_smeared = F^-1[ F[g]*F[rho] ]
-        g = numpy.zeros(grid.shape)   # holds the smeared out density
-        pos = numpy.where(grid <> 0)  # position in histogram (as bin numbers)
-        pm = CustomProgressMeter(len(pos[0]), interval=1, offset=1,
-                                 format="Smearing out water position %(step)4d/%(numsteps)5d with RMSF %(other)4.2f A [%(percentage)5.2f%%\r")
-        for iwat in xrange(len(pos[0])): # super-ugly loop
-            p = tuple([wp[iwat] for wp in pos])
-            g += grid[p] * \
-                numpy.fromfunction(self._gaussian,grid.shape,dtype=numpy.int,
-                                   p=p,sigma=sigma)
-            pm.echo(iwat, sigma)
-        return g
-
-    def _smear_rmsf(self,coordinates,grid,edges,rmsf):
-        # smear out each water with its individual Gaussian
-        # (slower than smear_sigma)
-        g = numpy.zeros(grid.shape)   # holds the smeared out density
-        N,D = coordinates.shape
-        pm = CustomProgressMeter(N, interval=1, offset=1,
-                                 format="Smearing out water position %(step)4d/%(numsteps)5d with RMSF %(other)4.2f A [%(percentage)5.2f%%\r")
-        for iwat,coord in enumerate(coordinates):
-            g += numpy.fromfunction(self._gaussian_cartesian,grid.shape,dtype=numpy.int,
-                                    c=coord,sigma=rmsf[iwat])
-            pm.echo(iwat, rmsf[iwat])
-        return g
-
-    def _gaussian(self,i,j,k,p,sigma):
-        # i,j,k can be numpy arrays
-        # p is center of gaussian as grid index, sigma its width (in A)
-        x = self.delta[0,0]*(i - p[0])  # in Angstrom
-        y = self.delta[1,1]*(j - p[1])
-        z = self.delta[2,2]*(k - p[2])
-        return (2*numpy.pi*sigma)**(-1.5) * numpy.exp(-(x*x+y*y+z*z)/(2*sigma*sigma))
-
-    def _gaussian_cartesian(self,i,j,k,c,sigma):
-        # i,j,k can be numpy arrays
-        # c is center of gaussian in cartesian coord (A), sigma its width (in A)
-        x = self.origin[0] + self.delta[0,0]*i - c[0]  # in Angstrom
-        y = self.origin[1] + self.delta[1,1]*j - c[1]
-        z = self.origin[2] + self.delta[2,2]*k - c[2]
-        return (2*numpy.pi*sigma)**(-1.5) * numpy.exp(-(x*x+y*y+z*z)/(2*sigma*sigma))
 
 

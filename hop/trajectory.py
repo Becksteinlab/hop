@@ -539,7 +539,7 @@ class TAPtrajectory(object):
           oxy = u.select_atoms('name OH2')
           TAP = TAPtrajectory(u.trajectory,oxy)
           u.trajectory = TAP.trajectory    # <--- replace orig dcd with TAP !!
-          dens = hop.sitemap.density_from_Universe(u,atomselection='name OH2')
+          dens = hop.density.density_from_Universe(u,atomselection='name OH2')
 
         NOTE: In the current implementation residues are often ripped apart
         because all coordinates are processed independently. It is recommended
