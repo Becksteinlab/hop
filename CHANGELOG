@@ -9,14 +9,17 @@
    * requires networkx >= 2.0 
    * requires numpy >= 1.12.0
    * compatibility fixes (to work with newer versions of dependencies
-     e.g., #33)
+     e.g., #33 and #34)
    * code clean up, import code from MDAnalysis.analysis.density (#29)
      and MDAnalysis.units (#30)
    * removed code to call VMD's VolMap plugin as an external density
      creator (#28)
    * sites again sorted by volume (#23)
    * docs available at https://hop.readthedocs.io/
-	
+   * removed docs/extras/staging and docs/examples, which used
+     the outdated staging module; the example scripts are
+     still visible at https://github.com/Becksteinlab/hop/tree/release-0.4.0-alpha2/doc/examples
+     but they are confusing when staging is not available
 
 0.3.4
 

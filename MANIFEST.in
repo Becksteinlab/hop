@@ -1,6 +1,5 @@
-include README.rst INSTALL.rst CHANGELOG COPYING COPYING.LESSER AUTHORS
+include README.rst INSTALL.rst CHANGELOG COPYING AUTHORS
 include setup.py requirements.txt
 recursive-include doc *.txt *.pdf *.png *.jpg README
-recursive-include extras *
 include versioneer.py
 include hop/_version.py

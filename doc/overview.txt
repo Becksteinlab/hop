@@ -35,16 +35,6 @@ you would like to do and I can tell you if it is already in there (but
 undocumented), easy to do, or rather difficult.
 
 
-examples directory
-------------------
-
-The examples/ directory contains a bunch of scripts that were used in
-production. The make use of the ``staging`` package for submitting jobs to
-a cluster (via Sun Gridengine (SGE)). ``staging`` can be found in
-extras/staging. Just drop it your PYTHONPATH if you want to use
-it. Note that the staging scripts can be run from the commandline,
-too, and do not actually require SGE. In this case they simply operate
-on local files and do not copy data to and from a staging directory.
 
 
 
