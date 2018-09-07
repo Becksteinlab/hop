@@ -13,7 +13,7 @@ import hop.sitemap, hop.trajectory, hop.interactive
 from hop.utilities import unlink_f, mkdir_p
 
 import logging
-logger = logging.getLogger('MDAnalysis.app')
+logger = logging.getLogger('MDAnalysis.app.hop')
 
 def generate_hopgraph(topology, trajectory, densityfile, filename, localcopy=False, **hopargs):
     density = hop.sitemap.Density(filename=densityfile)

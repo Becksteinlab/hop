@@ -29,7 +29,7 @@ import hop.interactive
 from hop.utilities import unlink_f, mkdir_p
 
 import logging
-logger = logging.getLogger('MDAnalysis.app')
+logger = logging.getLogger('MDAnalysis.app.hop')
 
 
 

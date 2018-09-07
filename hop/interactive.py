@@ -234,7 +234,7 @@ from . import graph
 from . import constants
 from .density import DensityCreator
 
-logger = logging.getLogger("hop.interactive")
+logger = logging.getLogger("MDAnalysis.app.hop.interactive")
 
 def generate_densities(*args, **kwargs):
     """Analyze the trajectory and generate solvent and bulk density.

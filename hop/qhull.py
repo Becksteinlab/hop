@@ -77,6 +77,10 @@ from subprocess import Popen
 
 import numpy
 
+import logging
+
+logger = logging.getLogger("MDAnalysis.app.qhull")
+
 #: Comparisons of distances less than EPSILON yield equal.
 EPSILON = 1e-6
 
@@ -106,7 +110,7 @@ def write_coordinates(filename, points, scale=None):
     if not scale is None:
         center = points.mean(axis=0)
         points[:] = scale*points + (1-scale)*center  # scale*(points - center) + center
-        print "Scaled coordinates by factor %(scale)g relative to center of geometry %(center)r" % vars()
+        logger.info("Scaled coordinates by factor %(scale)g relative to center of geometry %(center)r" % vars())
 
     with open(filename, 'w') as data:
         data.write('%d\n' % points.shape[1])  # dimension
@@ -114,7 +118,7 @@ def write_coordinates(filename, points, scale=None):
         fmt = " ".join(["%f"]*points.shape[1]) + "\n"
         for point in points:
             data.write(fmt % tuple(point))
-    print "Wrote points to %(filename)r." % vars()
+    logger.info("Wrote points to %(filename)r." % vars())
 
 
 class ConvexHull(object):
@@ -156,14 +160,14 @@ class ConvexHull(object):
         if rc != 0:
             raise OSError(rc, "qconvex failed computing planes, rc=%(rc)d" % vars(), self.files['planes'])
         self.planes = self.read_planes()
-        print "Wrote %d planes to %r" % (len(self.planes), self.files['planes'])
+        logger.debug("Wrote %d planes to %r" % (len(self.planes), self.files['planes']))
 
         args = ['p', 'TO', "'"+self.files['vertices']+"'"]
         rc = self.qconvex(args)
         if rc != 0:
             raise OSError(rc, "qconvex failed computing vertices, rc=%(rc)d" % vars(), self.files['vertices'])
         self.vertices = self.read_vertices()
-        print "Wrote %d vertices to %r" % (len(self.vertices), self.files['vertices'])
+        logger.debug("Wrote %d vertices to %r" % (len(self.vertices), self.files['vertices']))
 
     def wd(self, *args):
         """Return path in workdir."""
@@ -250,7 +254,7 @@ class ConvexHull(object):
     def write_vertices_pdb(self, pdb="vertices.pdb"):
         ppw = VertexPDBWriter(pdb)
         ppw.write(self.vertices)
-        print "Wrote vertices to pdb file %(pdb)r." % vars()
+        logger.info("Wrote vertices to pdb file %(pdb)r." % vars())
 
     def Density(self, density, fillvalue=None):
         """Create a Density object of the interior of the convex hall.

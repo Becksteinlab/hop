@@ -67,7 +67,7 @@ from .utilities import msg,set_verbosity, iterable, asiterable, CustomProgressMe
 
 
 import logging
-logger = logging.getLogger("MDAnalysis.analysis.hop.graph")
+logger = logging.getLogger("MDAnalysis.app.hop.graph")
 
 class TransportNetwork(object):
     """A framework for computing graphs from hopping trajectories.

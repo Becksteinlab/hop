@@ -45,7 +45,7 @@ from .utilities import msg, set_verbosity
 
 
 import logging
-logger = logging.getLogger("MDAnalysis.analysis.hop.trajectory")
+logger = logging.getLogger("MDAnalysis.app.hop.trajectory")
 
 class HoppingTrajectory(object):
     """Provides a time-sequence of sites visited by individual molecules,

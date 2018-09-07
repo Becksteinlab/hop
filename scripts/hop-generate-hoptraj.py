@@ -18,7 +18,7 @@ import hop.sitemap, hop.trajectory
 from hop.utilities import unlink_f, mkdir_p
 
 import logging
-logger = logging.getLogger('MDAnalysis.app')
+logger = logging.getLogger('MDAnalysis.app.hop')
 
 
 

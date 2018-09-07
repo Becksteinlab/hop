@@ -53,7 +53,7 @@ from .sitemap import Density
 
 
 import logging
-logger = logging.getLogger("hop.density")
+logger = logging.getLogger("MDAnalysis.app.hop.density")
 
 
 class DensityCollector(object):

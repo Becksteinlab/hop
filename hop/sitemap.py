@@ -1261,7 +1261,6 @@ class Density(Grid):
                     nsites[idensity] = len(sitelabels)
                 # liz getting the probability overlap
                 oc = overlap[isite]
-                print oc
                 msg(3,"[%5s]  %5d  %5d %5d  |   %s   | %s | %s\n" %
                     (labelstr,len(commonsite),nsites[SELF],nsites[REF],str(sorted(commonsite)),str(oc),str(sum(overlap))))
         if msg(7):
