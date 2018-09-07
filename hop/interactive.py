@@ -1,4 +1,4 @@
-# $Id$
+# -*- coding: utf-8 -*-
 # Hop --- a framework to analyze solvation dynamics from MD simulations
 # Copyright (c) 2009 Oliver Beckstein <orbeckst@gmail.com>
 #
@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Quickstart: using the hop package --- :mod:`hop.interactive`
+"""Quickstart: using the hop package --- :mod:`hop.interactive`
 ============================================================
 
 A typical session starts with a trajectory (which should have been
@@ -27,9 +26,12 @@ examples.
 
 We will use the high-level wrapper functions in :mod:`hop.interactive`:
 
->>> from hop.interactive import *
+>>> import hop
+>>> from hop.interactive import (make_density, analyze_density,
+...                              make_hoppingtraj, build_hoppinggraph)
 
-.. _MDAnalysis:: http://mdanalysis.googlecode.com
+.. _MDAnalysis: https://www.mdanalysis.org
+
 
 Hydration sites
 ---------------
@@ -46,19 +48,12 @@ First build the density of the water oxygens.
 
 >>> density = make_density(psf,dcd,filename,delta=1.0)
 
-If you have VMD with the VolMap plugin installed *and* your trajectory
-fits into your computer's RAM you can also choose the VMD backend to
-compute the density (which can be marginally faster):
-
->>> density = make_density(psf,dcd,filename,delta=1.0,backend='VMD')
-
-
 The density is also saved as a pickled python object so that one can
 easily reload it. The density is also exported as a dx file for
 visualization (e.g. use :func:`hop.interactive.visualize_density`,
 which calls :program:`VMD`).
 
-From the density one creates the 'site map' for a given threshold (by
+From the density one creates the *site map* for a given threshold (by
 default this is a multiple of the water bulk density):
 
 >>> density.map_sites(threshold=2.72)
@@ -74,8 +69,8 @@ Bulk site
 .........
 
 For a full analysis of hopping events one also needs to define a bulk
-site. This is currently accomplished by calculating a second 'bulk'
-density (all water not within 3.5 A of the protein) and manually
+site. This is currently accomplished by calculating a second *bulk
+density* (all water not within 3.5 Å of the protein) and manually
 inserting the bulk site into the site map for the first density.
 
 >>> density_bulk = make_density(psf,dcd,'bulk',delta=1.0,
@@ -103,13 +98,12 @@ Add the biggest bulk site:
 >>> del density_bulk
 
 .. Note:: Behind the scenes, the bulk is simply prepended to the list
-   of all sites (``density.sites``,
-   :attr:`hop.sitemap.Density.sites`), found so far. By convention the
-   site at position 1 in the list of all sites is treated specially in
-   many parts of hop (it has the so-called sitelabel "1", which is
-   simply the position in the list of sites) and hence you might
-   encounter unexpected behaviour later if you do not insert a bulk
-   site.
+   of all sites (:attr:`hop.sitemap.Density.sites`), found so far. By
+   convention the site at position 1 in the list of all sites is
+   treated specially in many parts of hop (it has the so-called
+   sitelabel "1", which is simply the position in the list of sites)
+   and hence you might encounter unexpected behaviour later if you do
+   not insert a bulk site.
 
 Statistics about the sites can be produced with
 
@@ -193,27 +187,29 @@ Further analysis uses tn.hopgraph:
 >>> h.plot_fits(xrange(301))  # plot rate constant fits for t=0ps to 300ps
 >>> h.plot_fits()
 >>> h.export('water')         # write dot file to visualize (filtered) graph
->>> h.plot_site_occupancy('siteoccupancy')  # plot site occupancy from graph ---is NOT working
->>> h.plot_residency_times('residencytimes')# residency times --- is NOT working
 
 To compare the water network based on density with another hop graph
 (based on ref_density), construct the CombinedGraph:
 
 >>> h_ref = hop.graph.HoppingGraph(filename=<filename>) --- basically repeat steps from
-###                                                     --- ref_density only with differ labels
+###                                                     --- ref_density only with different labels
 >>> cg = hop.graph.CombinedGraph(g0=h,g1=h_ref)
 >>> cg.plot(0,'cg_h',linewidths=(0.01,))
 >>> cg.plot(1,'cg_h_ref',linewidths=(0.01,))
 
 
-.. rubric:: TODO
+Other topics
+------------
 
-Currently un(der)-documented:
-* Remapping densities to a reference density (see hop.sitemap.remap_density).
+The following topics are not fully documented but the individual
+functions and classes contain some hints on how to make them work for
+the purposes outlined below:
+
+* Remapping densities to a reference density (see :func:`hop.sitemap.remap_density`).
 * Comparing densities and finding equivalence sites (see
-  hop.sitemap.find_common_sites() and Density.find_equivalence_sites_with()).
+  :func:`hop.sitemap.find_common_sites` and :meth:`hop.sitemap.Density.find_equivalence_sites_with`).
 * Comparing hopgraphs across different simulations: requires equivalence sites in
-  both densities; then build the hop.graph.CombinedGraph().
+  both densities; then build the :class:`hop.graph.CombinedGraph`.
 
 Functions
 ---------
