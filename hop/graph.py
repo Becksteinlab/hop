@@ -46,11 +46,15 @@ import sys
 import cPickle
 import os.path
 import warnings
+from itertools import izip
 
 import networkx as NX
 import numpy
+import scipy.optimize
+import Bio.PDB
 from MDAnalysis.lib.log import ProgressMeter
 
+import hop
 from . import constants
 from . import sitemap
 from . import trajectory
@@ -110,17 +114,24 @@ class TransportNetwork(object):
 
         .. Warning:: Erases any previous contents of graph.
         """
-        from itertools import izip
         self.graph = NX.DiGraph(name="Transitions between all sites, including interstitial and outliers")
 
-        s = self.traj.ts._x      # s changes with the timestep ('pointer')
-        slast = s.astype(int).copy()   # copy of the last frame
+        pm = ProgressMeter(self.traj.n_frames, interval=100,
+                           format="Analyzing transitions: frame %(step)5d/%(numsteps)d  [%(percentage)5.1f%%]\r")
 
+
+        self.traj.hoptraj.rewind()
         hops = self.traj.iterator()
-        hops.next()    # first frame is only needed for slast
-        for ts in hops:
-            self.graph.add_edges_from(izip(slast,s.astype(int)))
-            slast = s.astype(int).copy()   # copy of the last frame
+
+        # first frame is only needed for slast
+        ts = hops.next()
+        s = ts._x
+        slast = s.astype(int).copy()   # copy of the last frame
+        for ts in hops:                # continue with second frame
+            pm.echo(ts.frame)
+            s = ts._x.astype(int)
+            self.graph.add_edges_from(izip(slast, s))
+            slast = s.copy()           # copy of the last frame
         self._cache['sitelabels'] = sorted(self.graph.nodes())
 
     def HoppingGraph(self,verbosity=3):
@@ -176,12 +187,12 @@ class TransportNetwork(object):
         self.graph.name = "Transitions between sites"
         self.graph_properties = dict()   # contains dicts for nodes and edges
 
+        self.traj.hoptraj.rewind()
         hops = self.traj.iterator()
-        hops.next()    # make sure that we are on the first frame
 
-        snow = self.traj.ts._x  # s changes with the timestep ('pointer')
-        s = snow.astype(int)    # much faster than  numpy.array(snow,dtype=numpy.Int)
-        slast = s.copy()        # unavoidable copy of the last frame
+        s = self.traj.ts._x.astype(int)    # much faster than  numpy.array(snow,dtype=numpy.Int)
+        slast = s.copy()                   # unavoidable copy of the last frame
+        hops.next()                        # move to second frame
 
         # state[i] = dict( s0, t0, t1) + slast, s
         #  s0      assigned site        t0      time/frame for entering s0
@@ -201,7 +212,7 @@ class TransportNetwork(object):
         for ts in hops:
             pm.echo(ts.frame)
             # start from frame 2 (as we already used hops.next() above)
-            s = snow.astype(int)
+            s = self.traj.ts._x.astype(int)
 
             # Bugs of the main loop:
             #  * still counts (-1,1) transitions (outlier -> bulk); currently they are
@@ -1442,7 +1453,7 @@ class HoppingGraph(object):
         G = self.select_graph(use_filtered_graph)
         filename = self.filename(filename,'xgmml')
         xattr = {'id':'HoppingGraph', 'label':G.name, 'description':G.name,
-                 'softwareVersion': "$Id$",
+                 'softwareVersion': hop.__version__,
                  }
         xml = open(filename,'w')
         xml.write("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n"""
@@ -1557,7 +1568,8 @@ class HoppingGraph(object):
         self.write_pdb(graph,props,filename)  # ..and residues correspond to sites
 
     def write_pdb(self,graph,props,filename=None):
-        import Bio.PDB
+        # TODO: replace with MDAnalysis PDB writer
+
         B = Bio.PDB.StructureBuilder.StructureBuilder()
         B.init_structure('graph')
         B.init_model(0)
@@ -1609,7 +1621,7 @@ class HoppingGraph(object):
         psf.write('PSF\n\n')
         psf.write('%7d !NTITLE\n' % 2)
         psf.write('* Graph topology written by\n'+\
-                  '* $Id$\n')
+                  '* hop {0}\n'.format(hop.__version__))
         psf.write('\n')
 
         # ATOMS
@@ -1904,7 +1916,6 @@ class CombinedGraph(HoppingGraph):
         try:
             g2c = self._graph2combined_dict[igraph]
         except AttributeError:   # build cached dictionary first time
-            from itertools import izip
             self._graph2combined_dict = [None] * len(self.graphs)
             for ig in xrange(len(self.graphs)):
                  self._graph2combined_dict[ig] = dict(izip(self.g_labels[ig],self.node_properties.label))
@@ -1919,7 +1930,6 @@ class CombinedGraph(HoppingGraph):
         try:
             c2g = self._combined2graph_dict[igraph]
         except AttributeError:   # build cached dictionary first time
-            from itertools import izip
             self._combined2graph_dict = [None] * len(self.graphs)
             for ig in xrange(len(self.graphs)):
                  self._combined2graph_dict[ig] = dict(izip(self.node_properties.label,self.g_labels[ig]))
@@ -2352,7 +2362,6 @@ class fit_func(object):
     #       cPickle does not work on HoppingGraph (and one needs to implement
     #       custom pickling)
     def __init__(self,x,y):
-        import scipy.optimize
         _x = numpy.asarray(x)
         _y = numpy.asarray(y)
         p0 = self.initial_values()

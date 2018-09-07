@@ -177,17 +177,18 @@ class HoppingTrajectory(object):
                                 numpy.ones(tuple(numpy.asarray(self.map.shape) + 2))
 
             # Here we commit to writing a DCD hopping trajectory:
-            self.ts = MDAnalysis.coordinates.base.Timestep(Natoms)   # empty time step for N atoms
-            self.ts.frame = self.traj.ts.frame          # current frame
+            self._ts = MDAnalysis.coordinates.base.Timestep(Natoms)   # empty time step for N atoms
+            self._ts.frame = self.traj.ts.frame          # current frame
             numlabels = float(self.map.max() - self.map.min() + 2) # naive... but not crucial
             # fake unit cell for visualization
-            self.ts.dimensions = [numlabels, numlabels, 1, 90, 90, 90]
+            self._ts.dimensions = [numlabels, numlabels, 1, 90, 90, 90]
+            # access self.ts through managed property
             # current hopping trajectory frame is in ts._pos[]
             # _pos = numpy.empty(coord.shape)   # x=site label y=s(t)==0?s(t-1):s(t)  z=0
             self.n_frames = self.traj.n_frames    # total numer of frames
+            self.hoptraj = None                     # no hopping trajectory available
             self._init_coord2hop()                  # init for _map_next_timestep()
             self._map_next_timestep()               # initialize with first timestep
-            self.hoptraj = None                     # no hopping trajectory available
         elif not (hopdcd is None or hoppsf is None) or filename is not None:
             # read from dcd
             try:
@@ -203,13 +204,28 @@ class HoppingTrajectory(object):
                 raise ValueError("Hop trajectory contains 0 particles.")
             self.group = group      # group that refers to hopping trajectory
             self.hoptraj = u.trajectory    # DCD(!) trajectory object
-            self.ts = self.hoptraj.ts
+            # use property self.ts to access self.hoptraj.ts
             self.n_frames = self.hoptraj.n_frames
             self.totaltime = self.hoptraj.totaltime
         else:
             raise ValueError('Not sufficient data to create a hopping trajectory.')
 
     filename = utilities.filename_function
+
+    @property
+    def ts(self):
+        """Timestep of the hoptraj"""
+        if self.hoptraj:
+            return self.hoptraj.ts
+        else:
+            return self._ts
+
+    @ts.setter
+    def ts(self, x):
+        if self.hoptraj:
+            raise AttributeError("Cannot modify the loaded hoptraj.ts")
+        else:
+            self._ts = x
 
     def next(self):
         """Provides the next time step of a hopping trajectory.
@@ -360,7 +376,7 @@ class HoppingTrajectory(object):
             # ignore all the other sections (enough for MDAnalysis, VMD, and me)
 
 
-    def map_dcd(self,start=None,stop=None,skip=1):
+    def map_dcd(self, start=None, stop=None, step=None):
         """Generator to read the trajectory from start to stop and map
         positions to sites.
 
@@ -373,19 +389,8 @@ class HoppingTrajectory(object):
         Iterator Returns:
         ts           hopping trajectory timestep object (iterator)
         """
-        # note: iterator + loop is slower than direct loop so I may
-        # implement other functions directly with loops and leave the
-        # iterator for the user
-        if start is not None or stop is not None:
-            raise NotImplemented('start/stop do not work on big trajectories')
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.n_frames
-
         self._init_coord2hop()
-        #for traj_ts in self.traj[start:stop]:
-        for traj_ts in self.traj:              # no slicing for big trajectories
+        for traj_ts in self.traj[start:stop:step]:
             yield self._coord2hop(traj_ts)
 
     def _init_coord2hop(self):
