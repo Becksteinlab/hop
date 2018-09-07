@@ -89,6 +89,8 @@ Contents
    :maxdepth: 1
 
    installation
+   background
+   quickstart
    hop
 
 
