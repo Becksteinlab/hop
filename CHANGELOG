@@ -2,11 +2,11 @@
  Changes in Hop
 ================
 
-0.4.0
+0.4.0   2018-09-20
 
    * requires Python 2.7
    * requires MDAnalysis >= 0.18.0
-   * requires networkx >= 2.0 
+   * requires networkx >= 2.0
    * requires numpy >= 1.12.0
    * compatibility fixes (to work with newer versions of dependencies
      e.g., #33 and #34)
@@ -18,32 +18,33 @@
    * docs available at https://hop.readthedocs.io/
    * removed docs/extras/staging and docs/examples, which used
      the outdated staging module; the example scripts are
-     still visible at https://github.com/Becksteinlab/hop/tree/release-0.4.0-alpha2/doc/examples
+     still visible at
+     https://github.com/Becksteinlab/hop/tree/release-0.4.0-alpha2/doc/examples
      but they are confusing when staging is not available
 
-0.3.4
+0.3.4   2015-07-22
 
    * no functional changes
    * relicensed under GPL v3
    * small doc and metadata/url updates
    * internal code cleanups
-	
-0.3.3 
+
+0.3.3   2012-05-08
 
    * requires MDAnalysis 0.7.5
    * various minor fixes
 
-0.3.2
+0.3.2   ?
    * scripts to automate some common tasks
 
-0.3.1
-   
-   * removed gridDataFormats; separately available from 
+0.3.1   2010-09-21
+
+   * removed gridDataFormats; separately available from
      http://github.com/orbeckst/GridDataFormats (and automatically
      installed via EasyInstall)
    * moved pygraphviz dependency into the optional section
 
-0.3.0
+0.3.0   2010-07-28
 
    * updated to use networkx 1.x and newer pygraphviz
 
